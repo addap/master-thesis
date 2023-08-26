@@ -1,3 +1,9 @@
 [submodule "hazel"]
 	path = hazel
 	url = git@github.com:addap/hazel.git
+[submodule "eio"]
+	path = eio
+	url = git@github.com:addap/eio.git
+[submodule "kotlinx.coroutines"]
+	path = kotlinx.coroutines
+	url = git@github.com:Kotlin/kotlinx.coroutines.git
