@@ -1,3 +1,5 @@
+TODO pretty old and cancellation does not work like this anyways so inherently flawed.
+
 # Verification of Schedulers with Cancellation
 
 Eio's model of cancellation uses a cancellation context `cancel_ctx` associated with a tree of fibers.
@@ -5,6 +7,8 @@ Each cancellation context contains a reference `cf`, which if set to `true` mean
 
 We simplify it to associate each cancellation context with exactly one fiber.
 We also add an I/O log `state` to the cancellation context (at the moment only a nat that is incremented during an IO operation), and we want to verify the statement that after cancellation this log does not change anymore.
+
+## Formalization of Cancellation
 
 Cancellation has two main functions with two effects:
 
