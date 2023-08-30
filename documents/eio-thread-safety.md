@@ -12,10 +12,26 @@ Some examples of the behavior of the domain manager are given [here](https://git
 
 ## Thread Safety
 
-The main way that fibers communicate (intra or inter domain) is via promises (`Promise`, `Broadcast` & `Cell`).
-Promises are either in a waiting state, or completed with an error or a value.
-Promises can be shared between threads so they must be thread-safe.
-They are implemented via a customized CQS. CQS is already verified thread-safe in Coq, so we should be able to reuse the common parts and prove a specification for the new `resume_all` function.
+There are two datastructures in Eio that must be thread safe: the run queue of a scheduler and a customized CQS (cancellable concurrent queue).
+There are also other datastructures built on top of CQS like promises, [semaphores](https://github.com/ocaml-multicore/eio/blob/387fb6d2b9cb6bf03775c432b880f6ab6604e8ce/lib_eio/sem_state.ml), [synchronous channels](https://github.com/ocaml-multicore/eio/blob/387fb6d2b9cb6bf03775c432b880f6ab6604e8ce/lib_eio/sync.mli) & [resource pools](https://github.com/ocaml-multicore/eio/blob/387fb6d2b9cb6bf03775c432b880f6ab6604e8ce/lib_eio/pool.ml).
+
+The run queue of a scheduler uses an `Lwt` thread-safe queue.
+I did not see a formal verification of it and in the proofs so far it is axiomatized.
+Actually, it could be replaced by a CQS queue if we are fine with a different scheduling behavior (with the Lwt queue it sometimes enqueues at the front or at the back, but this is not possible with CQS. This change would not affect safety.)
+
+Instead, we should focus on the customized CQS because it is used to implement promises.
+Promises are the main way that fibers communicate intra & inter domain, so they are inherent to modeling fibers.
+
+My favored approach would then be to verify the customized parts of CQS (in module `Cell`) and take the unchanged parts as axioms (because the proofs are huge).
+Then we can verify promises (in modules `Promise` & `Broadcast`) built on top of CQS.
+Verifying the other abstractions built on top of CQS would be a bonus but it's not part of the core fiber abstraction, so low priority.
+If we want, we can build a simple standard queue on top of CQS and use that instead of the axiomatized Lwt queue.
+
+### Customized CQS
+
+We discuss the structure of CQS and how Eio customized it [here](./eio-cqs.md).
+
+## Thread safety hinted at in docs
 
 There are some informal constraints on functions like "must be able to be called in any context". E.g. in `broadcast.mli`.
 
@@ -27,10 +43,8 @@ if [resume_all] can be called from one. [fn] must not raise.
 ```
 
 In practice, the function saved in a cell by `Broadcast` will always be an `enqueue` function that appends a fiber to the run queue of a scheduler.
-I interpret "be called from caller's context, or by resume_all [which might be from different domain]" as "must only have persistent preconditions", which is true for `enqueue`.
+I interpret "be called from caller's context, or by resume_all [i.e. from different domain]" as "must only have persistent preconditions", which is true for `enqueue`.
 To be called from a signal handler, it also must not be blocking but I think that is not a safety concern.
-
-## Examples found in docs
 
 Below are some examples where the comments indicate that thread-safety restrictions exist for some functions.
 They could be wortwhile to look at for verification work.
@@ -40,9 +54,9 @@ They could be wortwhile to look at for verification work.
 - [Eio.Pool](https://github.com/ocaml-multicore/eio/blob/286a1b743d3a55c5318a1301083e311f5b7d5b91/lib_eio/pool.mli#L29)
   Resource pools have some unsafe interaction with switches.
 - [Sched](https://github.com/ocaml-multicore/eio/blob/286a1b743d3a55c5318a1301083e311f5b7d5b91/lib_eio_linux/sched.ml#L55)
-  Other domains can change the run queue of a scheduler.
-- [Domain_manager.run](https://github.com/ocaml-multicore/eio/blob/main/lib_eio/eio.mli#L94)
-  You can spawn new domains from within one fiber.
+  Other domains can change the run queue of a scheduler (but we assume the Lwt queue is thread-safe)
+- [Domain_manager.run](https://github.com/ocaml-multicore/eio/blob/286a1b743d3a55c5318a1301083e311f5b7d5b91/lib_eio/eio.mli#L89)
+  You can spawn new domains from within one fiber, but these must only access thread-safe values from the spawning domain.
 - [This issue links some more interesting places for thread-safety](https://github.com/ocaml-multicore/eio/issues/387)
 
 ## Signal Handlers

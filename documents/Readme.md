@@ -125,7 +125,7 @@ In that case, an exception is raised in the spawned domain.
 We do not want to axiomatize all possible resources that Eio offers.
 Instead, if we want some justification to model a `Switch`, we could add some opaque, generic resource.
 
-Then we would be able to prove that after a `Switch` is over, none of the attached resources remain.
+Then the goal would be to prove that after a `Switch` is over, none of the attached resources remain.
 
 ## Progress
 
@@ -157,4 +157,5 @@ Development on the case studies happens in the [hazel submodule](../hazel).
 
 - [Retrofitting Effect Handlers onto OCaml](https://arxiv.org/abs/2104.00250)
 - [Retrofitting Parallelism onto OCaml](https://arxiv.org/abs/2004.11663)
+- [CQS: A Formally-Verified Framework for Fair and Abortable Synchronization](https://arxiv.org/abs/2111.12682) (a shorter journal version from 2023 also exists)
 - TODO
