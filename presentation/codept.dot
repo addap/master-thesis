@@ -1,0 +1,27 @@
+digraph G {
+    Scheduler -> Fiber
+    Fiber -> Switch 
+    Fiber -> Suspend 
+    Fiber -> Single_waiter 
+    Fiber -> Promise 
+    Fiber -> Cancel 
+    Promise -> Suspend 
+    Promise -> Cancel 
+    Promise -> Broadcast 
+    Broadcast -> CQS 
+    Single_waiter -> Suspend 
+    Single_waiter -> Cancel 
+    Suspend -> Cancel 
+    Switch -> Single_waiter 
+    Switch -> Cancel 
+    
+    Scheduler [style=filled, fillcolor=green]
+    Fiber [style=filled, fillcolor=green]
+    Promise [style=filled, fillcolor=green]
+    Broadcast [style=filled, fillcolor=green]
+    CQS [style=filled, fillcolor=green]
+    Cancel [style=filled, fillcolor=green]
+    Suspend [style=filled, fillcolor=green]
+    Switch [style=filled, fillcolor=yellow]
+    Single_waiter [style=filled, fillcolor=yellow]
+}
