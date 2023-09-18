@@ -17,6 +17,7 @@
 \usepackage{mathtools}
 \usepackage{fontspec}
 \usepackage{minted}
+\usepackage{changepage}
 \usepackage{todonotes}
 \usepackage{newunicodechar}
 \usepackage{graphicx}
@@ -45,7 +46,7 @@
 \newcommand{\esuspend}{\ocaml{Suspend}}
 \newcommand{\egetctx}{\ocaml{GetContext}}
 \newcommand{\proto}{\mathtt{Coop}}
-\newcommand{\ewp}[3]{\textit{ewp}\; #1\; \langle #2 \rangle\; \{#3\}}
+\newcommand{\ewp}[3]{\textit{ewp}\; (#1)\; \langle #2 \rangle\; \{#3\}}
 \newcommand{\pers}[1]{\Box\; #1}
 \newcommand{\pinv}{\textit{promiseInv}}
 
@@ -235,7 +236,12 @@ let main () =
     let r1 = await p1 in 
     let r2 = await p2 in 
     r1 + r2
-\end{minted}
+    \end{minted}
+    We assume
+    \begin{align*}
+         & \Phi \Coloneqq \lambda n. n \in \mathbb{N}                 \\
+         & \ewp{\texttt{fetch\_api ()}}{\proto{}}{v. \pers{\Phi\; v}}
+    \end{align*}
 \end{frame}
 
 \begin{frame}[fragile]{Specifications}
@@ -244,103 +250,99 @@ let main () =
         %   ⊢ 
         %     EWP (fork_promise f) <| Coop  |> {{ y, 
         %       ∃ (p: loc), ⌜ y = #p ⌝ ∗ isPromise p Φ }}.
-        % \inferrule [Fork]
-        % {\pinv{} \ast \ewp{f\; ()}{\proto{}}{v.\; \pers{\Phi\; v}}}
-        % {\ewp{\texttt{fork_promise f}}{\proto{}}{p.\; \textit{isPromise}\; p\; \Phi}}
-
-        % \and
-
+        \inferrule [Fork]
+        {\pinv{} \ast \ewp{\texttt{f ()}}{\proto{}}{v.\; \pers{\Phi\; v}}}
+        {\ewp{\texttt{fork\_promise f}}{\proto{}}{p.\; \textit{isPromise}\; p\; \Phi}}
+        % 
+        \and
+        % 
         % promiseInv ∗ isPromise p Φ ⊢ 
         %   EWP (await #p) <| Coop |> {{v, □ Φ v}}.
-        % \inferrule [Await]
-        % {\pinv{} \ast \textit{isPromise}\; p\; \Phi}
-        % {\ewp{\texttt{await p}}{\proto{}}{v.\; \pers{\Phi\; v}}}
+        \inferrule [Await]
+        {\pinv{} \ast \textit{isPromise}\; p\; \Phi}
+        {\ewp{\texttt{await p}}{\proto{}}{v.\; \pers{\Phi\; v}}}
         % 
-        % \and
+        \and
         % 
-        %   let P := (λ v, ⌜ v = #() ⌝ ∗ promise_state_done γ)%I in
-        %     isMember p γ ε ∗ isPromiseResult ε Φ ∗ promise_cqs wakers γ
-        %   ⊢
-        %     EWP (await_callback #p wakers) <| ⊥ |> {{f, 
-        %       ∀ (waker: val), (∀ (v: val), P v -∗ EWP (waker v) <| ⊥ |> {{_, True }}) -∗
-        %       promiseInv -∗ 
-        %         (▷ EWP (f waker) <| ⊥ |> {{_, True }}) }}.
-        % \inferrule [Await-Callback]
-        % {\textit{isMember}\; p\; \gamma\; \epsilon \ast \textit{isPromiseResult}\; \epsilon\; \Phi \ast \textit{promiseCqs}\; cqs\; \gamma}
-        % {\ewp{\texttt{await\_callback}\; p\; cqs}{\bot}{f. \forall waker.\; I \ast  }}
-
-        % \and
         % promiseInv -∗
         %   (promiseInv -∗ EWP main #() <| Coop |> {{ v, □ Φ v }}) -∗
         %     EWP run main {{ _, True }}.
-        % \inferrule [Run]
-        % {\pinv{} \ast (\pinv{} \wand{} \ewp{\texttt{main ()}}{\proto{}}{\top})}
-        % {\ewp{\texttt{run main}}{\bot}{\top}}
-
+        \inferrule [Run]
+        {\pinv{} \ast (\pinv{} \wand{} \ewp{\texttt{main ()}}{\proto{}}{\top})}
+        {\ewp{\texttt{run main}}{\bot}{\top}}
     \end{mathpar}
 \end{frame}
 
-
-\begin{frame}[fragile]{Source Code}
-    \begin{columns}[t]
-        \begin{column}{0.4\textwidth}
-            \begin{minted}[fontsize=\footnotesize]{ocaml}
-let fork f =
-  let p = new_promise () in
-  fork (fun () ->
-    let v = f () in
-    match !p with
-    | Done _ -> raise Error 
-    | Waiting q -> 
-      p := Done v;
-      Cqs.resume_all q
-  );
-  p
-\end{minted}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \begin{minted}[fontsize=\footnotesize]{ocaml}
-let await p =
-  match !p with
-  | Done v -> v
-  | Waiting q ->
-    suspend (fun waker ->
-      let req = Cqs.suspend q waker in
-      match !p with
-      | Done _ -> 
-        Cqs.cancel cqs req; 
-        waker ()
-      | Waiting _ -> ()
-    );
-    match !p with
-    | Done v -> v
-    | Waiting _ -> raise Error
-\end{minted}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-
-\begin{frame}[fragile]{Source Code}
+\begin{frame}[fragile]{Scheduler}
     \begin{minted}[fontsize=\footnotesize]{ocaml}
 type 'a waker = 'a -> unit
 type 'a suspender = 'a waker -> unit
 type _ Effect.t += Fork : (unit -> unit) -> unit t
 type _ Effect.t += Suspend : 'a suspender -> 'a t
 
-let rec fulfill: (unit -> unit) -> unit = fun e ->
-   match_with e () {
-     effc = fun eff ->
-       match eff with
-       | Fork f -> Some (fun k ->
-           Queue.add (fun () -> continue k ()) q;
-           fulfill f)
-       | Suspend suspender -> Some (fun k -> 
-           let waker = fun v -> Queue.add (fun () -> continue k v) q in
-           suspender waker;
-           next ())
+let rec handle_fiber (e : unit -> unit) =
+  match_with e () {
+    effc = fun eff ->
+      match eff with
+      | Fork f -> Some (fun k ->
+        Queue.add (fun () -> continue k ()) q;
+        handle_fiber f)
+      | Suspend suspender -> Some (fun k -> 
+        let waker = fun v -> 
+          Queue.add (fun () -> continue k v) q in
+        suspender waker;
+        next ());
+    ...
    }
     \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Fiber Operations}
+    \begin{adjustwidth}{-2em}{0em}
+        \begin{minipage}{0.45\textwidth}
+            \begin{minted}[fontsize=\footnotesize]{ocaml}
+let fork_promise f =
+  let p = new_promise () in
+  perform (Fork (fun () ->
+    let v = f () in
+    match !p with
+    | Done _ -> assert false
+    | Waiting q -> 
+      p := Done v;
+      Cqs.resume_all q
+  ));
+  p
+\end{minted}
+        \end{minipage}
+        \begin{minipage}{0.5\textwidth}
+            \begin{minted}[fontsize=\footnotesize]{ocaml}
+let await p =
+  match !p with
+  | Done v -> v
+  | Waiting q ->
+    perform (Suspend (fun waker ->
+      let req = Cqs.suspend q waker in
+      match !p with
+      | Done _ -> 
+        Cqs.cancel cqs req; 
+        waker ()
+      | Waiting _ -> ()
+    ));
+    match !p with
+    | Done v -> v
+    | Waiting _ -> assert false
+\end{minted}
+        \end{minipage}
+
+    \end{adjustwidth}
+\end{frame}
+
+\begin{frame}{Execution Diagram}
+    \todo[inline]{Diagram of one possible execution path, then box around await}
+\end{frame}
+
+\begin{frame}[fragile]{\ocaml{await} in Detail}
+    \todo[inline]{Source of await again. Highlight 3 matches, the assert false \& Cqs.cancel}
 \end{frame}
 
 \begin{frame}[fragile]{Ghost State}
@@ -364,13 +366,14 @@ Definition promiseInv_inner : iProp Σ := (
 \end{frame}
 
 \begin{frame}[fragile]{Proof of \ocaml{await}}
-    a
+    \todo[inline]{Applying suspend effect and immediately getting promise state done}
+    \todo[inline]{Cancel CQS inside of suspend callback}
 \end{frame}
 
-\begin{frame}{Contribution}
-    Proof-of-concept for the \texttt{GetContext} effect.
-    \todo[inline]{TODO Protocol with gname parameter and example how GetContext can be used}
-\end{frame}
+% \begin{frame}{Contribution}
+%     Proof-of-concept for the \texttt{GetContext} effect.
+%     \todo[inline]{TODO Protocol with gname parameter and example how GetContext can be used}
+% \end{frame}
 
 \begin{frame}{A note on cancellation}
     \begin{itemize}
@@ -406,6 +409,7 @@ Definition promiseInv_inner : iProp Σ := (
 \section{Misc}
 
 \begin{frame}[fragile]{Control flow in the protocol for \esuspend{}}
+    \todo[inline]{Move this to the proof of await slide}
     \begin{itemize}
         \item \(P\; v\) appears in the precondition of \ocaml{waker}, which invokes the continuation.
         \item Therefore, we can prove \(P\; v\) in the postcondition of the protocol.
