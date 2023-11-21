@@ -1,0 +1,121 @@
+<mxfile host="app.diagrams.net" modified="2023-11-10T19:14:33.953Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/118.0" etag="vlWAZGUUf0DUsIuoOwWA" version="21.8.0" type="device">
+  <diagram id="prtHgNgQTEPvFCAcTncT" name="Page-1">
+    <mxGraphModel dx="1907" dy="1603" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="dNxyNK7c78bLwvsdeMH5-20" value="&lt;div&gt;Step&lt;/div&gt;" style="swimlane;html=1;startSize=20;horizontal=0;rotation=90;" parent="1" vertex="1">
+          <mxGeometry x="-460" y="-59.99" width="950" height="179.99" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-47" value="1. Setup Promise &amp;amp; CQS" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="dNxyNK7c78bLwvsdeMH5-20">
+          <mxGeometry x="416.56000000000006" y="-350.01" width="136.88" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-49" value="&lt;div&gt;2. Await promise&lt;/div&gt;&lt;div&gt;&amp;nbsp; 2. 1. open promise invariant&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp; 2. 2. suspend registration&lt;/div&gt;&lt;div&gt;&amp;nbsp; 2. 3. suspend effect&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp; 2. 4. cqs suspend&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="dNxyNK7c78bLwvsdeMH5-20">
+          <mxGeometry x="390" y="-220.01" width="163.44" height="70.01" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-60" value="&lt;div&gt;3. Fullfil promise&lt;/div&gt;&lt;div&gt;&amp;nbsp; 3. 1. open promise invariant&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp; 3. 2. complete promise state &amp;amp; take out resume all permit&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="dNxyNK7c78bLwvsdeMH5-20">
+          <mxGeometry x="393.28" y="39.99" width="163.44" height="70.01" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-63" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="dNxyNK7c78bLwvsdeMH5-20" source="ODjgAbvRZujrLT3kRPTA-60" target="ODjgAbvRZujrLT3kRPTA-60">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-64" value="&lt;div&gt;4. Resume all in CQS&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp; 3. 1. read suspend pointer (n_res)&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp; 3. 2. do n_res resume registrations&lt;/div&gt;&lt;div&gt;&amp;nbsp; 3. 3. do n_res resumes&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="dNxyNK7c78bLwvsdeMH5-20">
+          <mxGeometry x="389.99999999999994" y="179.99" width="163.44" height="70.01" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-15" value="&lt;div&gt;Promise Invariant \(\Phi\)&lt;/div&gt;" style="swimlane;html=1;startSize=20;horizontal=0;rotation=90;" vertex="1" parent="1">
+          <mxGeometry x="-264.68" y="-65.31" width="953.12" height="193.75" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-18" value="&lt;div&gt;p \(\mapsto\) Waiting cqs \(\ast\)&lt;/div&gt;&lt;div&gt;promise state waiting \(\ast\)&lt;/div&gt;&lt;div&gt;is thread queue \(\ast\)&lt;/div&gt;&lt;div&gt;resume all permit \(\ast\)&lt;br&gt;&lt;/div&gt;&lt;div&gt;\(\exists\) n, thread queue state n&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-15">
+          <mxGeometry x="385.12" y="-345.13" width="176.88" height="93.13" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-58" value="" style="endArrow=none;html=1;rounded=0;strokeWidth=2;" edge="1" parent="ODjgAbvRZujrLT3kRPTA-15">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="145.12" y="24.870000000000005" as="sourcePoint" />
+            <mxPoint x="1195.12" y="24.879999999999995" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-59" value="&lt;div&gt;p \(\mapsto\) Done v \(\ast\)&lt;/div&gt;&lt;div&gt;\(\Phi\) v \(\ast\)&lt;br&gt;&lt;/div&gt;&lt;div&gt;promise state done \(\ast\)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-15">
+          <mxGeometry x="388.12" y="85.31" width="176.88" height="54.69" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-66" value="" style="endArrow=none;html=1;rounded=0;strokeWidth=2;" edge="1" parent="ODjgAbvRZujrLT3kRPTA-15">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="144.68" y="165.31" as="sourcePoint" />
+            <mxPoint x="1194.6799999999998" y="165.32" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-22" value="Thread Queue" style="swimlane;html=1;startSize=20;horizontal=0;rotation=90;" vertex="1" parent="1">
+          <mxGeometry x="-40" y="-78.75" width="950" height="217.5" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-43" value="&lt;div&gt;(deqFront = 0 \(\lor\)&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;resume all permit) \(\ast\)&lt;/div&gt;&lt;div&gt;thread queue invariant&lt;/div&gt;&lt;div&gt;&amp;nbsp;&amp;nbsp; EMPTY&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-22">
+          <mxGeometry x="390" y="-331.25" width="170" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-44" value="l \(\mapsto\) EMPTY" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-22">
+          <mxGeometry x="400" y="-261.25" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-56" value="&lt;div&gt;(deqFront = 0 \(\lor\)&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;resume all permit) \(\ast\)&lt;/div&gt;&lt;div&gt;thread queue invariant&lt;/div&gt;&lt;div&gt;&amp;nbsp; INHABITED&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-22">
+          <mxGeometry x="380" y="-186" width="190" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-57" value="&lt;div&gt;iterator issued \(\gamma e\) \(\ast\)&lt;br&gt;&lt;/div&gt;&lt;div&gt;l \(\mapsto\) InjL k \(\ast\)&lt;br&gt;&lt;/div&gt;&lt;div&gt;(promise state done \(-\ast\) &lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp; WP k () { \(\top\) })&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-22">
+          <mxGeometry x="390" y="-111" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-69" value="&lt;div&gt;resume all permit \(\ast\)&lt;/div&gt;&lt;div&gt;thread queue invariant&lt;/div&gt;&lt;div&gt;&amp;nbsp; INHABITED&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-22">
+          <mxGeometry x="380" y="188.75" width="190" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-70" value="&lt;div&gt;iterator issued \(\gamma e\) \(\ast\)&lt;br&gt;&lt;/div&gt;&lt;div&gt;l \(\mapsto\) InjL k \(\ast\)&lt;br&gt;&lt;/div&gt;&lt;div&gt;(promise state done \(-\ast\) &lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp; WP k () { \(\top\) })&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-22">
+          <mxGeometry x="390" y="238.75" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-29" value="Awaited Fiber" style="swimlane;html=1;startSize=20;horizontal=0;rotation=90;" vertex="1" parent="1">
+          <mxGeometry x="355" y="-65" width="950" height="175.31" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-61" value="&lt;div&gt;promise state waiting&lt;/div&gt;&lt;div&gt;\(\exists v, \Phi v \) &lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-29">
+          <mxGeometry x="404.99999999999994" y="45" width="136.88" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-62" value="&lt;div&gt;promise state done&lt;/div&gt;&lt;div&gt;resume all permit&lt;/div&gt;&lt;div&gt;thread queue state n&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-29">
+          <mxGeometry x="404.99999999999994" y="95" width="136.88" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-67" value="&lt;div&gt;deqFront = 0&lt;/div&gt;&lt;div&gt;n = length l - deqFront&lt;/div&gt;&lt;div&gt;n_res &amp;lt;= length l&lt;/div&gt;&lt;div&gt;=&amp;gt; n_res &amp;lt;= n&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-29">
+          <mxGeometry x="405" y="185.00000000000003" width="136.88" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-68" value="&lt;div&gt;thread queue state (n - n_res) \(\ast\)&lt;/div&gt;&lt;div&gt;\([\ast]\) replicate n_res (resume permit)&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-29">
+          <mxGeometry x="390" y="265" width="170" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-75" value="&lt;div&gt;promise state waiting&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-29">
+          <mxGeometry x="406.55999999999995" y="-335" width="136.88" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-36" value="Waiting Fiber" style="swimlane;html=1;startSize=20;horizontal=0;rotation=90;" vertex="1" parent="1">
+          <mxGeometry x="160" y="-50" width="950" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-45" value="is promise \(\Phi\)" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-36">
+          <mxGeometry x="403.12" y="-360" width="136.88" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-48" value="" style="endArrow=none;html=1;rounded=0;strokeWidth=2;" edge="1" parent="ODjgAbvRZujrLT3kRPTA-36">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-290" y="-240.01" as="sourcePoint" />
+            <mxPoint x="760" y="-240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-50" value="thread queue state n" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-36">
+          <mxGeometry x="403.12" y="-230" width="136.88" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-51" value="thread queue state (n + 1) \(\ast\) suspension permit" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-36">
+          <mxGeometry x="403.12" y="-210" width="146.88" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-54" value="&lt;div&gt;promise state done \(-\ast\)&lt;/div&gt;&lt;div&gt;&amp;nbsp; WP k () { \(\top\) }&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-36">
+          <mxGeometry x="401.56" y="-160" width="146.88" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-55" value="suspend result Success" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="ODjgAbvRZujrLT3kRPTA-36">
+          <mxGeometry x="401.56" y="-110" width="146.88" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-71" value="&lt;div&gt;resume all permit \(\ast\)&lt;/div&gt;&lt;div&gt;thread queue invariant&lt;/div&gt;&lt;div&gt;&amp;nbsp; RESUMED&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="340" y="331" width="190" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-72" value="&lt;div&gt;iterator issued \(\gamma e\) \(\ast\)&lt;/div&gt;&lt;div&gt;iterator issued \(\gamma d\) \(\ast\)&lt;/div&gt;&lt;div&gt;l \(\mapsto\) RESUMED \(\ast\)&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="350" y="381" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ODjgAbvRZujrLT3kRPTA-73" value="&lt;div&gt;promise state done \(-\ast\)&lt;/div&gt;&lt;div&gt;&amp;nbsp; WP k () { \(\top\) }&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;align=left;rotation=0;verticalAlign=top;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="750" y="340" width="146.88" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
