@@ -3,10 +3,10 @@
 The goal of this thesis is to verify a simplified version of the core of the Eio library for OCaml 5.
 
 The recently released OCaml 5 includes several new features like multi-threading support and an effect sytem.  
-[Eio](https://github.com/ocaml-multicore/eio/) is a concurrency library for OCaml 5 that uses the effect system to implement fibers, which are cooperatively scheduled execution contexts.
+[Eio](https://github.com/ocaml-multicore/eio/) is a concurrency library for OCaml 5 that uses effects to implement fibers, which are cooperatively scheduled execution contexts.
 Eio aims to be the standard concurrency library for OCaml 5.
-[Hazel](https://gitlab.inria.fr/cambium/hazel) is a formalization of an effect system in Iris.
-It has been used in multiple case studies, among them a cooperative scheduler implementing fibers with effects (but with a different implementation than Eio uses).
+[Hazel](https://gitlab.inria.fr/cambium/hazel) is a formalization of a language with effects in Iris.
+Hazel has been used in multiple case studies, among them a cooperative scheduler implementing fibers with effects (but with a different implementation than Eio uses).
 
 For server-like applications running many short-lived tasks, concurrent programming has gained in popularity as a way to organize the code and efficiently use I/O resources (e.g. goroutines in Golang and async/await in Rust).
 If Eio does position itself as the standard concurrency library for OCaml 5, then it would be nice to have the reassurance of a formal verification of its core abstractions.
@@ -15,7 +15,7 @@ As such, we want to show the **safety** and **effect safety** of the core of Eio
 
 ## Structure
 
-The rest of this document is organized as follows. Some parts might link to other documents so that this one does not get too large.  
+The rest of this document is organized as follows. Some parts link to other documents so that this one does not get too large.  
 Section 0 tracks the progress of this work as a quick summary.
 Section 1 defines some terms we use throughout.
 Section 2 discusses Eio in more detail and section 3 shows how and what specifications we want to prove about Eio's API.
@@ -89,91 +89,130 @@ When talking about multi-threading, we use **domains** or **threads** interchang
 
 ## 2. Eio
 
-Eio is a structured concurrency library using OCaml 5 effects for "light-weight threads" (i.e. fibers).  
+Eio is a structured concurrency library implemented using OCaml 5 effects.
+
+Eio acts as an async runtime providing access to operating system resources (file system, network, timers, etc.) to code organized in fibers.
+The fibers are cooperatively scheduled and many operations on Eio provided resources are suspension points (reading from a socket, awaiting a timer, etc.).
+Fibers can spawn new fibers in the same thread and then cancel them or await their completion.
+
 Compared to previous concurrency libraries like Lwt and Async (which have a monadic interface), concurrency based on effects is easier to use because it is more composable, i.e. you can compose concurrent code with any non-concurrent code.
-In practice, this is because for monads, everything between the monadic run function and the code actually using the operations of your monad needs to be written in monadic style. No such restriction exists for effects.  
-However, for now OCaml 5 programs are not ensured to be effect safe.
+In practice, this is because for monads all of the code between the monadic run function and the actual usage of the operations of the monad needs to be written in monadic style.
+No such restriction exists for effects.
 
 Eio offers the following features.
 
 - Backends for multiple operating systems (Windows, Linux & general POSIX)
 - Operations to manage resources (file descriptors, sockets, etc.) using the `Switch` module.
-  Resource creation functions have a `Switch.t` argument where the resource is registered. When the switch is exited, all attached resources can be closed.
-- Operations to spawn (`fork`, `fork_promise`, `fork_daemon`), cancel and await fibers.
+  Resource creation functions have a `Switch.t` argument so that the resource is registered to the provided switch. When the switch is exited, all registered resources can be closed.
+- Operations to spawn (`Fiber.fork`, `Fiber.fork_promise`, `Fiber.fork_daemon`), cancel (`Cancel.cancel`) and await (`Promise.await`) fibers.
 - Multi-threading support
-  - Each scheduler only handles [fibers in one domain](https://github.com/ocaml-multicore/eio/blob/286a1b743d3a55c5318a1301083e311f5b7d5b91/lib_eio_posix/sched.mli#L3). If you want to run fibers in multiple threads, each thread needs its own scheduler.
+  - Each scheduler only handles [fibers in one thread](https://github.com/ocaml-multicore/eio/blob/286a1b743d3a55c5318a1301083e311f5b7d5b91/lib_eio_posix/sched.mli#L3). If you want to run fibers in multiple threads, each thread needs its own scheduler.
   - Fibers can await each other cross-thread. This is enabled by implementing promises using a multi-threaded lock-free queue (CQS).
-- Abstractions for different operating system services (file system, networking, processes) and synchronization primitives like mutexes, semaphores & conditions
+- Abstractions for different operating system resources (file system, network, timers, etc.)
+- Synchronization primitives like mutexes, semaphores & conditions.
 
 [Some more notes on the core modules of Eio](./eio-detail.md).
 
 ## 3. How to verify Eio
 
-Verifying the whole Eio library is a too wide scope and even the core library is with ~1300 LoC probably too big.
-In the following we give more details on some of Eio's features, what we could be able to verify about them, and how we should simplify them.
+For now OCaml 5 programs are not ensured to be effect safe.
+In the future it is planned to define an effects system (analogous to a type system) for OCaml 5, which statically analyses what effects a program can perform.
+With such an effects system it is then possible to statically ensure that a program does not perform any unhandled effects.  
+In the meantime, we can use Hazel to manually prove the effect safety of a given program $e$.
+We do this by proving an **extended weakest precondition** $\mathit{ewp}\; e\; \langle P\rangle\; \{x. Q\}$, which says that if e terminates in a value $x$, it satisfies $Q$ and the protocol $P$ can be performed during the execution.
+A protocol is a collection of multiple effects.
+
+To prove the effect safety of the Eio scheduler $\mathtt{run}$ for any given $\mathtt{main}$ function we thus want to prove an ewp with the empty protocol: $$\mathit{ewp}\; (\mathtt{run}\; \mathtt{main})\; \langle \bot\rangle\; \{\_. \top\}$$
+Programs using Eio can mainly perform three effects: `Fork` to spawn a new fiber, `Suspend` to suspend and wait for some condition, and `GetContext` to get access to metadata about the current fiber.
+The effects define the protocol `Coop`, so for any program using Eio, we want to prove an ewp with this protocol: $$\mathit{ewp}\; \mathtt{e}\; \langle Coop \rangle\; \{x. Q\}$$
+
+Verifying the whole Eio library is a too wide scope and even the core library is with ~1300 LoC probably too big (see [eio-detail.md](./eio-detail.md)).
+In the following we give more details on what we want to verify about Eio's core features.
 
 ### Fibers
 
-There are many ways to create fibers in Eio: `Fiber.{fork, fork_promise, fork_daemon, all, both, pair, any, first}`
+There are many ways to create fibers in Eio: `Fiber.{fork, fork_promise, fork_daemon, all, both, pair, any, first}`.
 
-`fork_promise` spawns a new fiber and creates a promise to hold the final result. `fork` does not create a promise, so it is just fire-and-forget. `fork_daemon` is for background fibers with different cancellation behavior.
-
+`fork_promise` spawns a new fiber and creates a promise to hold the final result. `fork` does not create a promise, so it is just fire-and-forget. `fork_daemon` is for background fibers with different cancellation behavior.  
 `all, both, pair, any, first` are combinators to run multiple fibers and aggregate their results.
-Only `any` is nontrivial (a.d. TODO I still have not understood this function. The cancellation handling seems quite complicated.)
+Only `any` is nontrivial since it cancels other fibers as soon as one has completed.
 
-From the above mentioned featues, we probably only want to keep the basic `Fiber.fork_promise` (and maybe `Fiber.any`) because others are just a basic variation on it.
-`fork_promise` returns a promise that will later be fulfilled by a value, so it should satisfy a specification like:
+From the above mentioned featues, we probably only want to verify the basic `Fiber.fork_promise` (and maybe `Fiber.any`) because others are just a basic variation on it.
+`(fork_promise e)` returns a promise `p` that will later be fulfilled by the final value of `e`, so it has to satisfy a specification like the following, where `is_promise` says that the promise `p` will be fulfilled by a value satisfying `Q`.
 
 ```
-{{ P }} EWP e () <| Coop |> {{v, Q v}} -*
-  {{ P }} EWP fork_promise e {{p, is_promise p Q}}
+{ P } EWP e () <| Coop |> {v, Q v} -*
+  { P } EWP (fork_promise e) <| Coop |> {p, is_promise p Q }
 ```
 
-Also, fibers support thread-local state that can be queried by an effect.
-This could be modelled by protocols with a ghost-cell parameter to describe the variables. (a.d. TODO more explanation why the parameter is needed. In short, so that both handler and handlee know from the beginning what data is transferred in the effect.)
+The corresponding operation to await a promise then must satisfy the following specifiation.
+Promises are built on top of CQS, which is explained separately below.
 
-### Multi-threading
+```
+{ is_promise p Q } EWP (await p) <| Coop |> {v, Q v}
+```
 
-Since some safety concerns only arise because Eio supports multiple threads (otherwise CQS would be unneeded, and promises could be a lot simpler), we also want to support multi-threading in our case study.
+Also, fibers support thread-local state that can be queried by the `GetContext` effect. This is explained further [here](./eio-fiber-state.md).
+
+### Multi-Threading
+
+Since some safety concerns only arise because Eio supports multiple threads (otherwise CQS would be unneeded and promises could be a lot simpler), we also want to support multi-threading in our case study.
 Thread-safety concerns and how multi-threading is used in Eio is detailed [here](./eio-thread-safety.md)
 
-Hazel has no multi-threading support and only basic support for invariants. For verifying the thread-safety of functions we need both. We describe how to use invariants [here](./hazel-invariants.md)
+Hazel has no multi-threading support and only basic support for invariants.
+For verifying the thread-safety of functions we need both. We describe how to use invariants [here](./hazel-invariants.md).  
+Hazel with multi-threading support could be achieved in two ways.
 
-Adding multi-threading should be straight-forward, but a lot of work, so it has not been a priority so far.
-Effects cannot be performed cross-thread, so spawning a new thread should obey the empty protocol.
-Otherwise, multiple threads should work the same as in heap-lang.
+First, heaplang already has support for multi-threading so we could add support for effects to heaplang and the standard Iris program logic.
+This would entail changing the language, operational semantics and the definition of WP.
+But the existence of other features like prophecy variables and later credits complicate the matter as they could interact with effects.
 
-### Switches & Cancellation Contexts
+To avoid this we decided to change the Hazel language instead.
+This should only entail adding `fork` and `cmpxchg` primitive operations to the language and proving their reasoning rules.
+The soundness proof of EWP would also need to be updated, but since effects and multi-threading are orthogonal (forking a new thread asserts that it obeys the empty protocol), the necessary changes should be analogous to the soundness proof of heaplang.
+This is currently work in progress and will be described in more detail [here](./hazel-multithreading.md).
 
-For each domain, there is a tree of **cancellation contexts** and each fiber belongs to one.
+### Cancellation Contexts
 
-Cancelling the context cancels all attached fibers (and those of unprotected child contexts).
-Right after being scheduled, and before calling any resource APIs a fiber checks if it was cancelled.
+Fibers in Eio can be cancelled to give them a nonbinding signal to stop running.
+This is implemented by assigning each fiber to a **cancellation contexts**.
+Cancellation contexts are organized as a tree and cancelling one context has the effect of logically cancelling all attached fibers, and also cancelling its child contexts.
+Right after being scheduled and before calling any resource APIs a fiber checks if it is cancelled, and if so, raises an exception.
 
-A `Switch.t` manages resources and fibers and is also attached to a cancellation context.
-A new switch is created with `Switch.run (fn sw -> ...)`.
-If a switch is cancelled, it cancels the attached cancellation context which in turn cancels the fibers.
-Before `Switch.run` returns, it waits until the non-daemon fibers are completed and then cancels all remaining daemon fibers.
-
-We describe our initial appraoch on how to model cancellation [here](./hazel-access-rights.md).
-The idea was to verify that after a fiber has been cancelled, not resource API can be called again.
-However, cancellation in Eio is pretty weak and acts only as a signal for a fiber to voluntarily shut down.
-A misbehaved fiber can go into a protected context **after** it has been cancelled and continue called resource APIs.
-So there is almost nothing to verify.
-(a.d. TODO what might be interesting is all the cancellation hooks that are registered for various operations, like waiting on a promise)
-
-Spawning new domains also interacts with cancellation, but rather ad-hoc.
-The `Domain.run` function receives a cancellation promise which it awaits concurrently with the domain's main function.
+Spawning new domains also interacts with cancellation.
+The `Domain.run` function receives a cancellation promise which it awaits concurrently with the domain's main fiber.
 If the spawning fiber is cancelled, the promise is resolved.
 In that case, an exception is raised in the spawned domain.
-(a.d. this behavior seems different than normal cancellation as fibers in the main thread can catch their own cancelled exceptions and continue running. But here the exception would directly go to the scheduler and terminate the thread. TODO test this)
+This behavior seems different than normal cancellation as fibers in the main thread can catch their own cancelled exceptions and continue running.
+But here the exception would directly go to the scheduler and terminate the thread. (TODO test if that is correct and maybe ask Eio people why this is intended behavior.)
+
+Cancellation is supposed to stop fibers from doing any useful work but fibers can also be attached to a protected cancellation context.
+Protected contexts and their fibers are unaffected by cancellation.
+A fiber can even attach itself to a protected cancellation context after being cancelled.
+So effectively, cancellation does not provide any guarantees about the behavior of fibers.
+While cancellation, maintaining the tree of cancellation contexts, and the routing of cancellation exceptions throughout the program represents a good part of the complexity of Eio, we were not able to formulate any kind of specification for it.
+This is why we decided to not model cancellation in our verification work.
+
+It would still be interesting to show that cancellation does not introduce any unwanted crashes in Eio due to unhandled exceptions.
+But as mentioned above, cancellation introduces a lot of extra code, which exceeds our time budget.
+We could target it for future work (and maybe even reformulate cancellation so that we can give it a real specification).
+
+Before we understood cancellation better we tried to give a specification for it, which is described [here](./hazel-access-rights.md).
+
+### Switches
+
+A `Switch.t` manages resources of fibers and is also attached to a cancellation context.
+If a switch is failed, it cancels the attached cancellation context which in turn cancels the fibers.
+Before `Switch.run` returns, it waits until all non-daemon fibers are completed and then cancels all remaining daemon fibers.
+
+Since the two main functions of switches are controlling cancellation behavior (which we don't model) and cleaning up resources (a liveness property) we decided to also not model switches.
+Instead, fibers are just run individually without attaching them to a switch.
 
 ### Resource usage
 
 We do not want to axiomatize all possible resources that Eio offers.
-Instead, if we want some justification to model a `Switch`, we could add some opaque, generic resource.
-
-Then the goal would be to prove that after a `Switch` is over, none of the attached resources remain.
+Instead, if we want a justification for future work to model a switch, we could add some opaque, generic resource.
+Then it could be possible to verify the cleanup behavior of switches using a similar approach as the the Iron framework does.
 
 ## 4. CQS
 
@@ -184,4 +223,3 @@ Then the goal would be to prove that after a `Switch` is over, none of the attac
 - [Retrofitting Effect Handlers onto OCaml](https://arxiv.org/abs/2104.00250)
 - [Retrofitting Parallelism onto OCaml](https://arxiv.org/abs/2004.11663)
 - [CQS: A Formally-Verified Framework for Fair and Abortable Synchronization](https://arxiv.org/abs/2111.12682) (a shorter journal version from 2023 also exists)
-- TODO

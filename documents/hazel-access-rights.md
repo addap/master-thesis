@@ -1,5 +1,11 @@
 TODO pretty old and cancellation does not work like this anyways so inherently flawed.
 
+The idea was to verify that after a fiber has been cancelled, not resource API can be called again.
+However, cancellation in Eio is pretty weak and acts only as a signal for a fiber to voluntarily shut down.
+A misbehaved fiber can go into a protected context **after** it has been cancelled and continue called resource APIs.
+So there is almost nothing to verify.
+(a.d. TODO what might be interesting is all the cancellation hooks that are registered for various operations, like waiting on a promise)
+
 # Verification of Schedulers with Cancellation
 
 Eio's model of cancellation uses a cancellation context `cancel_ctx` associated with a tree of fibers.
