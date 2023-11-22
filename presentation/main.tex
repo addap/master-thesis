@@ -41,14 +41,16 @@
 \newcommand{\ocf}{OCaml~5}
 \newcommand{\done}{{\symfontextra ✓}}
 \newcommand{\tbd}{{\symfontextra ⌛}}
-\newcommand{\wand}{-\kern-.6em\raisebox{-.659ex}{*}\ }
+% \newcommand{\wand}{-\kern-.6em\raisebox{-.659ex}{*}\ }
+\newcommand{\wand}{\mathrel{-\mkern-6mu*}}
 \newcommand{\efork}{\ocaml{Fork}}
 \newcommand{\esuspend}{\ocaml{Suspend}}
 \newcommand{\egetctx}{\ocaml{GetContext}}
-\newcommand{\proto}{\mathtt{Coop}}
+\newcommand{\proto}{\texttt{Coop}}
 \newcommand{\ewp}[3]{\textit{ewp}\; (#1)\; \langle #2 \rangle\; \{#3\}}
 \newcommand{\pers}[1]{\Box\; #1}
 \newcommand{\pinv}{\textit{promiseInv}}
+\newcommand{\later}[1]{\triangleright\;#1}
 
 \title{Verifying an Effect-Based Cooperative Concurrency Scheduler in Iris}
 \author{Adrian Dapprich\newline Advisors: Prof. Derek Dreyer \& Prof. François Pottier}
@@ -73,16 +75,24 @@
     \begin{itemize}
         \item Recently \ocf{} released with support for effect handlers.
         \item Eio is a multi-threaded, cooperative concurrency library for \ocf{} built around effects.
-        \item Hazel\footnote{[Paulo de Vilhena. 2022]} is an implementation of a language with effect handlers in Iris.
+        \item Hazel\footnote{["Proof of Programs with Effect Handlers". Paulo de Vilhena. 2022]} is an implementation of a language with effect handlers in Iris.
         \item[\(\Rightarrow\)] We want to verify (a part of) the Eio library using Hazel to show the \textbf{safety} and \textbf{effect safety} of its central abstractions.
     \end{itemize}
 \end{frame}
 
 \begin{frame}{Why Eio?}
     \begin{itemize}
-        \item Eio might replace previous concurrency libraries.
-        \item Effects are more composable than monads, so easier to use than monadic-style concurrency libraries like \texttt{Lwt} and \texttt{Async}.
-        \item Effects can be more efficient than monadic-style coding because it uses continuations for control flow instead of repeated bind operations.
+        \item Eio plans to replace previous concurrency libraries.
+              \begin{itemize}
+                  \item Effect handlers are more composable than monads, so easier to use than monadic-style concurrency libraries like \texttt{Lwt} and \texttt{Async}.
+                  \item Effect handlers can be more efficient than monadic-style coding because it uses continuations for control flow instead of repeated bind operations.
+              \end{itemize}
+        \item There are already ports of multiple libraries to use Eio:
+              \begin{itemize}
+                  \item \texttt{SZXX}, \texttt{Irmin}, \texttt{ocaml-grpc}, \texttt{ocaml-cohttp}, OCaml CI solver service
+                  \item More ports are being worked on.
+              \end{itemize}
+        \item[\(\Rightarrow\)] Verification of the core of a fundamental concurrency library in \ocf{} will provide a sense of safety for programmers using it.
     \end{itemize}
 \end{frame}
 
@@ -97,6 +107,16 @@
 \end{frame}
 
 \section{Background}
+
+\begin{frame}[fragile]{Effect Handlers}
+    \begin{itemize}
+        \item Separate the code performing an effect from the code implementing an effect.
+        \item Performing an effect captures a continuation up to the handler, aka "resumable exceptions".
+        \item A form of "delimited continuation" but easier to understand than \textit{shift/reset} etc.
+        \item \ocf{} supports effect handlers but without an effect system. Programs are not "effect-safe", i.e. there can be unhandled effects.
+    \end{itemize}
+\end{frame}
+
 
 \begin{frame}[fragile]{Effect Handlers Example}
     \begin{minted}[highlightlines={8},fontsize=\footnotesize]{ocaml}
@@ -120,7 +140,7 @@ let client () =
 \end{frame}
 
 \begin{frame}[fragile]{Effect Handlers Example}
-    \begin{minted}[highlightlines={2,10,12},fontsize=\footnotesize]{ocaml}
+    \begin{minted}[highlightlines={2,3,10,12},fontsize=\footnotesize]{ocaml}
 let run ~init f =
   let rec loop : type a r. int -> (a, r) continuation -> a -> r =
     fun state k x ->
@@ -140,26 +160,17 @@ let run ~init f =
 \end{minted}
 \end{frame}
 
-\begin{frame}[fragile]{Effect Handlers}
-    \begin{itemize}
-        \item Separate the code performing an effect from the code implementing an effect.
-        \item Performing an effect captures a continuation up to the handler, aka "resumable exceptions".
-        \item A form of "delimited continuation" but easier to understand than \textit{shift/reset} etc.
-        \item \ocf{} supports effect handlers but without an effect system. Programs are not "effect-safe", i.e. there can be unhandled effects.
-    \end{itemize}
-\end{frame}
-
 \begin{frame}{Eio}
     \begin{itemize}
         \item Concurrency library for \ocf{} using the new effect handlers.
         \item Abstractions over OS resources like filesystem, network, etc.
         \item Synchronization constructs like mutexes, semaphores, etc.
-        \item Intends to be the main concurrency library for \ocf{}, replacing earlier \texttt{Async} and \texttt{Lwt}.
+              % \item Intends to be the main concurrency library for \ocf{}, replacing earlier \texttt{Async} and \texttt{Lwt}.
     \end{itemize}
 \end{frame}
 
 
-\begin{frame}{Eio}
+\begin{frame}{Eio (core)}
     \begin{columns}
         \begin{column}{0.5\textwidth}
             \begin{itemize}
@@ -180,12 +191,12 @@ let run ~init f =
     \begin{itemize}
         \item Implementation of a language with effect handlers in Iris.
         \item Extended WP with protocols\footnote{Inspired by formalization of session types.} that define which effects can be performed during evaluation.
-        \item Existing case studies about control inversion \& cooperative concurrency
+        \item Existing case studies about control inversion \& cooperative concurrency.
         \item No multi-threading support and no atomic expressions defined.
         \item No type system but effect-safety is proved by extended WP.
     \end{itemize}
     \begin{align*}
-        \text{Protocols:}   & \quad \Psi \Coloneqq \bot \mid\; !\; \vec{x}\; (v)\; \{ P \}.\; ?\; \vec{y}\; (w)\; \{ Q \} \\
+        \text{Protocols:}   & \quad \Psi \Coloneqq \bot \mid\; !\; \vec{x}\; (v)\; \{ P \}.\; ?\; \vec{y}\; (w)\; \{ Q \} \mid ... \\
         \text{Extended WP:} & \quad \ewp{\texttt{e}}{\Psi}{w.\; Q}
     \end{align*}
 \end{frame}
@@ -195,11 +206,13 @@ let run ~init f =
 \begin{frame}{Plan}
     Build an extended cooperative concurrency case study based on Eio using Hazel.
     \begin{itemize}
-        \item Three effects are used to communicate between fibers and their scheduler: \ocaml{Fork}, \ocaml{Suspend} \& \ocaml{GetContext}
+        \item The protocol \proto{} comprises three effects to communicate between fibers and their scheduler: \ocaml{Fork}, \ocaml{Suspend} \& \ocaml{GetContext}
         \item Fibers can await other fibers using promises (built on \ocaml{CQS}).
         \item Fibers can use OS resources
         \item Fibers can be cancelled which signals them to stop and prevents OS resource usage.
-        \item[]
+    \end{itemize}
+    We do not plan to model switches as they are only used for efficiency.
+    \begin{itemize}
         \item Fibers and resources are registered to switches. If all fibers have exited, the resources can be cleaned up.
         \item Switches are organized in a hierarchy and you can cancel whole subtrees.
     \end{itemize}
@@ -225,6 +238,7 @@ let run ~init f =
 
 \begin{frame}{Contribution}
     Let us look at an example interaction between the cooperative concurrency scheduler and a fiber performing an async computation.
+    We focus on how a fiber awaits the completion of another fiber.
 \end{frame}
 
 \begin{frame}[fragile]{Client Fiber}
@@ -244,7 +258,52 @@ let main () =
     \end{align*}
 \end{frame}
 
+\begin{frame}[fragile]{Fiber Operations}
+    \ocaml{await} checks if promise is fulfilled and suspends if necessary, registering the waker.
+
+    \begin{adjustwidth}{-2em}{0em}
+        \begin{minipage}{0.45\textwidth}
+            \begin{minted}[fontsize=\footnotesize]{ocaml}
+let fork_promise f =
+  let p = new_promise () in
+  perform (Fork (fun () ->
+    let v = f () in
+    match !p with
+    | Done _ -> assert false
+    | Waiting cqs -> 
+      p := Done v;
+      Cqs.resume_all cqs
+  ));
+  p
+\end{minted}
+        \end{minipage}
+        \begin{minipage}{0.5\textwidth}
+            \begin{minted}[fontsize=\footnotesize]{ocaml}
+let await p =
+  match !p with
+  | Done v -> v
+  | Waiting cqs ->
+    perform (Suspend (fun waker ->
+      let req = Cqs.suspend cqs waker in
+      match !p with
+      | Done _ -> 
+        if (Cqs.cancel cqs req)
+        then waker ()
+        else ()
+      | Waiting _ -> ()
+    ));
+    match !p with
+    | Done v -> v
+    | Waiting _ -> assert false
+\end{minted}
+        \end{minipage}
+    \end{adjustwidth}
+\end{frame}
+
+
 \begin{frame}[fragile]{Specifications}
+    \ocaml{fork_promise} and \ocaml{await} form a pair where the promise returned from the first is used by the second.
+    The specification of the scheduler \ocaml{run} shows that it handles all effects of its fibers.
     \begin{mathpar}
         %     promiseInv ∗ EWP (f #()) <| Coop  |> {{v, □ Φ v}}
         %   ⊢ 
@@ -273,6 +332,14 @@ let main () =
     \end{mathpar}
 \end{frame}
 
+\begin{frame}{Scheduler}
+    \begin{itemize}
+        \item The scheduler runs \ocaml{handle_fiber} for each fiber to handle their effects.
+        \item The \ocaml{Fork} effect just runs \ocaml{handle_fiber} for the new fiber.
+        \item The \ocaml{Suspend} effect carries a function that is called with a \ocaml{waker}, which is used to put the suspended fiber back into the run queue. Either immediately, or \ocaml{waker} is registered as a callback somewhere.
+    \end{itemize}
+\end{frame}
+
 \begin{frame}[fragile]{Scheduler}
     \begin{minted}[fontsize=\footnotesize]{ocaml}
 type 'a waker = 'a -> unit
@@ -285,11 +352,11 @@ let rec handle_fiber (e : unit -> unit) =
     effc = fun eff ->
       match eff with
       | Fork f -> Some (fun k ->
-        Queue.add (fun () -> continue k ()) q;
+        Queue.add (fun () -> continue k ()) run_queue;
         handle_fiber f)
       | Suspend suspender -> Some (fun k -> 
         let waker = fun v -> 
-          Queue.add (fun () -> continue k v) q in
+          Queue.add (fun () -> continue k v) run_queue in
         suspender waker;
         next ());
     ...
@@ -297,83 +364,449 @@ let rec handle_fiber (e : unit -> unit) =
     \end{minted}
 \end{frame}
 
-\begin{frame}[fragile]{Fiber Operations}
-    \begin{adjustwidth}{-2em}{0em}
-        \begin{minipage}{0.45\textwidth}
-            \begin{minted}[fontsize=\footnotesize]{ocaml}
-let fork_promise f =
-  let p = new_promise () in
-  perform (Fork (fun () ->
-    let v = f () in
-    match !p with
-    | Done _ -> assert false
-    | Waiting q -> 
-      p := Done v;
-      Cqs.resume_all q
-  ));
-  p
-\end{minted}
-        \end{minipage}
-        \begin{minipage}{0.5\textwidth}
-            \begin{minted}[fontsize=\footnotesize]{ocaml}
-let await p =
-  match !p with
-  | Done v -> v
-  | Waiting q ->
-    perform (Suspend (fun waker ->
-      let req = Cqs.suspend q waker in
-      match !p with
-      | Done _ -> 
-        Cqs.cancel cqs req; 
-        waker ()
-      | Waiting _ -> ()
-    ));
-    match !p with
-    | Done v -> v
-    | Waiting _ -> assert false
-\end{minted}
-        \end{minipage}
-
-    \end{adjustwidth}
-\end{frame}
-
 \begin{frame}{Execution Diagram}
-    \todo[inline]{Diagram of one possible execution path, then box around await}
+    \includegraphics[width=\textwidth]{sequence diagram.png}
 \end{frame}
 
 \begin{frame}[fragile]{\ocaml{await} in Detail}
-    \todo[inline]{Source of await again. Highlight 3 matches, the assert false \& Cqs.cancel}
+    \begin{adjustwidth}{-2em}{0em}
+        \begin{minipage}{0.4\textwidth}
+            \begin{itemize}
+                \item 1st match checks if value can be returned immediately.
+                \item 2nd match checks if fiber should really suspend.
+                \item Must try to cancel in \ocaml{suspend} to ensure fiber is not lost.
+                \item 3rd match knows that the promise is fullfilled after \ocaml{suspend} returns.
+            \end{itemize}
+        \end{minipage}
+        \begin{minipage}{0.5\textwidth}
+            \begin{minted}[escapeinside=@@,fontsize=\footnotesize]{ocaml}
+let await p =
+  @\colorbox{cyan}{\texttt{match !p with}}@
+  | Done v -> v
+  | Waiting cqs ->
+    perform (Suspend (fun waker ->
+      let req = Cqs.suspend cqs waker in
+      @\colorbox{cyan}{\texttt{match !p with}}@
+      | Done _ -> 
+        @\colorbox{yellow}{\texttt{if (Cqs.cancel cqs req)}}@
+        then waker ()
+        else ()
+      | Waiting _ -> ()
+    ));
+    @\colorbox{cyan}{\texttt{match !p with}}@
+    | Done v -> v
+    | Waiting _ -> @\colorbox{red}{\texttt{assert false}}@
+\end{minted}
+        \end{minipage}
+    \end{adjustwidth}
 \end{frame}
 
 \begin{frame}[fragile]{Ghost State}
-    \begin{minted}{coq}
-Definition promise_cqs (wakers: val) (γ : gname) : iProp Σ :=
-  is_cqs wakers (λ waker, ∀ (v: val), promise_state_done γ -∗
-            EWP (waker v) <| ⊥ |> {{_, True }} ).
-  
+    Promises are either waiting or already done.\newline
+    Each \ocaml{waker} in a promise's queue represents a suspended fiber waiting for the result. So it may only be called with the knowledge that the promise is done.
+    \vspace{0.5em}
+    \begin{minted}[fontsize=\footnotesize]{coq}
+Definition promise_state_waiting γ := own γ (Cinl (1/2)%Qp).
+Definition promise_state_done γ := own γ (Cinr (to_agree ())).
+
+Definition promise_cqs (cqs: val) (γ : gname) : iProp Σ :=
+  is_cqs cqs (λ waker, promise_state_done γ -∗
+            EWP (waker #()) <| ⊥ |> {{_, True }} ).
+\end{minted}
+
+\end{frame}
+
+\begin{frame}[fragile]{Ghost State}
+    To interact with promises from multiple threads we keep an authoritative map containing all promises in an invariant.
+    Each promise is either done or waiting.
+    \begin{itemize}
+        \item[Done:] it contains a value satisfying a saved predicate \(\Phi\).
+        \item[Waiting:] it contains a queue of suspended fibers.
+    \end{itemize}
+    \begin{minted}[fontsize=\footnotesize]{coq}
 Definition promiseInv_inner : iProp Σ := (
-  ∃ M, isPromiseMap M ∗ 
+  ∃ M, (own promise_name (● M)) ∗ 
     [∗ map] args ↦ tt ∈ M, let '(p, γ, ε) := args in
-      ((* Fulfilled: *) ∃ y,
+      ((* Done: *) ∃ y,
         p ↦ Done' y ∗ promise_state_done γ ∗ 
         ∃ (Φ: val -d> iPropO Σ), isPromiseResult ε Φ ∗ □ Φ y)
     ∨
-      ((* Unfulfilled: *) ∃ wakers,
-        p ↦ Waiting' wakers ∗
+      ((* Waiting: *) ∃ cqs,
+        p ↦ Waiting' cqs ∗
         promise_state_waiting γ ∗
-        promise_cqs wakers γ)).
-\end{minted}
+        promise_cqs cqs γ)).
+    \end{minted}
 \end{frame}
 
-\begin{frame}[fragile]{Proof of \ocaml{await}}
-    \todo[inline]{Applying suspend effect and immediately getting promise state done}
-    \todo[inline]{Cancel CQS inside of suspend callback}
+\begin{frame}[fragile,t]{Proof of await}
+    \begin{columns}
+        \begin{column}[T]{0.5\textwidth}
+            % Actions
+            \textbf{Actions:}\newline
+            \only<1>{\null}
+            \only<2>{\textit{Open \texttt{HInv}, lookup \texttt{Hp}, destruct}}
+            \only<3>{\textit{Use \texttt{H\(\Phi'\)}, \texttt{Heq}}}
+            \only<4>{\textit{Perform \ocaml{Suspend} effect}}
+            \only<5>{\textit{Push \texttt{waker} in \texttt{cqs}}}
+            \only<6>{\textit{Open \texttt{HInv}, lookup \texttt{Hp}, destruct}}
+            \only<7>{\textit{Try to cancel}}
+            \only<8>{\textit{Call \texttt{waker}}}
+            \only<9>{\textit{Do nothing}}
+            \only<10>{\textit{Do nothing}}
+            \only<11>{\textit{Open \texttt{HInv}, lookup \texttt{Hp}, destruct}}
+            \only<12>{\textit{Use \texttt{H\(\Phi'\)}, \texttt{Heq}}}
+            \only<13>{\textit{Contradiction \texttt{Hs}, \texttt{Hs'}!}}
+            \mbox{} \vspace{0.5em} \ \newline
+            % Context
+            \textbf{Context:}\newline
+            \texttt{HInv:} \pinv{}\newline
+            \texttt{Hp:} \(\circ [(p, \gamma, \epsilon) \coloneqq ()]\)\newline
+            \begin{onlyenv}<3>
+                \texttt{H\(\Phi'\):} \(\pers{(\Phi'\; y)}\)\newline
+                \texttt{Heq:} \(\later{(\Phi' \equiv \Phi)}\)
+            \end{onlyenv}
+            \only<4->{\texttt{Hcqs:} \(\pers{(is\_cqs\; cqs)}\)\newline}
+            \begin{onlyenv}<4>
+                \texttt{Hw:}
+                {\footnotesize
+                    \(promise\_state\_done~\gamma~\wand{} \quad \ewp{\texttt{waker ()}}{\bot}{\top}\)}
+            \end{onlyenv}
+            \only<5,6,7>{\texttt{Hr:} \(is\_req\;req\;waker\)\newline}
+            \only<7,8>{\texttt{Hs:} \(promise\_state\_done~\gamma\)\newline}
+            \begin{onlyenv}<8>
+                \texttt{Hw:}
+                {\footnotesize
+                    \(promise\_state\_done~\gamma~\wand{} \quad \ewp{\texttt{waker ()}}{\bot}{\top}\)}
+            \end{onlyenv}
+            \only<11->{\texttt{Hs:} \(promise\_state\_done~\gamma\)\newline}
+            \begin{onlyenv}<12>
+                \texttt{H\(\Phi'\):} \(\pers{(\Phi'\; y)}\)\newline
+                \texttt{Heq:} \(\later{(\Phi' \equiv \Phi)}\)
+            \end{onlyenv}
+            \only<13>{\texttt{Hs':} \(promise\_state\_waiting~\gamma\)}
+
+        \end{column}
+        \begin{column}[T]{0.49\textwidth}
+            \only<1-3,11-13>{\textbf{Goal:} \textit{Return \texttt{v} with \texttt{\(\pers{(\Phi\; v)}\)}}}
+            \only<4-10>{\textbf{Goal:} \(\top\;/\;{\scriptstyle promise\_state\_done~\gamma}\)}
+            \begin{onlyenv}<1>
+                \begin{minted}[fontsize=\scriptsize]{ocaml}
+    match !p with
+    | Done v -> v
+    | Waiting cqs ->
+    
+    perform (Suspend (fun waker ->
+      let req = 
+        Cqs.suspend cqs waker in
+      match !p with
+      | Done _ -> 
+        if (Cqs.cancel cqs req)
+        then waker ()
+        else ()
+      | Waiting _ -> ()
+      ));
+    
+    match !p with
+    | Done v -> v
+    | Waiting _ -> assert false
+        \end{minted}
+            \end{onlyenv}
+
+            \begin{onlyenv}<2>
+                \begin{minted}[fontsize=\scriptsize]{ocaml}
+==> match !p with
+    | Done v -> v
+    | Waiting cqs ->
+    
+    perform (Suspend (fun waker ->
+      let req = 
+        Cqs.suspend cqs waker in
+      match !p with
+      | Done _ -> 
+        if (Cqs.cancel cqs req)
+        then waker ()
+        else ()
+      | Waiting _ -> ()
+      ));
+    
+    match !p with
+    | Done v -> v
+    | Waiting _ -> assert false
+        \end{minted}
+            \end{onlyenv}
+
+            \begin{onlyenv}<3>
+                \begin{minted}[fontsize=\scriptsize]{ocaml}
+    match !p with
+==> | Done v -> v
+    | Waiting cqs ->
+    
+    perform (Suspend (fun waker ->
+      let req = 
+        Cqs.suspend cqs waker in
+      match !p with
+      | Done _ -> 
+        if (Cqs.cancel cqs req)
+        then waker ()
+        else ()
+      | Waiting _ -> ()
+      ));
+    
+    match !p with
+    | Done v -> v
+    | Waiting _ -> assert false
+        \end{minted}
+            \end{onlyenv}
+
+            \begin{onlyenv}<4>
+                \begin{minted}[fontsize=\scriptsize]{ocaml}
+    match !p with
+    | Done v -> v
+    | Waiting cqs ->
+    
+==> perform (Suspend (fun waker ->
+      let req = 
+        Cqs.suspend cqs waker in
+      match !p with
+      | Done _ -> 
+        if (Cqs.cancel cqs req)
+        then waker ()
+        else ()
+      | Waiting _ -> ()
+      ));
+    
+    match !p with
+    | Done v -> v
+    | Waiting _ -> assert false
+        \end{minted}
+            \end{onlyenv}
+
+            \begin{onlyenv}<5>
+                \begin{minted}[fontsize=\scriptsize]{ocaml}
+    match !p with
+    | Done v -> v
+    | Waiting cqs ->
+    
+    perform (Suspend (fun waker ->
+====> let req = 
+        Cqs.suspend cqs waker in
+      match !p with
+      | Done _ -> 
+        if (Cqs.cancel cqs req)
+        then waker ()
+        else ()
+      | Waiting _ -> ()
+      ));
+    
+    match !p with
+    | Done v -> v
+    | Waiting _ -> assert false
+        \end{minted}
+            \end{onlyenv}
+
+            \begin{onlyenv}<6>
+                \begin{minted}[fontsize=\scriptsize]{ocaml}
+    match !p with
+    | Done v -> v
+    | Waiting cqs ->
+    
+    perform (Suspend (fun waker ->
+      let req = 
+        Cqs.suspend cqs waker in
+====> match !p with
+      | Done _ -> 
+        if (Cqs.cancel cqs req)
+        then waker ()
+        else ()
+      | Waiting _ -> ()
+      ));
+    
+    match !p with
+    | Done v -> v
+    | Waiting _ -> assert false
+        \end{minted}
+            \end{onlyenv}
+
+            \begin{onlyenv}<7>
+                \begin{minted}[fontsize=\scriptsize]{ocaml}
+    match !p with
+    | Done v -> v
+    | Waiting cqs ->
+    
+    perform (Suspend (fun waker ->
+      let req = 
+        Cqs.suspend cqs waker in
+      match !p with
+      | Done _ -> 
+======> if (Cqs.cancel cqs req)
+        then waker ()
+        else ()
+      | Waiting _ -> ()
+      ));
+    
+    match !p with
+    | Done v -> v
+    | Waiting _ -> assert false
+        \end{minted}
+            \end{onlyenv}
+
+            \begin{onlyenv}<8>
+                \begin{minted}[fontsize=\scriptsize]{ocaml}
+    match !p with
+    | Done v -> v
+    | Waiting cqs ->
+    
+    perform (Suspend (fun waker ->
+      let req = 
+        Cqs.suspend cqs waker in
+      match !p with
+      | Done _ -> 
+        if (Cqs.cancel cqs req)
+======> then waker ()
+        else ()
+      | Waiting _ -> ()
+      ));
+    
+    match !p with
+    | Done v -> v
+    | Waiting _ -> assert false
+        \end{minted}
+            \end{onlyenv}
+
+            \begin{onlyenv}<9>
+                \begin{minted}[fontsize=\scriptsize]{ocaml}
+    match !p with
+    | Done v -> v
+    | Waiting cqs ->
+    
+    perform (Suspend (fun waker ->
+      let req = 
+        Cqs.suspend cqs waker in
+      match !p with
+      | Done _ -> 
+        if (Cqs.cancel cqs req)
+        then waker ()
+======> else ()
+      | Waiting _ -> ()
+      ));
+    
+    match !p with
+    | Done v -> v
+    | Waiting _ -> assert false
+        \end{minted}
+            \end{onlyenv}
+
+            \begin{onlyenv}<10>
+                \begin{minted}[fontsize=\scriptsize]{ocaml}
+    match !p with
+    | Done v -> v
+    | Waiting cqs ->
+    
+    perform (Suspend (fun waker ->
+      let req = 
+        Cqs.suspend cqs waker in
+      match !p with
+      | Done _ -> 
+        if (Cqs.cancel cqs req)
+        then waker ()
+        else ()
+====> | Waiting _ -> ()
+      ));
+    
+    match !p with
+    | Done v -> v
+    | Waiting _ -> assert false
+        \end{minted}
+            \end{onlyenv}
+
+            \begin{onlyenv}<11>
+                \begin{minted}[fontsize=\scriptsize]{ocaml}
+    match !p with
+    | Done v -> v
+    | Waiting cqs ->
+    
+    perform (Suspend (fun waker ->
+      let req = 
+        Cqs.suspend cqs waker in
+      match !p with
+      | Done _ -> 
+        if (Cqs.cancel cqs req)
+        then waker ()
+        else ()
+      | Waiting _ -> ()
+      ));
+    
+==> match !p with
+    | Done v -> v
+    | Waiting _ -> assert false
+        \end{minted}
+            \end{onlyenv}
+
+            \begin{onlyenv}<12>
+                \begin{minted}[fontsize=\scriptsize]{ocaml}
+    match !p with
+    | Done v -> v
+    | Waiting cqs ->
+    
+    perform (Suspend (fun waker ->
+      let req = 
+        Cqs.suspend cqs waker in
+      match !p with
+      | Done _ -> 
+        if (Cqs.cancel cqs req)
+        then waker ()
+        else ()
+      | Waiting _ -> ()
+      ));
+    
+    match !p with
+==> | Done v -> v
+    | Waiting _ -> assert false
+        \end{minted}
+            \end{onlyenv}
+
+            \begin{onlyenv}<13>
+                \begin{minted}[fontsize=\scriptsize]{ocaml}
+    match !p with
+    | Done v -> v
+    | Waiting cqs ->
+    
+    perform (Suspend (fun waker ->
+      let req = 
+        Cqs.suspend cqs waker in
+      match !p with
+      | Done _ -> 
+        if (Cqs.cancel cqs req)
+        then waker ()
+        else ()
+      | Waiting _ -> ()
+      ));
+    
+    match !p with
+    | Done v -> v
+==> | Waiting _ -> assert false
+        \end{minted}
+            \end{onlyenv}
+        \end{column}
+    \end{columns}
 \end{frame}
 
-% \begin{frame}{Contribution}
-%     Proof-of-concept for the \texttt{GetContext} effect.
-%     \todo[inline]{TODO Protocol with gname parameter and example how GetContext can be used}
-% \end{frame}
+
+\begin{frame}[fragile]{Control flow in the protocol for \esuspend{}}
+    \begin{itemize}
+        \item \(P\; v\) must be provided to call \ocaml{waker}.
+        \item Waker registers the continuation of the effect to be invoked, so \(P\; v\) can be in the postcondition of the effect.
+        \item In the case of \ocaml{await}, \(P \coloneqq \lambda \_. promise\_state\_done~\gamma\).
+    \end{itemize}
+    \begin{align*}
+        \textit{isSuspender}\; f\; \Coloneqq & \; \forall \textit{waker}.\; \pinv{} \wand{}                                                                      \\
+                                             & \quad (\forall v.\; P\; v \wand{} \textit{ewp}\; (\textit{waker}\; v)\; \langle \bot \rangle\; \{\top \}) \wand{} \\
+                                             & \quad \triangleright \textit{ewp}\; (f\; waker)\; \langle \bot \rangle\; \{ \top \}                               \\
+        \textit{SUSPEND}\;         \Coloneqq & \; !\; f\; P\; (f)\; \{ \pinv{} \ast \textit{isSuspender}\; f \}.                                                 \\
+                                             & \;?\; v\; (v) \{ P\; v \}
+    \end{align*}
+\end{frame}
+
 
 \begin{frame}{A note on cancellation}
     \begin{itemize}
@@ -389,10 +822,10 @@ Definition promiseInv_inner : iProp Σ := (
     \end{itemize}
 \end{frame}
 
-\section{Conlusion}
+\section{Conclusion}
 \begin{frame}{Tentative Evaluation}
     \begin{itemize}
-        \item Our case study shows that an Eio-like scheduler with \efork{}, \esuspend{} \& \egetctx{} effects makes sense.
+        \item Our case study shows that an Eio-like scheduler with \efork{}, \esuspend{} \& \egetctx{} effects is safe to use.
         \item We aim to show that it uses CQS correctly as a synchronization primitive.
         \item Real Eio has more ways of forking fibers and a hierarchy of cancellation contexts, which can be protected from cancellation. This part is not modelled.
     \end{itemize}
@@ -401,39 +834,33 @@ Definition promiseInv_inner : iProp Σ := (
 \begin{frame}{Summary}
     \begin{itemize}
         \item We have finished a simple scheduler case study approximating Eio using the \efork{} \& \esuspend{} effects.
-        \item Separately, we have mechanized the \egetctx{} effect to get meta-data about the current fiber.
-        \item Next, we want to iteratively extend the case study to arrive at a more sizeable subset of Eio.
+        \item Separately, we implemented a case study on the \egetctx{} effect to get meta-data about the current fiber.
+    \end{itemize}
+    Next, we want to iteratively extend the case study to arrive at a more sizeable subset of Eio. This includes:
+    \begin{itemize}
+        \item[\tbd{}] Add multi-threading to Hazel.
+            \begin{itemize}
+                \item[\tbd{}] Add support for the \texttt{iInv} tactic to Hazel.
+            \end{itemize}
+        \item[\tbd{}] Use a smaller axiomatization of CQS.
+            \begin{itemize}
+                \item[\tbd{}] Ideally, port CQS development to Hazel and remove axioms.
+            \end{itemize}
+        \item[\tbd{}] Verify example client program that uses threads \& fibers.
     \end{itemize}
 \end{frame}
 
 \section{Misc}
 
-\begin{frame}[fragile]{Control flow in the protocol for \esuspend{}}
-    \todo[inline]{Move this to the proof of await slide}
-    \begin{itemize}
-        \item \(P\; v\) appears in the precondition of \ocaml{waker}, which invokes the continuation.
-        \item Therefore, we can prove \(P\; v\) in the postcondition of the protocol.
-        \item \(P\; v\) allows us to conclude in \ocaml{promise_await} that the promise is fulfilled after performing the \esuspend{} effect.
-    \end{itemize}
-    \begin{align*}
-        \textit{isSuspender}\; f\; \Coloneqq & \; \forall \textit{waker}.\; I \wand{}                                                                            \\
-                                             & \quad (\forall v.\; P\; v \wand{} \textit{ewp}\; (\textit{waker}\; v)\; \langle \bot \rangle\; \{\top \}) \wand{} \\
-                                             & \quad \triangleright \textit{ewp}\; (f\; waker)\; \langle \bot \rangle\; \{ \top \}                               \\
-        \textit{SUSPEND}\;         \Coloneqq & \; !\; f\; P\; (f)\; \{ I \ast \textit{isSuspender}\; f \}.                                                       \\
-                                             & \;?\; v\; (v) \{ P\; v \}
-    \end{align*}
-\end{frame}
 
-
-\begin{frame}{Fiber-local storage}
-    \begin{itemize}
-        \item Eio supports fiber-local storage that can be queried by the \texttt{GetContext} effect.
-        \item Authoritative ghost map in the scheduler to save the storage \(\bullet [\texttt{gname} \mapsto (\textit{Var} \to \textit{Val})]\).
-        \item If we specify the gohst name that identifies the storage of a fiber in either the request or answer variables of the protocol, one party has an existentially quantified ghost name and cannot do anything with it.
-        \item Therefore, we parameterize the whole protocol by the ghost name.
-        \item That way both the handler and the handlee know which storage is accessible to the fiber.
-    \end{itemize}
-\end{frame}
+% \begin{frame}{Fiber-local storage}
+%     \begin{itemize}
+%         \item Eio supports fiber-local storage that can be queried by the \texttt{GetContext} effect.
+%         \item Authoritative ghost map in the scheduler to save the storage \(\bullet [\texttt{gname} \mapsto (\bullet [\texttt{gname} \mapsto \textit{Val}])]\).
+%         \item We parameterize the whole protocol by the ghost name of the storage of the current fiber.
+%         \item That way both the scheduler and the fiber know which storage is accessible to the fiber.
+%     \end{itemize}
+% \end{frame}
 
 \begin{frame}{Hazel Reasoning Rules}
     \includegraphics[width=\textwidth]{reasoning_rules1.png}
@@ -441,6 +868,39 @@ Definition promiseInv_inner : iProp Σ := (
 
 \begin{frame}{Hazel Reasoning Rules}
     \includegraphics[width=\textwidth]{reasoning_rules2.png}
+\end{frame}
+
+\begin{frame}{Adding Multi-Threading to Hazel}
+    \begin{itemize}
+        \item Since Eio is multi-theaded we also want to add a multi-threaded semantics to Hazel to have a better model.
+        \item Effects are not allowed to cross thread boundaries so a \ocaml{fork} primitive needs to enforce the empty protocol.
+        \item Question: since effects and multiple threads should not interact, can this be done generically?
+    \end{itemize}
+    \[
+        \inferrule [Fork]
+        {\ewp{\texttt{e}}{\bot}{\top}}
+        {\ewp{\texttt{fork e}}{\bot}{\top}}
+    \]
+\end{frame}
+
+\begin{frame}{CQS API}
+    \begin{itemize}
+        \item CQS is a queue built on an infinite array of cells with two pointers into the array.
+        \item The \ocaml{suspend} \& \ocaml{resume} pointers are allowed to overtake each other.
+        \item \ocaml{suspend} creates a future and puts it into the next cell or immediately completes it if the cell is filled with a value.
+        \item \ocaml{resume} puts a value into the next cell or completes the future if the cell is filled with a future.
+        \item \ocaml{cancel} cancels the future from a cell.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Customized CQS API}
+    \begin{itemize}
+        \item \ocaml{suspend} receives a callback instead of creating a future itself.\newline
+              \mintinline[fontsize=\footnotesize]{ocaml}{val suspend : t -> (unit -> unit) -> request option}
+        \item \ocaml{resume_all} resumes all callbacks with the same unit value.\newline
+              \mintinline[fontsize=\footnotesize]{ocaml}{resume_all : t -> unit}
+        \item \ocaml{cancel} is the same.
+    \end{itemize}
 \end{frame}
 
 \end{document}
