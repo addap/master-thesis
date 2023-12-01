@@ -1,0 +1,281 @@
+<mxfile host="app.diagrams.net" modified="2023-11-28T21:46:07.170Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/118.0" etag="Eq-yFktVly9njstJ3oPk" version="22.1.4" type="device">
+  <diagram name="Page-1" id="2YBvvXClWsGukQMizWep">
+    <mxGraphModel dx="1114" dy="596" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="aM9ryv3xv72pqoxQDRHE-7" value="&lt;font face=&quot;Lucida Console&quot;&gt;perform (Fork fetch_api)&lt;/font&gt;" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" parent="1" source="aM9ryv3xv72pqoxQDRHE-2" target="Xmo3_Crtta4L2Li_5l8g-5" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="305" y="109" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="290" y="99" />
+            </Array>
+            <mxPoint x="370" y="99" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="aM9ryv3xv72pqoxQDRHE-9" value="&lt;font face=&quot;Lucida Console&quot;&gt;k ()&lt;/font&gt;" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" parent="1" target="Xmo3_Crtta4L2Li_5l8g-7" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="375" y="159" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="300" y="159" />
+            </Array>
+            <mxPoint x="210" y="159" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-3" value="&lt;font face=&quot;Lucida Console&quot;&gt;fetch_api ()&lt;/font&gt;" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" parent="1" target="Xmo3_Crtta4L2Li_5l8g-2" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="385" y="119" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="505" y="119" />
+            </Array>
+            <mxPoint x="580" y="119" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-4" value="&lt;i&gt;suspend on request&lt;/i&gt;" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" parent="1" source="Xmo3_Crtta4L2Li_5l8g-2" target="Xmo3_Crtta4L2Li_5l8g-6" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="580" y="137.73000000000002" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="400" y="139" />
+            </Array>
+            <mxPoint x="390" y="139" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-8" value="&lt;font face=&quot;Lucida Console&quot;&gt;perform (Suspend suspender)&lt;/font&gt;" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" parent="1" source="Xmo3_Crtta4L2Li_5l8g-7" target="Xmo3_Crtta4L2Li_5l8g-9" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="220" y="199" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="305" y="199" />
+            </Array>
+            <mxPoint x="360" y="199" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-21" value="" style="curved=1;endArrow=classic;html=1;rounded=0;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="Xmo3_Crtta4L2Li_5l8g-20" target="Xmo3_Crtta4L2Li_5l8g-14" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="440" y="249" as="sourcePoint" />
+            <mxPoint x="490" y="199" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="460" y="190" />
+              <mxPoint x="480" y="190" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-25" value="" style="endArrow=none;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="Xmo3_Crtta4L2Li_5l8g-5" target="Xmo3_Crtta4L2Li_5l8g-33" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="380" y="270" as="sourcePoint" />
+            <mxPoint x="520" y="180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-33" value="scheduler" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="340" y="55" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-34" value="&lt;font face=&quot;Lucida Console&quot;&gt;fetch_api&lt;/font&gt; fiber" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="510" y="55" width="100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-24" value="&lt;font face=&quot;Lucida Console&quot;&gt;main&lt;/font&gt; fiber" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="160" y="55" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-27" value="" style="endArrow=none;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="aM9ryv3xv72pqoxQDRHE-2" target="Xmo3_Crtta4L2Li_5l8g-24" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="200" y="270" as="sourcePoint" />
+            <mxPoint x="360" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="aM9ryv3xv72pqoxQDRHE-2" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};" parent="1" vertex="1">
+          <mxGeometry x="195" y="84" width="10" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-29" value="" style="endArrow=none;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" target="Xmo3_Crtta4L2Li_5l8g-7" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="200" y="250" as="sourcePoint" />
+            <mxPoint x="200" y="99" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-7" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};" parent="1" vertex="1">
+          <mxGeometry x="195" y="159" width="10" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-28" value="" style="endArrow=none;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="Xmo3_Crtta4L2Li_5l8g-7" target="aM9ryv3xv72pqoxQDRHE-2" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="200" y="270" as="sourcePoint" />
+            <mxPoint x="200" y="79" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-36" value="" style="endArrow=none;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="Xmo3_Crtta4L2Li_5l8g-6" target="Xmo3_Crtta4L2Li_5l8g-5" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="380" y="270" as="sourcePoint" />
+            <mxPoint x="380" y="75" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-5" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};" parent="1" vertex="1">
+          <mxGeometry x="375" y="99" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-37" value="" style="endArrow=none;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="Xmo3_Crtta4L2Li_5l8g-9" target="Xmo3_Crtta4L2Li_5l8g-6" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="380" y="270" as="sourcePoint" />
+            <mxPoint x="380" y="119" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-6" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};" parent="1" vertex="1">
+          <mxGeometry x="375" y="139" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-38" value="" style="endArrow=none;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" target="Xmo3_Crtta4L2Li_5l8g-9" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="380" y="250" as="sourcePoint" />
+            <mxPoint x="380" y="159" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-9" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};" parent="1" vertex="1">
+          <mxGeometry x="375" y="199" width="10" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-20" value="&lt;font face=&quot;Lucida Console&quot;&gt;suspender waker&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="380" y="209" width="110" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-39" value="" style="endArrow=none;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="Xmo3_Crtta4L2Li_5l8g-2" target="Xmo3_Crtta4L2Li_5l8g-34" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="270" as="sourcePoint" />
+            <mxPoint x="420" y="130" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-40" value="" style="endArrow=none;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" target="Xmo3_Crtta4L2Li_5l8g-2" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="250" as="sourcePoint" />
+            <mxPoint x="560" y="80" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-2" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};" parent="1" vertex="1">
+          <mxGeometry x="555" y="119" width="10" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-44" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="199.57" y="270" as="sourcePoint" />
+            <mxPoint x="199.57" y="250" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-45" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="380" y="270" as="sourcePoint" />
+            <mxPoint x="380" y="250" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-46" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="559.79" y="270" as="sourcePoint" />
+            <mxPoint x="559.79" y="250" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-47" value="" style="endArrow=none;html=1;rounded=0;" parent="1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="200" y="325" as="sourcePoint" />
+            <mxPoint x="200" y="275" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-48" value="" style="endArrow=none;html=1;rounded=0;" parent="1" source="Xmo3_Crtta4L2Li_5l8g-50" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="379.51" y="330" as="sourcePoint" />
+            <mxPoint x="379.51" y="275" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-49" value="" style="endArrow=none;html=1;rounded=0;" parent="1" source="Xmo3_Crtta4L2Li_5l8g-54" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="559.76" y="330" as="sourcePoint" />
+            <mxPoint x="559.76" y="275" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-52" value="" style="endArrow=none;html=1;rounded=0;" parent="1" source="Xmo3_Crtta4L2Li_5l8g-57" target="Xmo3_Crtta4L2Li_5l8g-50" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="379.51" y="330" as="sourcePoint" />
+            <mxPoint x="379.51" y="275" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-50" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};" parent="1" vertex="1">
+          <mxGeometry x="375" y="270" width="10" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-53" value="&lt;i&gt;wake after request&lt;br&gt;&lt;/i&gt;" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="380" y="280" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="470" y="280" />
+            </Array>
+            <mxPoint x="555" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-55" value="" style="endArrow=none;html=1;rounded=0;" parent="1" target="Xmo3_Crtta4L2Li_5l8g-54" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="559.76" y="330" as="sourcePoint" />
+            <mxPoint x="559.76" y="275" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-54" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};" parent="1" vertex="1">
+          <mxGeometry x="555" y="280" width="10" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-56" value="waker ()" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Lucida Console;" parent="1" vertex="1">
+          <mxGeometry x="500" y="287.5" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-58" value="" style="endArrow=none;html=1;rounded=0;" parent="1" target="Xmo3_Crtta4L2Li_5l8g-57" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="379.51" y="330" as="sourcePoint" />
+            <mxPoint x="380" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-57" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};" parent="1" vertex="1">
+          <mxGeometry x="375" y="315" width="10" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-59" value="&lt;font face=&quot;Lucida Console&quot;&gt;k ()&lt;/font&gt;" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="375" y="325" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="300" y="325.21000000000004" />
+            </Array>
+            <mxPoint x="205" y="325" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-61" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};" parent="1" vertex="1">
+          <mxGeometry x="195" y="325" width="10" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-10" value="&lt;font face=&quot;Lucida Console&quot;&gt;await p&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="150" y="190" width="50" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-64" value="&lt;font style=&quot;font-size: 11px;&quot; face=&quot;Lucida Console&quot;&gt;fork_promise&lt;br&gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="120" y="90" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-65" value="" style="rounded=0;whiteSpace=wrap;html=1;fillStyle=auto;fillColor=default;gradientColor=none;fillOpacity=0;strokeColor=#00FF00;" parent="1" vertex="1">
+          <mxGeometry x="140" y="180" width="430" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-67" value="" style="group" parent="1" vertex="1" connectable="0">
+          <mxGeometry x="500" y="157" width="50" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-41" value="" style="group" parent="Xmo3_Crtta4L2Li_5l8g-67" vertex="1" connectable="0">
+          <mxGeometry y="25" width="50" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-14" value="&lt;font face=&quot;Lucida Console&quot;&gt;waker&lt;/font&gt;" style="ellipse;whiteSpace=wrap;html=1;" parent="Xmo3_Crtta4L2Li_5l8g-41" vertex="1">
+          <mxGeometry width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-15" value="∅" style="ellipse;whiteSpace=wrap;html=1;" parent="Xmo3_Crtta4L2Li_5l8g-41" vertex="1">
+          <mxGeometry y="30" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-16" value="∅" style="ellipse;whiteSpace=wrap;html=1;" parent="Xmo3_Crtta4L2Li_5l8g-41" vertex="1">
+          <mxGeometry y="60" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-17" value="" style="endArrow=none;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" parent="Xmo3_Crtta4L2Li_5l8g-41" source="Xmo3_Crtta4L2Li_5l8g-15" target="Xmo3_Crtta4L2Li_5l8g-14" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-180" y="50" as="sourcePoint" />
+            <mxPoint x="-130" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-18" value="" style="endArrow=none;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" parent="Xmo3_Crtta4L2Li_5l8g-41" source="Xmo3_Crtta4L2Li_5l8g-16" target="Xmo3_Crtta4L2Li_5l8g-15" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="35" y="40" as="sourcePoint" />
+            <mxPoint x="35" y="30" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-19" value="" style="endArrow=none;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="Xmo3_Crtta4L2Li_5l8g-41" target="Xmo3_Crtta4L2Li_5l8g-16" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="25" y="90" as="sourcePoint" />
+            <mxPoint x="35" y="60" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Xmo3_Crtta4L2Li_5l8g-42" value="CQS" style="rounded=0;whiteSpace=wrap;html=1;" parent="Xmo3_Crtta4L2Li_5l8g-67" vertex="1">
+          <mxGeometry width="50" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

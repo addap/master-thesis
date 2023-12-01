@@ -1,0 +1,10 @@
+Verifying an Effect-Based Cooperative Concurrency Scheduler in Iris
+
+Lightweight asynchronous programming (using futures, goroutines or green threads) has been widely adopted to organize programs with many concurrent tasks, 
+more than are traditionally feasible with thread-per-task models of concurrency.
+With the release of OCaml 5 and its support for effect handlers, the new concurrency library Eio was proposed which aims to replace
+previous monadic concurrency libraries for OCaml.
+In this work we verify the core fiber and promise abstractions of Eio and show their safety and effect safety using the Hazel program logic.
+Hazel is built on the Iris framework and allows reasoning about programs with effect handlers.
+We also adapt the existing proof of the verified CQS datastructure since Eio uses a customized version of CQS for its implementation of promises.
+We do not treat some features of Eio like cancellation, because it does not yield a verifiable specification, and resource control using switches, since it is a liveness property. 
