@@ -15,11 +15,14 @@ As such, we want to show the **safety** and **effect safety** of the core of Eio
 
 ## Structure
 
-The rest of this document is organized as follows. Some parts link to other documents so that this one does not get too large.  
-Section 0 tracks the progress of this work as a quick summary.
-Section 1 defines some terms we use throughout.
-Section 2 discusses Eio in more detail and section 3 shows how and what specifications we want to prove about Eio's API.
-Section 4 discusses the existing verification of CQS (explained later) and section 5 shows how we adapt this development to use it for verifying Eio.
+The rest of this document is organized as follows.
+
+- Section 0 tracks the progress of this work as a quick summary.
+- Section 1 defines some terms we use throughout.
+- Section 2 discusses Eio in more detail.
+- Section 3 shows how and what specifications we want to prove about Eio's API.
+- Section 4 discusses the existing verification of CQS (explained later)
+- Section 5 shows how we adapt this development to use it for verifying Eio.
 
 ## 0. Progress
 
@@ -38,7 +41,7 @@ Development happens mostly in the [hazel submodule](../hazel).
 - [ ] We extend the support for using invariants in Hazel.
   - [x] Define atomic expressions.
   - [ ] Add an invariant opening lemma to avoid doing `inv_access` manually.
-- [ ] We extend the Hazel operational semantics with multiple threads.
+- [x] We extend the Hazel operational semantics with multiple threads.
 - [x] We adapt the CQS verification so that we can use it for the customized CQS variant that Eio defines.
 - [ ] All developments mentioned above need to be combined to a final case study where we verify a scheduler with
   - the Eio effects `Fork`, `Suspend` & `GetContext`
@@ -156,21 +159,21 @@ Also, fibers support thread-local state that can be queried by the `GetContext` 
 
 ### Multi-Threading
 
-Since some safety concerns only arise because Eio supports multiple threads (otherwise CQS would be unneeded and promises could be a lot simpler), we also want to support multi-threading in our case study.
-Thread-safety concerns and how multi-threading is used in Eio is detailed [here](./eio-thread-safety.md)
+Some safety concerns only arise because Eio supports multiple threads, otherwise CQS would be unneeded and promises could be a lot simpler.
+Therefore, we also want to support multi-threading in our case study.
+Thread-safety concerns and how multi-threading is used in Eio is detailed in [eio-thread-safety.md](./eio-thread-safety.md).
 
 Hazel has no multi-threading support and only basic support for invariants.
-For verifying the thread-safety of functions we need both. We describe how to use invariants [here](./hazel-invariants.md).  
-Hazel with multi-threading support could be achieved in two ways.
+To verify the thread-safety of functions we need both.
+We describe how to use invariants in [hazel-invariants.md](./hazel-invariants.md).
 
+Hazel with multi-threading support could be achieved in two ways.
 First, heaplang already has support for multi-threading so we could add support for effects to heaplang and the standard Iris program logic.
 This would entail changing the language, operational semantics and the definition of WP.
-But the existence of other features like prophecy variables and later credits complicate the matter as they could interact with effects.
+But the existence of other features like prophecy variables and later credits complicate the matter as they could interact with effects so we decided against this approach.
 
-To avoid this we decided to change the Hazel language instead.
-This should only entail adding `fork` and `cmpxchg` primitive operations to the language and proving their reasoning rules.
-The soundness proof of EWP would also need to be updated, but since effects and multi-threading are orthogonal (forking a new thread asserts that it obeys the empty protocol), the necessary changes should be analogous to the soundness proof of heaplang.
-This is currently work in progress and will be described in more detail [here](./hazel-multithreading.md).
+Instead, we decided to change the Hazel language.
+This is described in more detail in [hazel-multithreading.md](./hazel-multithreading.md).
 
 ### Cancellation Contexts
 
