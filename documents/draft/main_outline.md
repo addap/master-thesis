@@ -10,62 +10,73 @@
 6. A Note on Cancellation
 7. Evaluation
 8. Conclusion
+9. Bibliography
 
-# 1. Introduction
+## 1. Introduction
 
-- As a motivation for the work: program verification, safety and why we care about it.
+- Program verification, safety and why we care about it.
 - Iris and how we can prove safety
-- Eio and how it provides concurrency primitives
-- Effect Handlers with a simple example
-- Effect Handler formalization in Iris using protocols
+- As a motivation: Eio wants to become the standard concurrency library.  
+  We want to verify the safety of the central abstractions.
+- Effect handlers with a simple example
+- Effect handler formalization in Iris using Hazel
 
-## Simple Scheduler
+## 2. Simple Scheduler
 
-- The simplified code of the mock scheduler that Eio provides (actual schedulers differ per OS and intergrate with OS primitives)
-- What is the difference between this scheduler and the one from Paolo's paper  
-  The gist is that using a concurrent queue and handling promises in the fibers allows many simplifications in the scheduler & the logical state.
+- Show the simplified code of the mock scheduler that Eio provides (actual schedulers differ per OS and intergrate with OS primitives)
+- What is the difference between this scheduler and the one from Paulo's paper  
+  The gist is that using a concurrent queue and handling promises in the fibers allows simplifications in the scheduler code & the logical state.
 - Explain how the Fork/Suspend effect work and how fibers use them.
 - Explain how the scheduler implements these effects.
 - What are the safety concerns in this implementation (mainly in the implementation for await)
 - What logical state in Iris do we use to model the behavior.
 - What are some interesting parts of the proofs.
 
-## Towards A Multi-Threaded Scheduler
+## 3. Towards A Multi-Threaded Scheduler
 
-### Adding Invariants to Hazel
+- OCaml supports multi-threading and Eio implements spawning a scheduler in a new thread.
+- That's why we also want to incorporate it in our model.
+- But we first need to add support for invariants and a multi-threaded semantics to Hazel.
+
+### 3.1. Adding Invariants to Hazel
 
 - [short] How are invariants used and implemented in Iris.
 - What does Hazel already provide for invariants and what is missing.
 - How we prove atomicity for the basic operations.
 - [tbd] How we add support for the iInv tactic to use invariants more easily.
 
-### Adding Multi-Threading to Hazel
+### 3.2. Adding Multi-Threading to Hazel
 
 - [short] How is multi-threading implemented in Heaplang.
 - We use the same approach and extend the definition of Hazel.
 - What are the interesting points in the implementation.  
-  We don't have a frame for `Fork`, one of the proofs was a little bit tricky but everything else was standard.
+  We don't have a frame for `Fork`, one of the proofs to use Iris' language interface was a little bit tricky but everything else was standard. Also, empty protocol on `Fork`.
 
-## Verifying an Adaptation of CQS
+## 4. Verifying an Adaptation of CQS
 
 - What is CQS used for
-- What is the logical state used for the verification
-- How we adapt CQS (use promises & and resume_all)
-- How we change the logical state to match our adapted version.
+  Lock-free synchronization primitive. Enables a number of threads to wait for an event.
+- [short] What is the logical state used for the original verification.  
+  CQS supports many features so the map of possible states is quite complicated.
+- How we adapt & simplify CQS  
+  We use promises, add resume_all & do not use many features.
+- How we need change the logical state to match our adapted version.
+- The complication that arises from a resume_all operation and the fact that we do not count the number of waiters anywhere.
 
-## Extending the Scheduler with Thread-Local Variables
+## 5. Extending the Scheduler with Thread-Local Variables
 
-- How thread-local variables can be used.
+- Usage scenario of thread-local variables.  
+  e.g. a shared log
 - Explain the GetContext effect in Eio and how we model it in our scheduler.
 - How we adapt our logical state to include GetContext.
   And explain that we need to parameterize the protocol to solve the issue of shared knowledge between the scheduler and fiber.
 
-## A Note on Cancellation
+## 6. A Note on Cancellation
 
 - That we tried to model cancellation but the feature is too permissive to give it a specification.
-- There is still an interesting question of safety (fibers cannot be added to a cancelled Switch).  
+- There is still an interesting question of safety (fibers must be added to a cancelled Switch).  
   But including switches & cancellation in our model would entail too much work so we leave it for future work.
 
-## Evaluation
+## 7. Evaluation
 
-## Conclusion
+## 8. Conclusion

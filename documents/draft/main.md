@@ -37,27 +37,27 @@ Each domain in OCaml 5 corresponds to one system-level thread and the usual rule
 Eio defines an operation to make use of multi-threading by forking off a new thread and running a separate scheduler in it.
 So while each Eio scheduler is only responsible for fibers in a single thread, fibers can await and communicate with fibers running in other threads.
 
-In order for a fiber to be able to await fibers in another thread, the `wakers_queue` from above is actually a thread-safe queue based on something called CQS, which we will discuss in detail in a later section.
+In order for a fiber to be able to await fibers in another thread, the `wakers_queue` [note it will be in the Simple Scheduler section] from above is actually a thread-safe queue based on something called CQS, which we will discuss in detail in a later section.
 
 Heaplang supports reasoning about multi-threaded programs by implementing fork and join operations for threads and defining atomic steps in the operational semantics, which enables the use of Iris _invariants_.
-In contrast, Hazel did not define any multi-threaded operational semantics but it contained the basic building blocks for using invariants.
+In contrast, Hazel did not define any multi-threaded operational semantics but it contained most of the building blocks for using invariants.
 In the following we explain how we added a multi-threaded operational semantics and enabled the use of invariants.
 
 ```
 Note: OCaml 5's Memory Model
-In the OCaml 5 memory model, *atomic variables* are needed to share memory without introducing data races.
-Instead of modelling atomic variables in Hazel, we continue to use normal references as the multi-threaded operational semantics by definition defines all memory operations to be sequentially consistent. This seems to be the standard approach and is done the same way in Heaplang.
+In the OCaml 5 memory model, *atomic variables* are needed in order to access shared memory without introducing data races.
+Instead of modelling atomic variables in Hazel, we continue to use normal references because the multi-threaded operational semantics by definition defines all memory operations to be sequentially consistent. This seems to be the standard approach and is done the same way in Heaplang.
 ```
 
 ### Adding Invariants to Hazel
 
 Invariants in Iris are used to share resources between threads.
-They encapsulate the resource to be shared and can be opened for a single atomic step of execution.
+They encapsulate a resource to be shared and can be opened for a single atomic step of execution.
 During this step the resource can be taken out of the invariant and used in the proof but at the end of the step the invariant must be restored.
 
-An Iris language must support the usage of invariants and Hazel did already have the basic elements of support.
-It defined a ghost cell to hold the invariants and proved an invariant access lemma which allows opening an invariant provided the current expression is atomic.
-We only had to provide proofs for which evaluation steps are atomic in order to use invariants.
+Hazel did already have the basic elements necessary to support using invariants.
+It defined a ghost cell to hold invariants and proved an invariant access lemma which allows opening an invariant if the current expression is atomic.
+In order to use invariant we only had to provide proofs for which evaluation steps are atomic.
 We provided proofs for all primitive evaluation steps.
 The proofs are the same for all steps so we just explain the one for `Load`.
 
@@ -73,7 +73,10 @@ Instance store_atomic v1 v2 : Atomic StronglyAtomic (Store (Val v1) (Val v2)).
 An expression is atomic if it takes one step to a value, and if all subexpressions are already values.
 The first condition follows by definition of the step relation and the second follows by case analysis of the expression.
 
-[TODO something about effects?]
+Since performing an effect starts a chain of evaluation steps to capture the current continuation, it is not atomic.
+For the same reason an effect handler and invoking a continuation are not atomic except in degenerate cases.
+Therefore, invariants and effects do not interact in any interesting way.
+
 [TODO How we add support for the iInv tactic to use invariants more easily.]
 
 ### Adding Multi-Threading to Hazel
