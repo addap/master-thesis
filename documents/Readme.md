@@ -43,6 +43,7 @@ Development happens mostly in the [hazel submodule](../hazel).
   - [ ] Add an invariant opening lemma to avoid doing `inv_access` manually.
 - [x] We extend the Hazel operational semantics with multiple threads.
 - [x] We adapt the CQS verification so that we can use it for the customized CQS variant that Eio defines.
+  - [ ] Instead of manually translating the CQS program & proofs we could prove that a WP in heaplang implies an EWP in Hazel as explained [here](./cqs-proof-by-translation.md).
 - [ ] All developments mentioned above need to be combined to a final case study where we verify a scheduler with
   - the Eio effects `Fork`, `Suspend` & `GetContext`
   - multi-threading
