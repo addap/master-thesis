@@ -185,29 +185,29 @@ What is more interesting is that they encapsulate the possible effects the given
 <!-- What is CQS and how does Eio use it? -->
 
 CQS [ref] is a formally verified implementation of a synchronization primitive which allows execution contexts to stop execution until signalled.
-The exact nature of the execution context is abstracted away but it must support stopping and resuming execution.
+The nature of the execution context is kept abstract but it must support stopping and resuming execution.
 In the case of Eio an execution context is an Eio fiber but nevertheless CQS works across multiple threads, so fibers can use CQS to synchronize with fibers running in another thread.
 Eio uses a custom version of CQS adapted from the paper [ref] in the form of the `Broadcast` module from section 1.
 In this section we mainly describe the behavior of Eio's _customized CQS_ (or `Broadcast` module), highlight differences to the _original CQS_, and discuss how we adapted the verification of the original CQS for our case study.
 If something applies to both the customized and original version we just use the term _CQS_.
 
-<!-- How does CQS work? -->
-
 #### Operations in CQS
 
+<!-- How does CQS work? -->
+
 The original CQS supports three operations that are interesting to us.
-In a _suspend operation_ the requesting execution context wants to wait until signalled so it places a handle to itself in the datastructure and stops execution afterwards.
-But before it actually stops execution it can try to cancel the suspend operation using the _cancel operation_.
-Finally, a _resume operation_ can be done from a difference execution context.
-It takes one handle out of the datastructure and tries to resume execution of the associated execution context, passing it the value that was provided to the resume operation.
-This fails if the suspend operation had already been cancelled.
+In a _suspend operation_ the requesting execution context wants to wait until signalled so it places a handle to itself in the datastructure and is expected to stop execution afterwards.
+But before it actually stops execution it can try to cancel the _suspend operation_ using the _cancel operation_.
+Finally, a _resume operation_ can be initiated from a difference execution context.
+It takes one handle out of the datastructure and tries to resume execution of the associated execution context, passing it the value that was provided to the _resume operation_.
+This fails if the _suspend operation_ had already been cancelled.
 
 <!-- Here we call back to how the operations described above are used to implement promises/broadcast. -->
 
-Eio's customized CQS supports a new operation called the _resume all operation_.
-As the name implies, it is a resume operation that applies to all currently saved handles.
-This operation was added to support Eio's _promise_ functionality, which allows fibers to wait for the completion of another fiber and retrieve its final value.
-When a promise is fulfilled all waiting fibers must be signalled so that they can continue execution.
+These operations enable a single execution context to wait until it is signalled by another.
+Eio's customized CQS supports an additional operation called the _resume all operation_.
+As the name implies, it is a _resume operation_ that applies to all currently saved handles.
+This operation was added to support Eio's _promise_ functionality, which allows fibers to wait for the completion of another fiber and retrieve its final value, so when a promise is fulfilled _all_ waiting fibers must be signalled.
 
 ```
 Aside: Implementation of resume_all
@@ -222,20 +222,22 @@ By analyzing the code of Eio we conclude that Eio's resume_all and our resume_al
 
 #### Implementation and Logical Interface of CQS
 
-CQS is implemented as a linked list of _cells_ forming a queue since insertion and removal follows a FIFO order.
-It has two pointers pointing to the beginning and end of the list, the _suspend pointer_ and the _resume pointer_.
-Since CQS is multi-threaded and lock-free, during a suspend or resume operation the respective cell pointer is atomically updated to the next cell to ensure that each cell is only handled once.
+<!-- Some general information how CQS is implemented and the logical state describing the entire queue. -->
 
-There is a logical resource called the `thread_queue_state`, which tracks the number of cells, i.e. the length of the queue.
-This logical state is supposed to be kept in an invariant and updated when some outer atomic variable is accessed.
-In the case of Eio, this outer atomic variable is the location that holds the result of the promise.
-Updating the `thread_queue_state` involves
+CQS is implemented as a queue of _cells_ with two pointers pointing to the beginning and end of the active cell range, the _suspend pointer_ and the _resume pointer_.
 
-- enqueue & dequeue registration to update the state of the CQS at some outer atomic variable as a synchronization point.
+<!-- Since CQS is multi-threaded and lock-free, during a _suspend_ or _resume operation_ the respective cell pointer is atomically dereferenced and updated to the next cell to ensure that each cell is only handled once. -->
 
-<!-- Next we talk about how we adapted the existing verification of CQS to use it in our scheduler proof. -->
+There is a logical resource called the `thread_queue_state n`, which tracks the number `n` of active cells, which is the length of the queue.
+In normal usage of CQS, there is supposed to be an atomic variable in some outside scope which encodes the length of the queue in its value and this logical resource is then kept in an associated invariant.
+Changing the logical state of the queue, i.e. its length, is done using _enqueue_ and _dequeue registration_ operations.
+
+In the case of Eio, however, the exact length of the queue is irrelevant because the _resume-all operation_ will always set the length to 0, so in our customized version we keep this logical resource in the invariant of CQS itself.
+This somewhat simplifies the usage of CQS in a proof and also moves the _enqueue_ and _dequeue registration_ out of the public API because they are done internally.
 
 #### Specification of the Operations
+
+<!-- Next we talk about how we adapted the existing verification of CQS to use it in our scheduler proof. -->
 
 In the following we describe the specifications we proved for the three operations `suspend`, `cancel` and `resume_all`, in which points they differ from the specifications of the original CQS operations, and what changes we did to the logical state of CQS to carry out the proofs.
 
@@ -251,25 +253,33 @@ Also, this reduced the state space of the original CQS shown below (taken from t
 ![](../cqs-cell-states-eio.png)
 
 The first major change was replacing the future-based interface of the suspend operation with a callback-based interface.
-In the original CQS, doing a suspend operation creates a future, saves it in the datastructure as the handle and returns it.
+In the original CQS, performing a suspend operation creates a future, saves it in the datastructure as the handle and returns it.
 The execution context can then use the future to stop execution because it is assumed there is a runtime that allows suspending until the completion of a future.
 But Eio cannot use this interface because it uses the customized CQS to _build_ the runtime that allows fibers to suspend until the completion of a promise.
-Instead, Eio implements CQS with a callback-based interface where the fiber doing the suspend operation passes in a callback as the handle and afterwards the fiber implicitly stops execution.
-Doing a resume operation analogously invokes the callback, instead of completing the future.
-Concretely, Eio's _promise_ uses the `Suspend` effect to stop execution of the fiber and passes the `waker` as the callback so that on invokation the fiber resumes execution.
+Instead, Eio implements CQS with a callback-based interface where the fiber performing the suspend operation passes in a callback as the handle and afterwards the fiber implicitly stops execution.
+Performing a resume operation analogously invokes the callback, instead of completing the future.
+Concretely, Eio's _promise_ uses the `Suspend` effect to stop execution of the fiber and passes the `waker` as the callback so that when it is invoked the fiber is placed back into the run queue of its scheduler.
 
 This changes the logical state of CQS only slightly.
 The original CQS tracked the state of the future for each cell and managed _futureCancellation_ and _futureCompletion_ tokens.
-In the customized CQS we track the state of the callback for each cell and manage _callbackInvokation_ and _callbackCancellation_ tokens.
+In the customized CQS we analogously track the state of the callback for each cell and manage _callbackInvokation_ and _callbackCancellation_ tokens.
+
+[TODO mention that for all operations, the implementation differs but the primitive underlying operations are the same so verification was not hard. Except resume-all.]
 
 ##### _suspend operation_
 
-The suspend operation takes a _suspension permit_
+The big `is_thread_queue` resource with all the ghost names identifies `e` and `d` as a CQS (instead of just one value, the queue is represented in terms of the suspend and resume pointers).
+The _suspend permit_ from the original CQS is not needed anymore since we do the _enqueue registration_ internally.
+The `is_waker` resource is defined as `V' -∗ EWP k () {{ ⊤ }}` and represents the permission to invoke the callback `k`.
+For Eio we instantiate `V'` with `promise_state_done γp` so that the callback transports the knowledge that the promise has been fulfilled.
+`is_waker` is non-duplicable because the callback must be invoked only once and it might happen from a different thread.
+
+If there is a concurrent _resume-all operation_, the callback is invoked immediately and nothing is returned.
+Otherwise the callback is saved in the queue and the `is_thread_queue_suspend_result` (TODO too long, rename) resource acts as the cancellation permit.
 
 ```coq
 Theorem suspend_spec γa γtq γe γd γres e d k:
   {{{ is_thread_queue γa γtq γe γd γres e d ∗
-      suspension_permit γtq ∗
       is_waker V' k }}}
     suspend e k
   {{{ v, RET v; ⌜v = NONEV⌝ ∨
@@ -278,6 +288,11 @@ Theorem suspend_spec γa γtq γe γd γres e d k:
 ```
 
 ##### _cancel operation_
+
+The cancel operation specification is a lot simplified compared to the original.
+The `is_thread_queue_suspend_result` resource is used as a permission token and in order to find the callback that should be cancelled from the queue.
+If the callback had already been invoked the operation returns `false`.
+Otherwise, the cell is set to a cancelled state and it returns the permission to invoke the callback is returned.
 
 ```coq
 
