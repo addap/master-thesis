@@ -19,7 +19,7 @@
 - Effect Handlers with a simple example
 - Effect Handler formalization in Iris using protocols
 
-## Simple Scheduler
+# 2. Simple Scheduler
 
 - The simplified code of the mock scheduler that Eio provides (actual schedulers differ per OS and intergrate with OS primitives)
 - What is the difference between this scheduler and the one from Paolo's paper  
@@ -57,7 +57,7 @@ like Iron [ref] or Transfinite Iris [ref] because it is a liveness property.
 But at least for the Iron approach
 ```
 
-## Towards A Multi-Threaded Scheduler
+# 3. Towards A Multi-Threaded Scheduler
 
 OCaml 5 added not only effect handlers but also the ability to use multiple threads of execution, which are called _domains_ (in the following we use the terms interchangeably).
 Each domain in OCaml 5 corresponds to one system-level thread and the usual rules of multi-threaded execution apply, i.e. domains are preemtively scheduled and can share memory.
@@ -76,7 +76,7 @@ In the OCaml 5 memory model, *atomic variables* are needed in order to access sh
 Instead of modelling atomic variables in Hazel, we continue to use normal references because the multi-threaded operational semantics by definition defines all memory operations to be sequentially consistent. This seems to be the standard approach and is done the same way in Heaplang.
 ```
 
-### Adding Invariants to Hazel
+## Adding Invariants to Hazel
 
 Invariants in Iris are used to share resources between threads.
 They encapsulate a resource to be shared and can be opened for a single atomic step of execution.
@@ -106,7 +106,7 @@ Therefore, invariants and effects do not interact in any interesting way.
 
 [TODO How we add support for the iInv tactic to use invariants more easily.]
 
-### Adding Multi-Threading to Hazel
+## Adding Multi-Threading to Hazel
 
 To allow reasoning in Hazel about multi-threaded programs we need a multi-threaded operational semantics as well as specifications for the new primitive operations `Fork`, `Cmpxcgh` and `FAA`.
 
@@ -181,7 +181,7 @@ Lemma spawn_scheduler_spec (Q : val -> iProp Σ) (f: val) :
 The scheduler `run` and therefore also the `spawn_scheduler` function don't have interesting return values, so this part of the specification is uninteresting.
 What is more interesting is that they encapsulate the possible effects the given function `f` performs.
 
-## Verifying Eio's Customized CQS
+# 4. Verifying Eio's Customized CQS
 
 <!-- What is CQS and how does Eio use it? -->
 
@@ -192,7 +192,7 @@ Eio uses a custom version of CQS adapted from the paper [ref] in the form of the
 In this section we mainly describe the behavior of Eio's _customized CQS_ (or `Broadcast` module), highlight differences to the _original CQS_, and discuss how we adapted the verification of the original CQS for our case study.
 If something applies to both the customized and original version we just use the term _CQS_.
 
-#### Operations in CQS
+### Operations in CQS
 
 <!-- How does CQS work? -->
 
@@ -212,7 +212,7 @@ This operation was added to implement Eio's _promise_ so that **all** waiting fi
 
 <!--  -->
 
-#### Implementation and Logical Interface of CQS
+### Implementation and Logical Interface of CQS
 
 <!-- Some general information how CQS is implemented and the logical state describing the entire queue. -->
 
@@ -228,7 +228,7 @@ Changing the logical state of the queue, i.e. its length, is done using _enqueue
 In the case of Eio, however, the exact length of the queue is irrelevant because the _resume-all operation_ will always set the length to 0, so in our customized version we keep this logical resource in the invariant of CQS itself.
 This somewhat simplifies the usage of CQS proofs and also moves the _enqueue_ and _dequeue registration_ out of the public API because they are now done internally.
 
-#### Specification of the Operations
+### Specification of the Operations
 
 <!-- Next we talk about how we adapted the existing verification of CQS to use it in our scheduler proof. -->
 
@@ -268,7 +268,7 @@ Instead, I actually defined resume_all simply as a loop over a resume operation.
 Since resume_all is only called once I posit that this verification is still valid but I still want to verify Eio's resume_all and remove this aside.
 ```
 
-##### _suspend operation_
+#### _suspend operation_
 
 The big `is_thread_queue` resource with all the ghost names identifies `e` and `d` as a CQS (instead of just one value, the queue is represented in terms of the _suspend_ and _resume pointers_).
 The _suspend permit_ from the original CQS is not needed anymore since we do the _enqueue registration_ internally.
@@ -289,7 +289,7 @@ Theorem suspend_spec γa γtq γe γd γres e d k:
                          is_thread_queue_suspend_result γtq γa γk v' k }}}.
 ```
 
-##### _cancel operation_
+#### _cancel operation_
 
 The specification of the _cancel operation_ is a lot simplified compared to the original.
 The `is_thread_queue_suspend_result` resource is used as a permission token and in order to find the callback that should be cancelled from the queue.
@@ -309,7 +309,7 @@ Theorem try_cancel_spec γa γtq γe γd γres e d γk r k:
                   else True }}}.
 ```
 
-##### _resume all operation_
+#### _resume all operation_
 
 The specification of the _resume-all operation_ is also a lot simplified compared to the specification of the original _resume operation_ because removing unused features from CQS reduced the state space and because cancelled cells are simply ignored by _resume-all_.
 The `resume_all_permit` is a unique resource used to ensure the function can only be called once.
@@ -327,7 +327,7 @@ Theorem resume_all_spec γa γtq γe γd γres e d n:
   {{{ RET #(); True }}}.
 ```
 
-## Extending the Scheduler with Thread-Local Variables
+# 5. Extending the Scheduler with Thread-Local Variables
 
 - How thread-local variables can be used.
 - Explain the GetContext effect in Eio and how we model it in our scheduler.
