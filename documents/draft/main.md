@@ -228,7 +228,8 @@ In the next section we show how the former is addressed by defining a unique res
 
 ## 2.2. Specifications
 
-[TODO say that logical state is based on de Vilhena's case study but Eio both allows some simplifications & necessitates less powerful specifications since fibers are more free.]
+To prove specifications for an effectful program in Hazel we have to define not only the usual ghost state constructs to track program state but also protocols which describe the behavior of the program's effects.
+We base both again on the simple cooperative concurrency scheduler case stufy from de Vilhena's dissertation.
 
 #### Protocols
 
@@ -236,32 +237,49 @@ First we look at the protocols for the `Fork` and `Suspend` effect.
 
 ![](./Eio_Protocols.png)
 
-Compared to de Vilhena's case study, `Fork` is almost the same but since promise handling is done entirely in the fiber, the scheduler does not interact with the return value so the ewp degenerates to a trivial postcondition.
+`Fork` is almost the same but since promise handling is done entirely in the fiber, the scheduler does not interact with the return value so the *ewp* degenerates to a trivial postcondition.
 
 The protocol for `Suspend` is entirely new.
 From the type of the `Suspend` effect we already know that some value can be transmitted from the party that calls the `waker` callback to the fiber that performed the effect.
 The protocol now expresses the same idea on the level of resources.
-By appropriately instantiating `P` the fiber can enforce that some condition holds before it can be signalled to resume execution. 
+By appropriately instantiating `P`, the fiber can enforce that some condition holds before it can be signalled to resume execution. 
 For example, in the `Promise.await` specification below, we ensure that the promise must be fulfilled before the effect returns by instantiating `P` with `promise_done γ`.
 
 #### Logical State
 
-The most basic ghost state we track is whether a promise is fulfilled or not.
+The most basic ghost state we track is wether a promise is fulfilled or not.
 The `promise_waiting γ` resource exists as two halves, one owned by the fiber and one by the invariant that tracks all promises.
-They can be combined when fulfilling the promise, yielding the persistent `promise_done γ` resource.
+Both halves are combined when fulfilling the promise, yielding the persistent `promise_done γ` resource.
 
-![](./Vilhena_Logical_State.png)
+```coq
+(* TODO convert to latex *)
+Definition promiseInv : iProp Σ := (
+  ∃ M, isPromiseMap M ∗
+    ([∗ map] args ↦ Φ ∈ M, let '(p, γ, ε) := args in
+      ((* Fulfilled: *) ∃ y,
+        p ↦ Done' y ∗ promise_done γ ∗ □ Φ y)
+    ∨
+      ((* Unfulfilled: *) ∃ cqs,
+        p ↦ Waiting' cqs ∗
+        is_cqs cqs ∗
+        promise_waiting γ ∗
+        resume_all_permit))
+)%I.
+  
+Definition ready (δ : gname) (k: val) : iProp Σ := (
+  EWP (k #()) {{ _, ⊤ }}
+)%I.
+```
 
 *PromiseInv* tracks the state of all existing promises, which are either *Done* or *Waiting*.
-The *Ready* predicate expresses that *k* is safe to be called on a value satisfying *Φ* under the condition that all promises and the scheduler's run queue are well-formed.
-Note that *Ready* is used both recursively to ensure that all runnable fibers are safe to execute, and mutually recursive with *PromiseInv* to ensure that all fibers waiting for a promise are safe to execute.
-If a promise is waiting it contains a list of continuations that will be invoked by the scheduler when a fiber finishes execution.
+As long as the promise is not fulfilled, it holds and an instance of CQS so that wakers can be registered along with a `resume_all_permit`. 
+This token is used to call the `CQS.signal_all` function which must only be called once.
+When it is fulfilled it instead holds a final value `v` satisfying some predicate `Φ`.
 
-Because of this, the *Ready* predicate 
+The *Ready* predicate now just expresses that *f* is safe to be executed. 
+Compared to de Vilhena's formalization, the *Φ(v)* predicate was dropped because the scheduler does not interact with the return value of an effect, it has moved to the protocol of `Suspend` as *P(v)*.
+Both the precondition for the promise invariant and the run queue have been dropped because they are now put into Iris shareable invariants since Eio supports multi-threading.
 
-
-- The logical state of the scheduler tracks the state of all currently existing promises (across all threads) in a shareable invariant using an auth. Since promises are not handled by the scheduler anymore we can completely remove it from the scheduler's spec.
-- The `ready` predicate is a lot simplified because the queue parameter is now an invariant and can be dropped so it's not mutually recursive with is_promise anymore
 - Explain the proof of the spec of `Sched.run`
   - First explain the protocol of the Fork effect since it's the simplest, here we also need the spec of the next function.
   - Then explain the protocol of the Suspend effect and how the `waker` callback precondition is returned from the protocol, which means that doing a suspend effects waits until some user-specified condition is met.
