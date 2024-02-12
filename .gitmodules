@@ -6,4 +6,4 @@
 	url = git@github.com:addap/eio.git
 [submodule "kotlinx.coroutines"]
 	path = kotlinx.coroutines
-	url = git@github.com:Kotlin/kotlinx.coroutines.git
+	url = git@github.com:addap/kotlinx.coroutines.git
