@@ -32,6 +32,7 @@ geometry: margin=4cm
   - Mention that continuations can only be invoked once? (not really necessary info)
 - We want to verify some parts of the Eio library but the standard Heaplang language for Iris does not support effect handlers.
   - Hazel is an Iris language formalizing effect handlers using protocols.
+  - Syntax and semantics of protocols.
   - Since OCaml 5 allows both effect handlers and mutable shared state we had to add a multi-threaded semantics to Hazel.
 - Inherent part of a scheduler is liveness, because it is responsible for running all fibers to completion. Unfortunately it is hard to prove liveness properties in Iris so we just focus on safety and effect safety.
 
@@ -78,30 +79,33 @@ This includes:
 
 [TODO mention that all code examples are an OCaml rendering of the verified Hazel code, based on but not equal to the Eio code]
 
-Cooperative concurrency schedulers are commonly treated in the literature on effect handlers [ref, Paolos dissertation, Dolan paper, Dan Leijen paper] because they are a lucid example for the usefulness of handling delimited continuations in this way. 
+Cooperative concurrency schedulers are commonly treated in the literature on effect handlers [ref, Paulos dissertation, Dolan paper, Daan Leijen paper] because they are a lucid example for the usefulness of handling delimited continuations in this way. 
 Generally, the scheduler contains an effect handler and a fiber is just a normal function.
 The fiber can yield execution by performing an effect, jumping to the effect handler (i.e. the scheduler) and providing it with the rest of the fiber's computation in the form of a continuation. 
 The scheduler has a collection of continuations and by invoking one of them it schedules the next fiber.
 This approach is also used in Eio.
 
 We can therefore use the simple cooperative concurrency scheduler case study from the dissertation of de Vilhena [ref] as a starting point for our verification work.
-In the following section we discuss the implementation of the simplified Eio model in more detail to give an intution about what their specification and the logical state to prove them should look like. 
-From this intuition we will derive a formalization in [ref, section 2.2].
+In the following section we discuss the implementation of the simplified Eio model in more detail.
+Using the implementation we give an intution about what specifications the functions should satisfy and what kind of logical state is needed to prove these specifications. 
+On this intuition we will then build a formalization in [ref, section 2.2].
 <!-- But some key differences in the implementation of Eio allow simplifications of the logical state that we use in our proofs. -->
 
 ## 2.1. Implementation
 
 Let us first get an idea of how different components of the core Eio fiber abstraction interact by looking at their types.
 `Scheduler.run` is the main entrypoint to Eio and it is provided a function which represents the first fiber to be executed.
-`Fiber.fork_promise` is also provided a function which represents a fiber, but this one will be forked so that it runs concurrenctly. 
+The scheduler runs the main fiber and all forked-off fibers in a single thread. 
+However, a fiber can also spawn new schedulers in separate threads to run other fibers in parallel as explained in [ref, appendix]
+`Fiber.fork_promise` is also provided a function which represents a fiber, but this one will be forked in the current scheduler so that it runs concurrenctly. 
 It returns a promise holding the eventual return value of the new fiber.
-The promise is thread-safe so any other fiber can use the `Promise.await` function to wait until the value is available.
+The promise is thread-safe so that also fibers running in different threads can use the `Promise.await` function to wait until the value is available.
 Common problems like deadlocks are not prevented in any way and are the responsibility of the programmer.
 <!-- The function sends the fiber to the scheduler by performing an effect, so it must always be called from a fiber itself. -->
 
 
 ```ocaml 
-Scheduler.run : (() -> 'a) -> ()
+Scheduler.run : (() -> 'a) -> 'a option\footnote{The scheduler's result is optional because the main fiber might deadlock.}
 Fiber.fork_promise : (() -> 'a) -> 'a Promise.t
 Promise.await : 'a Promise.t -> 'a
 ```
@@ -114,7 +118,8 @@ Instead, we use an overloading of the match syntax that is common in the literat
 effect E : int -> bool
 
 (* Matches on the expression e and evaluates the second branch if it performs the effect E. 
-   The continuation k captures the rest of the computation of e. *)
+   The continuation k captures the rest of the computation of e.
+   It acts as a deep handler, i.e. even if evaluating e performs E more than once the second branch will be evaluated every time. *)
 match e with
 | v -> ...
 | effect (E v) k -> ...
@@ -124,16 +129,40 @@ match e with
 
 As mentioned above this is the main entry point to the Eio library. 
 It receives the main fiber as an argument and sets up the scheduler environment. 
-The `run_queue` is a queue of ready fibers and the `next` function pops one fiber (i.e. function) and evaluates it.
-The inner `fork` function is called once on each fiber to execute it and handle any performed effects.
 
-Handling a `Fork` effect is simple because it just carries a new fiber to be executed so the handler recursively calls the `fork` function.
+The `run_queue` contains closures that will immediately invoke the continuation of an effect. 
+This represents ready fibers which can continue execution from the point where they performed an effect.
+
+The `next` function pops one fiber (i.e. function) from the `run_queue` and executes it.
+If no more ready fibers remain -- either because all fibers terminated or there is a deadlock -- the next function just returns and the scheduler exits.
+
+The inner `execute` function is called once on each fiber to execute it and handle any performed effects.
+The return value of a fiber given to the `execute` function is always just unit.
+- The main fiber is wrapped in a closure that saves its return value in a reference and returns unit so that `execute` does not need to differentiate between the main fiber and any other fiber.
+- All other fibers are forked using `Fiber.fork_promise`, which also wraps them in a closure that saves their return value in a promise and returns unit.
+
+This emphasizes the fact that an Eio scheduler is only used for running fibers. 
+The interaction between fibers waiting for values of other fibers is handled separately in promises.
+
+Handling a `Fork` effect is simple because it just carries a new fiber to be executed so the handler recursively calls the `execute` function to execute it immediately.
+The execution of the original fiber is paused due to performing an effect and its continuation `k` is placed in the run queue so that it can be scheduled again.
+This prioritizes the execution of a new fiber and is a design decision by Eio. 
+It would be equally valid to place the `fiber` argument in the run queue.
 
 Handling a `Suspend` effect may look complicated at first due to the higher-order `register` function.
-This effect is used by fibers to suspend execution and through the `register` function they can control under what conditions they should resume execution again.
-The key point is that as long as the continuation `k` is not invoked, the fiber will not continue to execute.
-So the `waker` callback is defined to "wake up" a fiber by placing its continuation into the run queue and the `register` function can install it as a callback somewhere (or even call it directly).
+This effect is used by fibers to suspend execution until some condition is met.
+The fiber defines this condition by constructing a `register` function that in turn receives a wakeup capability by the scheduler in form of the `waker` function.
+The key point is that as long as the continuation `k` is not invoked, the fiber will not continue execution.
+So the `waker` function wakes up a fiber by placing its continuation into the run queue.
+The `register` function is called by the scheduler right after the fiber suspends execution and can then install `waker` as a callback at a suitable place (or even call it directly).
+For example, to implement promises, the `waker` function is installed in a datastructure that will call the function after the promise is fulfilled.
+
+Note that the `waker` function's argument `v` has a *locally abstract type*, which is a typical pattern in effect handlers.
+From the point of view of the fiber, the polymorphic type of the `Suspend` effect is instanitated depending on how the effect's return value is used.
+But the scheduler does not get any information about this so the argument type of the continuation `k` and the `waker` function is still abstract.
+
 Waking up should be possible across thread boundaries, which is why the run queue in Eio needs to be thread-safe.
+For the verification we assume the specification of a suitable `Queue` module that supports thread-safe push and pop operations.
 
 <!-- In our simplified model of Eio, the `Suspend` effect is only performed in the implementation of `Promise.await` which registers the `waker` callback to be called when the promise is fulfilled. -->
 
@@ -142,20 +171,28 @@ effect Fork : (() -> 'a) -> ()
 type 'a waker : 'a -> ()
 effect Suspend : ('a waker -> ()) -> 'a
 
-let run (main : () -> 'a) : () =
-  let run_queue := queue_create () in
-  let rec fork fiber =
+let run (main : () -> 'a) : option 'a =
+  let run_queue = Queue.create () in
+  let next () = 
+    match Queue.pop run_queue with
+    | None -> ()
+    | Some cont -> cont ()
+  let rec execute fiber =
     match fiber () with
-    | _ -> next run_queue
+    | () -> next ()
     | effect (Fork fiber) k -> 
-        queue_push run_queue (fun _ -> invoke k ());
-        fork fiber
-    | effect (Suspend register) =>
-        let waker = fun v -> queue_push run_queue (fun _ -> invoke k v) in
+        Queue.push run_queue (fun () -> invoke k ());
+        execute fiber
+    | effect (Suspend register) k =>
+      let waker = fun v -> Queue.push run_queue (fun () -> invoke k v) in
         register waker;
-        next run_queue
+        next ()
   in
-  fork main
+  let result = ref None in
+  execute (fun () -> result := main ());
+  !result
+
+Caption: `Scheduler` module.
 ```
 
 #### `Fiber.fork_promise`
@@ -172,77 +209,131 @@ let fork_promise (f : () -> 'a) : 'a Promise.t =
   let fiber = fun () ->
     let result = f () in
     match Atomic.get p with
-    | Done _ -> error "unreachable"
+    | Done _ -> error "impossible"
     | Waiting cqs ->
         Atomic.set p (Done result);
         CQS.signal_all cqs 
   in
   perform (Fork fiber) 
   p
+
+Caption: `Fiber` module
 ```
 
 #### `Promise.await`
 
-This function is looks most complicated in our case study which is partly due to the `Suspend` effect and also due to the use of CQS functions.
-`Promise.await p` suspends execution of the calling fiber until `p` is fulfilled and then returns its value. 
-The "suspend execution" part is handled by performing the `Suspend` effect because the scheduler will switch to the next fiber in its run queue.
-Then, the "until `p` is fulfilled" part is handled by CQS [ref, paper].
+This is the most complicated looking function in our case study which is partly due to the `Suspend` effect and also due to the use of CQS functions.
+The purpose of `Promise.await p` is to suspend execution of the calling fiber until `p` is fulfilled and then return its value. 
+The "suspend execution" part is handled by performing the `Suspend` effect.
+Then, the "until `p` is fulfilled" part is implemented by using CQS [ref, paper] functions as described in the following.
 
-CQS is an implementation of the observer pattern and functionally similar to condition variables\footnote{\url{https://en.cppreference.com/w/cpp/thread/condition_variable}} in languages like C++ (only lock-free), allowing fibers to register callbacks that will be called when a condition is signalled.
-In our case, we want to wait until `p` is fulfilled, so we register the `waker` function of the `Suspend` effect with CQS.
-The `Fiber.fork_promise` function then uses `CQS.signal_all` to call all registered `waker`s after it fulfills the promise.
+CQS is an implementation of the observer pattern and functionally similar to condition variables\footnote{\url{https://en.cppreference.com/w/cpp/thread/condition_variable}} in languages like C++ (as defined by the POSIX standard), allowing fibers to register callbacks that will be called when a condition is signalled.
+The difference is that traditional condition variables are always used together with a mutex to enable synchronization between different threads, while CQS is a lock-free datastructure implementing a similar API.
 
-Therefore, after the `Suspend` effect returns we know that the `Done` branch is reached.
+Below we show the public API of the CQS module. The implementation and specification will be exapanded upon in section [ref, CQS chapter].
+```ocaml
+type callback = () -> ()
+type register_handle
 
-Because CQS is lock-free, the register function must take care of possible interleavings where the promise is fulfilled in another thread.
-First, if `CQS.register` notices that there is a concurrent `CQS.signal_all` it will directly call the `waker`.
+val create : () -> t
+val register : t -> callback -> register_handle option
+val try_cancel : register_handle -> bool
+val signal_all : t -> ()
+
+Caption: CQS module
+```
+
+In the `Promise.await` function if the promise is not fulfilled initially the fiber should wait until that is the case so it registers the `waker` function with CQS by using `CQS.register`.
+In turn, the `Fiber.fork_promise` function is reponsible for fulfilling the promise and it uses `CQS.signal_all` to call all `waker` functions registered with CQS.
+Recall that calling a `waker` function will enqueue the fiber that performed the `Suspend` effect in the scheduler's run queue so that it can continue execution.
+In the default case the following simplified chain of events is established:
+0. The fiber suspends execution at the point of evaluating `perform (Suspend register);`.
+1. The `waker` function is registed with CQS.
+2. The promise is fulfilled.
+3. The `waker` function is called.
+4. The fiber resumes execution at the point of evaluating `perform (Suspend register);`.
+Therefore, after the `Suspend` effect returns we know the state of the promise is `Done` and the final value can be returned.
+
+But because CQS is lock-free and promises can be shared between different threads there are a number of possible interleavings that the `register` function must take care of aswell.
+The definition of the register function is interesting enough that we split it out into `make_register` and give a separate specification, even though it is not part of the public API of the module.
+First, there could be a race on the state of the promise itself.
+Right after the state is read in line 19 another thread might change the state to `Done` and go on to call `CQS.signal_all`.
+If that happes there is another race between the `CQS.register` in line 7 and the `CQS.signal_all` in the other thread.
+If `CQS.register` notices that there is a racing `CQS.signal_all` it will directly call the `waker`\footnote{TODO mention that this is just an optimization.}.
 Otherwise, the `waker` is registered but in fact the `CQS.signal_all` might have already finished before `CQS.register` even started.
-In this case the callback would be "lost" in the CQS, never to be called.
-To avoid this, `register` must check the state of the promise again, try to cancel the callback registration and call it directly.
+In this case the `waker` would be "lost" in the CQS, never to be called.
+To avoid this, `register` must check the state of the promise again in line 12, and if it is fulfilled try to cancel the `waker` registration.
+The cancel will fail if the `waker` function was already called.
+If it succeeds the `register` function has the responsibility of calling `waker` itself.
 
 ```ocaml
-let await (p: 'a Promise.t) : 'a = 
+type 'a t = Done of 'a | Waiting of CQS.t
+
+let create () : 'a t = 
+  let cqs = CQS.create () in
+  Atomic.create (Waiting cqs)
+
+let make_register (p: 'a t) (cqs: CQS.t) : (() waker -> ()) = fun waker ->
+  let register_result = CQS.register cqs waker in
+  match register_result with
+  | None -> ()
+  | Some register_handle ->
+      match Atomic.get p with
+      | Done result ->  
+          if CQS.try_cancel register_handle
+          then waker ()
+          else ()
+      | Waiting _ -> ()
+
+let await (p: 'a t) : 'a = 
   match Atomic.get p with
   | Done result -> result
   | Waiting cqs ->
-      let register = fun waker ->
-        let register_result = CQS.register cqs waker in
-        match register_result with
-        | None -> ()
-        | Some register_handle ->
-            match Atomic.get p with
-            | Done result ->  
-                if CQS.try_cancel register_handle
-                then waker ()
-                else ()
-            | Waiting _ -> ()
-      in
+      let register = make_register p cqs
       perform (Suspend register);
       match Atomic.get p with
       | Done result -> result 
-      | Waiting _ -> error "unreachable"
+      | Waiting _ -> error "impossible"
+
+Caption: `Promise` module.
 ```
 
-The only **safety** concerns in the above implementations are `Fiber.fork_promise` expecting the promise to be unfulfilled and `Promise.await` expecting the promise to be fulfilled in the last match.
-In the next section we show how the former is addressed by defining a unique resource that is needed to fulfill a promise, and the latter is a consequence of the protocol of the `Suspend` effect.
+The only **safety** concerns in the above implementation are `Fiber.fork_promise` expecting the promise to be unfulfilled and `Promise.await` expecting the promise to be fulfilled in the last match.
+In both cases, the program would crash (signified by the `error` expression) if the expectation is violated. 
+So to establish the safety of Eio we wish to prove that the expectations always hold and the two `error` expressions are never reached.
+In the next section we show how the first situation is addressed by defining a unique resource that is needed to fulfill a promise, and the latter is a consequence of the protocol of the `Suspend` effect.
 
 ## 2.2. Specifications
 
-To prove specifications for an effectful program in Hazel we have to define not only the usual ghost state constructs to track program state but also protocols which describe the behavior of the program's effects.
-We take both from the simple cooperative concurrency scheduler case study from de Vilhena's dissertation and adapt them to our model of Eio.
+To prove specifications for an effectful program in Hazel we have to define not only ghost state constructs to track program state as usual but also protocols which describe the behavior of the program's effects.
+To use them in our Eio case study we adapt both the ghost state and the effect protocols from the simple cooperative concurrency scheduler case study from de Vilhena's dissertation [ref, section of Paulos paper].
 
 #### Protocols
 
 First we look at the protocols for the `Fork` and `Suspend` effect.
+In Hazels' protocol syntax they are formalized in the following way, where the precondition of `Suspend` is given the name `isRegister` to describe the behavior of the fiber-defined `register` function.
 
 ![](./Eio_Protocols.png)
 
-`Fork` stays almost the same but since promise handling is done entirely in the fibers, the scheduler does not interact with the return value so the *ewp* degenerates to a trivial postcondition.
+The `Fork` effect stays almost the same compared to de Vilhena's case study.
+It accepts an arbitraty expression `e` which represents the computation that a new fiber executes.
+To perform the effect one must prove that `e` acts as a function that can be called on `()` and obeys the `Coop` protocol itself. 
+This means spawned off fibers can again perform `Fork` and `Suspend` effects.
+The *ewp* is guarded behind a later modality because of the recursive occurrence of the Coop protocol.
+Since promise handling is done entirely in the fibers and the effect just hands off the fiber to the scheduler, the protocol is simplified in two ways compared to the original.
+First, the scheduler does not interact with the return value of the fiber so the *ewp* has a trivial postcondition.
+Second, because the scheduler does not create the promise, the protocol itself also has a trivial postcondition. 
 
 The protocol for `Suspend` is entirely new.
-From the type of the `Suspend` effect we already know that some value can be transmitted from the party that calls the `waker` callback to the fiber that performed the effect.
-The protocol now expresses the same idea on the level of resources.
-By appropriately instantiating `P`, the fiber can enforce that some condition holds before it can be signalled and then receive this resource when it continues execution.
+From the type of the `Suspend` effect we already know that some value can be transmitted from the party that calls the `waker` function to the fiber that performed the effect.
+The protocol now expresses the same idea on the level of resources. 
+To suspend, a fiber must supply a function `register` that satisfies the `isRegister` predicate. 
+This predicate says that `register` must be callable on a `waker` function and in turn gets to assume that the `waker` function is callable on an arbitrary value `v`, which satisfies the predicate `P`. 
+Both must not perform effects.
+The predicate `P` appears twice in the definition of the protocol, once in the precondition of `waker` and then in the postcondition of the whole protocol. 
+It signifies the resources that are transmitted from the party that calls the `waker` function to the fiber that performed the effect.
+
+By appropriately instantiating `P`, we can enforce that some condition holds before the fiber can be signalled to continue execution and we get to assume the resources `P v` for the rest of the execution.
 For example, in the `Promise.await` specification below, we ensure that the promise must be fulfilled before the effect returns by instantiating `P` with a resource that says the promise is fulfilled.
 
 #### Logical State
@@ -256,7 +347,7 @@ It is not possible to have both a `promise_waiting γ` and a `promise_done γ`.
 (* TODO convert to latex *)
 Definition promiseInv : iProp Σ := (
   ∃ M, isPromiseMap M ∗
-    ([∗ map] args ↦ Φ ∈ M, let '(p, γ, ε) := args in
+    ([∗ map] args ↦ Φ ∈ M, let '(p, γ) := args in
       (∃ result,
         p ↦ Done result ∗ 
         promise_done γ ∗
@@ -270,16 +361,16 @@ Definition promiseInv : iProp Σ := (
 )%I.
 
 Definition ready (k: val) : iProp Σ := (
-  EWP (k #()) {{ _, ⊤ }}
+  EWP (k #()) <| ⊥ |> {{ _, ⊤ }}
 )%I.
 ```
 
 *PromiseInv* still tracks the state of all existing promises, which are either *Done* or *Waiting*.
-As long as the promise is not fulfilled, it holds and an instance of CQS so that wakers can be registered along with a `resume_all_permit`. 
+As long as the promise is not fulfilled, it holds an instance of CQS so that wakers can be registered along with a `resume_all_permit`. 
 This token is used to call the `CQS.signal_all` function which must only be called once.
 When the promise is fulfilled it instead holds a final value `v` satisfying some predicate `Φ`.
 
-The *Ready* predicate now just expresses that *f* is safe to be executed. 
+The *Ready* predicate now just expresses that *k* is safe to be executed. 
 Compared to de Vilhena's formalization, the *Φ(v)* predicate was dropped because the scheduler does not interact with the return value of an effect; this has moved to the protocol of `Suspend` as *P(v)*.
 We were able to drop the other preconditions because they are now put into Iris shareable invariants since Eio supports multi-threading.
 Now *Ready* is neither recursive nor mutually recursive with *isPromise* anymore, which simplifies its usage in Iris.
@@ -287,7 +378,7 @@ Now *Ready* is neither recursive nor mutually recursive with *isPromise* anymore
 #### `Scheduler.run`
 
 The interesting part about the scheduler specification is that it proves **effect safety** of the runtime, i.e. no matter what a fiber does it will not crash the scheduler due to an unhandled effect.
-However, the specification only talks about effect safety and not about handling fibers correctly in any other way, e.g. regarding fairess of scheduling or just not dropping fibers. 
+However, the specification only talks about effect safety and not about handling fibers correctly in any other way, e.g. regarding fairness of scheduling or just not dropping fibers. 
 For example, a trivial function which ignores the `main` argument and immediately returns satisfies the same specificaiton.
 For a scheduler it would be desirable to prove these properties, too, but since they are liveness properties it is hard to do in Iris and not a focus of this thesis.
 
@@ -329,7 +420,7 @@ The proof proceeds as follows:
 #### `Promise.await`
 
 The `register` function which is passed to the `Suspend` effect is complex enough that we spin out its specification.
-The implementation of `Promise.await` is very different to the original but stil satisfies the same specification. *PromiseInv* and *IsPromise* are both needed to interact with the promise's state.
+The implementation of `Promise.await` is very different from the original but still satisfies the same specification. *PromiseInv* and *IsPromise* are both needed to interact with the promise's state.
 
 ```coq
 Lemma ewp_await_make_register (p: loc) (cqs: val) Φ:
@@ -610,7 +701,7 @@ Due to this, the part of the verification of the original CQS that we had to cus
 
 | Eio | Thesis | Mechanization |
 |-|-|-|
-| `enqueue` | waker callback | `waker` |
+| `enqueue` | `waker` function | `waker` |
 | `f`       | register function | `register` |
 | `Fiber.fork_promise` | `Fiber.fork_promise` | `fork_promise` |
 | `Promise.await` | `Promise.await` | `await` |
