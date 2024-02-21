@@ -339,9 +339,24 @@ For example, in the `Promise.await` specification below, we ensure that the prom
 #### Logical State
 
 The most basic ghost state we track is wether a promise is fulfilled or not.
-The `promise_waiting γ` resource exists as two halves, one owned by the fiber and one by the invariant that tracks all promises.
-Both halves are combined when fulfilling the promise, yielding the persistent `promise_done γ` resource.
-It is not possible to have both a `promise_waiting γ` and a `promise_done γ`.
+If a promise `p` is unfulfilled, two copies of `promise_waiting γ` exist\footnote{TODO maybe use meta\_tokens to hide gamma}, one owned by the fiber and one by the invariant that tracks all promises.
+When fulfilling the promise, both copies can be combined and converted to a persistent `promise_done γ` resource.
+The `promise_waiting γ` and `promise_done γ` resources cannot exist at the same time. 
+This design allows us to deduce the current state of the promise depending on if we own a `promise_waiting γ` or a `promise_done γ`.
+This is formalized in the rules in figure [ref].
+
+$$
+TODO after latex conversion
+$$
+
+The resource *PromiseInv* tracks the state of all existing promises by using an authoritative map which contains for each promise: a location `p` holding its current value, a ghost name `γ` that is used for the `promise_waiting γ` and `promise_done γ` resources, and a predicate `Φ` that describes the value the promise will eventually hold.
+Additionally, for each promise in the map we own some resources as part of *PromiseInv* that depend on the current state of the promise.
+
+As long as the promise is not fulfilled we own a broadcast, one copy of `promise_waiting γ`, and a `signal_all_permit`.
+The `signal_all_permit` is used to call the `CQS.signal_all` function which must only be called once.
+When the promise has been fulfilled, we instead own a `promise_done γ` and the knowledge that the final value satisfies the given `Φ`.
+
+The *Ready* predicate expresses that *f* is safe to be executed and is used as the invariant for a scheduler's run queue, i.e. it should hold for all fibers in the run queue that they can be executed.
 
 ```coq
 (* TODO convert to latex *)
@@ -357,23 +372,35 @@ Definition promiseInv : iProp Σ := (
         p ↦ Waiting cqs ∗
         is_cqs cqs ∗
         promise_waiting γ ∗
-        resume_all_permit))
+        signal_all_permit))
 )%I.
 
-Definition ready (k: val) : iProp Σ := (
-  EWP (k #()) <| ⊥ |> {{ _, ⊤ }}
+Definition ready (f: val) : iProp Σ := (
+  EWP (f #()) <| ⊥ |> {{ _, ⊤ }}
 )%I.
 ```
 
-*PromiseInv* still tracks the state of all existing promises, which are either *Done* or *Waiting*.
-As long as the promise is not fulfilled, it holds an instance of CQS so that wakers can be registered along with a `resume_all_permit`. 
-This token is used to call the `CQS.signal_all` function which must only be called once.
-When the promise is fulfilled it instead holds a final value `v` satisfying some predicate `Φ`.
+### Aside: Comparing the Logical State to the one from de Vilhena's Case Study
+[TODO insert logical state from the dissertation]
 
-The *Ready* predicate now just expresses that *k* is safe to be executed. 
-Compared to de Vilhena's formalization, the *Φ(v)* predicate was dropped because the scheduler does not interact with the return value of an effect; this has moved to the protocol of `Suspend` as *P(v)*.
-We were able to drop the other preconditions because they are now put into Iris shareable invariants since Eio supports multi-threading.
-Now *Ready* is neither recursive nor mutually recursive with *isPromise* anymore, which simplifies its usage in Iris.
+In de Vilhena's case study, the *Ready* predicate fulfilled two roles. 
+2. It expresses that all continuations in the scheduler's run-queue are safe to execute. 
+1. It expresses that all continuations in a promise's waiting-queue are safe to execute.
+
+It was necessary to have both *PromiseInv* and *isQueue* as preconditions because they describe global state so they had to be passed around.
+
+In our case study *PromiseInv* was dropped from the definition of Ready because it is now put into an Iris shareable invariant, so we don't need to pass it around explicitly.
+Similarly, the isQueue precondition was dropped from the definition of Ready because in Eio the run queue must be thread-safe, so our new isQueue is persistent and we don't need to pass it around explicitly.
+Therefore, our *Ready* is neither recursive nor mutually recursive with *PromiseInv* anymore, which simplifies its usage in Iris.
+We note that the (mutual) recursion was only necessary because *PromiseInv* was used to track global state but was not put into an Iris shareable invariant, so it had to be passed around explicitly in many places.
+
+We also split up the two uses of *Ready* and only use it under this name for the first role.
+In the case of a scheduler's run-queue the `Φ v` degenerates just to `v = ()`, so we can drop both from the definition and use `()` directly.
+This is why in our definition of *Ready* it is only an *ewp* without preconditions.
+
+For the second use case of describing the continuations in a promise's waiting-queue we now have another specialized version of *Ready*.
+A broadcast has the following invariant for all stored callbacks: `P v -∗ ewp (callback ()) <| ⊥ |> {{ ⊤ }}`.
+This is just *Ready* where `P v` replaces `Φ v`, which is the same `P` as in the definition of the `Suspend` effect since the callbacks in a broadcast are `waker` functions.
 
 #### `Scheduler.run`
 
@@ -412,14 +439,13 @@ The proof proceeds as follows:
 - First, a new promise is created, which updates the *PromiseInv* invariant and yields one half of the `promise_waiting γ` resource for that new promise.
 - We define the actual fiber and prove its *ewp*.
   - Evaluating `f` yields a value satisfying `Φ` as given by the *ewp*.
-  - Because we own `promise_waiting γ` the second branch of the match can be ruled out. Now the *PromiseInv* invariant is accessed to update the promise state to `Done`. This consumes both halves of the `promise_waiting γ` resource and yields a `promise_done γ`. We also take out the `resume_all_permit`.
-  - We use this permit along with `promise_done γ` to call `CQS.resume_all`. `promise_done γ` is persistent so it can be used to call all wakers.
+  - Because we own `promise_waiting γ` the second branch of the match can be ruled out. Now the *PromiseInv* invariant is accessed to update the promise state to `Done`. This consumes both halves of the `promise_waiting γ` resource and yields a `promise_done γ`. We also take out the `signal_all_permit`.
+  - We use this permit along with `promise_done γ` to call `CQS.signal_all`. `promise_done γ` is persistent so it can be used to call all wakers.
 - Using the *ewp* for the wrapped `f` we can perform a `Fork` effect.
 - Since the promise will be fulfilled with a value satisfying `Φ` we have the `isPromise p Φ` that we must return.
 
 #### `Promise.await`
 
-The `register` function which is passed to the `Suspend` effect is complex enough that we spin out its specification.
 The implementation of `Promise.await` is very different from the original but still satisfies the same specification. *PromiseInv* and *IsPromise* are both needed to interact with the promise's state.
 
 ```coq
@@ -499,7 +525,7 @@ This fails if the _suspend operation_ (and thereby the handle) had already been 
 <!-- Which operations does Eio add? -->
 
 These operations enable a single execution context to wait until it is signalled by another.
-Eio's customized CQS supports an additional operation called the _resume-all operation_.
+Eio's customized CQS supports an additional operation called the _signal-all operation_.
 As the name implies, it is a _resume operation_ that applies to all currently saved handles.
 This operation was added so that **all** fibers waiting on a promise can be signalled when the promise is fulfilled.
 
@@ -518,23 +544,23 @@ In the case of Eio, the atomic variable holds the state of the promise, which ca
 - If the promise is already fulfilled with a value, a requesting fiber immediately returns that value.
 - If the promise is not yet fulfilled, a requesting fiber will perform a `Suspend` effect in order to stop execution and use the _suspend operation_ to wait until the promise is fulfilled.
 - Optionally, it can also use the _cancel operation_ afterwards.
-- The fiber that is associated with the promise will fulfill it with a value and then use the _resume-all operation_ to signal all waiting fibers that they can now retrieve the value.
+- The fiber that is associated with the promise will fulfill it with a value and then use the _signal-all operation_ to signal all waiting fibers that they can now retrieve the value.
 
 ![](./CQS_Outer_Atomic.png)
 
-It is important to note that since CQS is lock-free and fibers can run on different threads there can be a race between concurrent _suspend_, _cancel_ and _resume-all operations_.
+It is important to note that since CQS is lock-free and fibers can run on different threads there can be a race between concurrent _suspend_, _cancel_ and _signal-all operations_.
 Possible interleavings and the necessity of the _cancel operation_ are explained in section [ref, Promise Implementation].
 This example illustrates that a CQS instance always acts as a thread-safe store for cancellable callbacks.
-More precisely, it is a FIFO queue but a _resume-all operation_ dequeues all elements at once.
+More precisely, it is a FIFO queue but a _signal-all operation_ dequeues all elements at once.
 
 <!-- What are the types of the operations. -->
 
 That CQS is "just" a store for cancellable callbacks is also reflected in the rather barebones types of the operations as implemented in OCaml.
 A CQS instance can be `create`d and shared between different threads.
 New callbacks are inserted using the `suspend` function, yielding an optional `request` value.
-If `suspend` returns `None` the callback has already been invoked due to a concurrent `resume_all`.
+If `suspend` returns `None` the callback has already been invoked due to a concurrent `signal_all`.
 A `request` value can then be used to cancel the insertion, signifying that a fiber can only cancel its own callback.
-The `resume_all` function (logically) consumes the CQS, which will become more clear when we present the specifications in [ref, Verification of the `Broadcast` module]
+The `signal_all` function (logically) consumes the CQS, which will become more clear when we present the specifications in [ref, Verification of the `Broadcast` module]
 
 ```ocaml
 type t
@@ -543,7 +569,7 @@ type request
 val create : unit -> t
 val suspend : t -> (unit -> unit) -> request option
 val cancel : request -> bool
-val resume_all : t -> unit
+val signal_all : t -> unit
 ```
 
 ## Implementation and Logical Interface of CQS
@@ -559,13 +585,13 @@ The number of active cells `n` (i.e. the length of the queue) is tracked by the 
 In normal usage of CQS, the atomic variable of the outer synchronization construct would encode the length of the queue in its value and keep this resource in an associated invariant.
 Logically changing the length of the queue is done using _enqueue_ and _dequeue registration_ operations when opening this invariant.
 
-As we saw before, however, for promises the exact length of the queue is irrelevant because the _resume-all operation_ will always set the length to 0.
+As we saw before, however, for promises the exact length of the queue is irrelevant because the _signal-all operation_ will always set the length to 0.
 So in the adapted proof we keep the `cqs_state n` resource in the invariant of CQS itself.
 As a consequence we also move the _enqueue_ and _dequeue registration_ out of the public API because they are now done internally.
 
 ## Verification of the `Broadcast` Module
 
-In the following we describe the specifications we proved for the three operations `suspend`, `cancel` and `resume_all` of Eio's `Broadcast` module, in which points they differ from the specifications of the original CQS operations, and what changes we did to the internal logical state of CQS to carry out the proofs.
+In the following we describe the specifications we proved for the three operations `suspend`, `cancel` and `signal_all` of Eio's `Broadcast` module, in which points they differ from the specifications of the original CQS operations, and what changes we did to the internal logical state of CQS to carry out the proofs.
 
 <!-- Futures vs. Callbacks -->
 
@@ -585,11 +611,11 @@ However, the specifications of the underlying operations for manipulating the ce
 Note that the presented specifications are cleaned up for readability.
 
 ```
-Aside: Implementation of resume_all
-Eio implements resume_all by atomically increasing the *resume pointer* by some number n, instead of just 1 like in the original resume.
-Because of technical differences between the infinte array implementation in the CQS mechanization & the infinite array implementation of Eio did not yet verify Eio's custom resume_all function.
-Instead, I actually defined resume_all simply as a loop over a resume operation.
-Since resume_all is only called once I posit that this verification is still valid but I still want to verify Eio's resume_all and remove this aside.
+Aside: Implementation of signal_all
+Eio implements signal_all by atomically increasing the *resume pointer* by some number n, instead of just 1 like in the original resume.
+Because of technical differences between the infinte array implementation in the CQS mechanization & the infinite array implementation of Eio did not yet verify Eio's custom signal_all function.
+Instead, I actually defined signal_all simply as a loop over a resume operation.
+Since signal_all is only called once I posit that this verification is still valid but I still want to verify Eio's signal_all and remove this aside.
 ```
 
 The logical state of an individual cell is changed by the functions according to the following diagram.
@@ -601,13 +627,13 @@ The logical state of an individual cell is changed by the functions according to
 Creating a CQS instance requires `inv_heap_inv` which is an Iris propositions that we are in a garbage-collected setting.
 It creates an `is_cqs γ q` which is a persistent resource that shows the value `q` is a CQS queue, along with a collection of ghost names we summarize with `γ`.
 The resource `cqs_state n` mentioned above is now kept inside `is_cqs γ q`.
-It also returns the unique resource `resume_all_permit γ`, which is held by the enclosing promise and allows calling the `resume_all` function once.
+It also returns the unique resource `signal_all_permit γ`, which is held by the enclosing promise and allows calling the `signal_all` function once.
 
 ```coq
 Theorem create_spec:
   {{{ inv_heap_inv }}}
     newThreadQueue #()
-  {{{ γ q, RET q; is_cqs γ q ∗ resume_all_permit γ }}}.
+  {{{ γ q, RET q; is_cqs γ q ∗ signal_all_permit γ }}}.
 ```
 
 #### `suspend`
@@ -618,7 +644,7 @@ We instantiate `V'` with `promise_state_done γp` so that the callback transport
 `is_waker` is not persistent because the callback must be invoked only once and it might be accessed from a different thread.
 
 The `suspend` function will advance the _suspend pointer_ to allocate a new cell in the **EMPTY** logical state.
-If there is a concurrent call to `resume_all` which changed the cell to the **RESUMED** logical state before this function can `CAS` the callback into the cell, the callback is invoked immediately and `NONEV` is returned.
+If there is a concurrent call to `signal_all` which changed the cell to the **RESUMED** logical state before this function can `CAS` the callback into the cell, the callback is invoked immediately and `NONEV` is returned.
 In this case, the state of the cell will be set to **TAKEN**.
 Otherwise the callback is saved in the cell, which is advanced to the **CALLBACK(waiting)** logical state and a `is_suspend_result` resource is returned as the cancellation permit.
 
@@ -637,7 +663,7 @@ Theorem suspend_spec γ q k:
 The specification of the _cancel operation_ is a lot simplified compared to the original due to removed features.
 The `is_suspend_result` resource is used as a permission token and the `r` value is used to find the callback that should be cancelled.
 
-If the callback had already been invoked by a concurrent call to `resume_all` (i.e. the logical state is **CALLBACK(resumed)**) the function returns `false` and no resources are returned to the caller.
+If the callback had already been invoked by a concurrent call to `signal_all` (i.e. the logical state is **CALLBACK(resumed)**) the function returns `false` and no resources are returned to the caller.
 Otherwise, the permission to invoke the callback is returned and the cell is advanced to the **CALLBACK(cancelled)** logical state.
 
 ```coq
@@ -649,19 +675,19 @@ Theorem try_cancel_spec γ q γk r k:
                          else True }}}.
 ```
 
-#### `resume_all`
+#### `signal_all`
 
-The specification of the _resume-all operation_ is also a lot simplified compared to the specification of the original _resume operation_ because we removed multiple unused features.
-The `resume_all_permit` is a unique resource used to ensure the function can only be called once.
+The specification of the _signal-all operation_ is also a lot simplified compared to the specification of the original _resume operation_ because we removed multiple unused features.
+The `signal_all_permit` is a unique resource used to ensure the function can only be called once.
 The `V'` resource must be duplicable because it will be used to invoke multiple callbacks, which have `V'` as their precondition.
 It does not return any resources because its only effect is making an unknown number of fibers resume execution, which is not something we can easily formalize in Iris.
 
 ```coq
-Theorem resume_all_spec γ q:
+Theorem signal_all_spec γ q:
   {{{ is_thread_queue γ q ∗
       □ V' ∗
-      resume_all_permit γ }}}
-    resume_all q
+      signal_all_permit γ }}}
+    signal_all q
   {{{ RET #(); True }}}.
 ```
 

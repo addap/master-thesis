@@ -218,7 +218,7 @@ More help should be given to the reader to decipher the formal part.
 - [x] page 9, `promise_waiting γ`, in principle it should be possible to use a
 meta_token to associate `γ` with `p`. You could then write `promise_waiting p`
 and avoid ever mentioning `γ` to the reader/user.
-- [ ] page 9, "The promise_waiting γ resource exists as two halves". It might be
+- [x] page 9, "The promise_waiting γ resource exists as two halves". It might be
 worth clarifying what this means, i.e., what ghost updates or implications
 you have. I imagine this:
 
@@ -233,7 +233,7 @@ you have. I imagine this:
 - [x] page 9, in `let '(p, γ, ε) := args`, what is ε? It seems unused.
 - [x] page 9, in the definition of `ready`, `EWP` is used without a protocol.
 Is it Coop?
-- [ ] page 9, "PromiseInv still tracks"... "The Ready predicate now just
+- [x] page 9, "PromiseInv still tracks"... "The Ready predicate now just
 expresses..." You are still performing a comparison with Paulo's
 code and proof, which you have not shown. Better explain your proof
 first, and later discuss how it differs from Paulo's proof.
@@ -241,13 +241,13 @@ first, and later discuss how it differs from Paulo's proof.
 Oh, "it holds and an instance of CQS" should be "it holds an instance of CQS".
 Also, "an instance of CQS" sounds heavy. We should find a word for it, e.g.,
 "a channel", or "a signaling channel".
-- [ ] page 9, "so that wakers can be registered along with a resume_all_permit".
+- [x] page 9, "so that wakers can be registered along with a resume_all_permit".
 Not sure what "along ..." means. It sounds as if a resume_all_permit is
 being registered at the same time as a waker. I don't think this is what
 you mean. Also, `resume_all_permit` should be `signal_all_permit`.
 - [x] page 9, "The Ready predicate now just expresses that f is safe". There
 is no `f` in the definition of `ready`, it is `k`.
-- [ ] page 9, "Now Ready is neither recursive nor mutually recursive with isPromise
+- [x] page 9, "Now Ready is neither recursive nor mutually recursive with isPromise
 anymore". This is interesting, and (in the paragraph where you compare with
 Paulo's version) would deserve a little more explanation. You might wish to
 recall why Ready and promiseInv were mutually recursive in Paulo's version.
@@ -262,7 +262,7 @@ versus Scheduler), and clarify which entities are visible to the outside world
 (e.g., `isPromise` should be visible as an abstract predicate outside of the
 `Promise` module, but `promiseInv` should ideally be entirely invisible
 outside of this module)?
-- [ ] Specifically, I am a bit worried to see that `isRegister` mentions
+- [x] Specifically, I am a bit worried to see that `isRegister` mentions
 `promiseInv`. It seems to me that the Scheduler module should be entirely
 unaware of the concept of "promise". Therefore `isRegister` should not mention
 `promiseInv`.
@@ -290,7 +290,7 @@ and needs to be improved (I think). At first I did not even understand that
 this text is meant to be an explanation of the specification that follows.
 - [ ] page 10, "The proof proceeds as follows", same criticism. It is impossible
 to follow this proof without seeing the code.
-- [ ] page 10, "we spin out its specification" : what does this mean?
+- [x] page 10, "we spin out its specification" : what does this mean?
 - [x] page 10, "different to" -> "different from"
          "stil" -> "still"
 - [x] page 10, what is `make_register`? There is no function by this name in the
