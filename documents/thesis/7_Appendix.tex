@@ -1,0 +1,139 @@
+\section*{Appendix}
+\label{sec:appendix}
+
+
+\subsection*{A. Translation Table}
+\label{sec:apdx-translation}
+
+\begin{table}[ht]
+	\begin{tabular}{l|l|l}
+		Eio                          & Thesis                       & Mechanization          \\
+		\hline
+		\ocamlin{enqueue}            & \ocamlin{waker} function     & \ocamlin{waker}        \\
+		\ocamlin{f}                  & \ocamlin{register} function  & \ocamlin{register}     \\
+		\ocamlin{Fiber.fork_promise} & \ocamlin{Fiber.fork_promise} & \ocamlin{fork_promise} \\
+		\ocamlin{Promise.await}      & \ocamlin{Promise.await}      & \ocamlin{await}        \\
+		\ocamlin{Sched.run}          & \ocamlin{Scheduler.run}      & \ocamlin{run}          \\
+	\end{tabular}
+\end{table}
+
+\subsection*{B. Towards A Multi-Threaded Scheduler}
+\label{sec:apdx-mt}
+
+OCaml 5 added not only effect handlers but also the ability to use multiple threads of execution, which are called \textit{domains} (in the following we use the terms interchangeably).
+Each domain in OCaml 5 corresponds to one system-level thread and the usual rules of multi-threaded execution apply, i.e. domains are preemtively scheduled and can share memory.
+Eio defines an operation to make use of multi-threading by forking off a new thread and running a separate scheduler in it.
+So while each Eio scheduler is only responsible for fibers in a single thread, fibers can await and communicate with fibers running in other threads.
+
+In order for a fiber to be able to await fibers in another thread, the \ocamlin{wakers_queue} [note it will be in the Simple Scheduler section] from above is actually a thread-safe queue based on something called CQS, which we will discuss in detail in a later section.
+
+Heaplang supports reasoning about multi-threaded programs by implementing fork and join operations for threads and defining atomic steps in the operational semantics, which enables the use of Iris \textit{invariants}.
+In contrast, Hazel did not define any multi-threaded operational semantics but it contained most of the building blocks for using invariants.
+In the following we explain how we added a multi-threaded operational semantics and enabled the use of invariants.
+
+% \ocamlin{}`
+% Aside: Memory Model in OCaml 5
+% In the OCaml 5 memory model, \textit{atomic variables} are needed in order to access shared memory without introducing data races.
+% Instead of modelling atomic variables in Hazel, we continue to use normal references because the multi-threaded operational semantics by definition defines all memory operations to be sequentially consistent. This seems to be the standard approach and is done the same way in Heaplang.
+% \ocamlin{}`
+
+\subsubsection*{Adding Invariants to Hazel}
+
+Invariants in Iris are used to share resources between threads.
+They encapsulate a resource to be shared and can be opened for a single atomic step of execution.
+During this step the resource can be taken out of the invariant and used in the proof but at the end of the step the invariant must be restored.
+
+Hazel did already have the basic elements necessary to support using invariants.
+It defined a ghost cell to hold invariants and proved an invariant access lemma which allows opening an invariant if the current expression is atomic.
+In order to use invariant we only had to provide proofs for which evaluation steps are atomic.
+We provided proofs for all primitive evaluation steps.
+The proofs are the same for all steps so we just explain the one for \ocamlin{Load}.
+
+\begin{minted}{coq}
+Lemma ectx_language_atomic a e :
+head_atomic a e → sub_exprs_are_values e → Atomic a e.
+
+Instance load_atomic v : Atomic StronglyAtomic (Load (Val v)).
+Instance store_atomic v1 v2 : Atomic StronglyAtomic (Store (Val v1) (Val v2)).
+...
+\end{minted}
+
+An expression is atomic if it takes one step to a value, and if all subexpressions are already values.
+The first condition follows by definition of the step relation and the second follows by case analysis of the expression.
+
+Since performing an effect starts a chain of evaluation steps to capture the current continuation, it is not atomic.
+For the same reason an effect handler and invoking a continuation are not atomic except in degenerate cases.
+Therefore, invariants and effects do not interact in any interesting way.
+\todo{How we add support for the iInv tactic to use invariants more easily.}
+
+\subsubsection*{Adding Multi-Threading to Hazel}
+
+To allow reasoning in Hazel about multi-threaded programs we need a multi-threaded operational semantics as well as specifications for the new primitive operations \efork{}, \ocamlin{Cmpxcgh} and \ocamlin{FAA}.
+
+The language interface of Iris provides a multi-threaded operational semantics that is based on a thread-pool.
+The thread-pool is a list of expressions that represents threads running in parallel.
+At each step, one expressions is picked out of the pool at random and executed for one thread-local step.
+Each thread-local step additionally returns a list of forked-off threads, which are then added to the pool.
+This is only relevant for the \efork{} operation as all other operations naturally don't fork off threads.
+
+% (e, \sigma) ->_t (e', \sigma', es')
+% ------------------------------------------------------------
+% (es_1 ++ e ++ es_2, \sigma) ->_mt (es_1 ++ e' ++ es_2 + es', \sigma')
+
+Heaplang implements multi-threading like this and for Hazel we do the same thing.
+We adapt Hazel's thread-local operational semantics to include \efork{}, \ocamlin{Cmpxchg} and \ocamlin{FAA} operations and to track forked-off threads and get a multi-threaded operational semantics "for free" from Iris' language interface.
+
+Additionally, we need to prove specifications for these three operations.
+\ocamlin{Cmpxchg} and \ocamlin{FAA} are standard so we will not discuss them here.
+The only interesting design decision in the case of Hazel is how effects and \efork{} interact.
+This decision is guided by the fact that in OCaml 5 effects never cross thread-boundaries.
+An unhandled effect just terminates the current thread.
+As such we must impose the empty protocol on the argument of \efork{}.
+
+% EWP e <| \bot |> { \top }
+% -------------------------------------
+% EWP (Fork e) <| \Phi |> { x, x = () }
+
+Using these primitive operations we can then build the standard \ocamlin{CAS}, \ocamlin{Spawn}, and \ocamlin{Join} operations on top and prove their specifications.
+For \ocamlin{Spawn} \& \ocamlin{Join} we already need invariants as the point-to assertion for the done flag must be shared between the two threads.
+
+% Lemma spawn_spec (Q : val → iProp Σ) (f : val) :
+% EWP (f #()) <| \bot |> {{ Q }} -∗ EWP (spawn f) {{ v, ∃ (l: loc), ⌜ v = #l ⌝ ∗ join_handle l Q }}.
+
+% Lemma join_spec (Q : val → iProp Σ) l :
+% join_handle l Q -∗ EWP join #l {{ v, Q v }}.
+
+% Definition spawn_inv (γ : gname) (l : loc) (Q : val → iProp Σ) : iProp Σ :=
+% ∃ lv, l ↦ lv ∗ (⌜lv = NONEV⌝ ∨
+% ∃ w, ⌜lv = SOMEV w⌝ ∗ (Q w ∨ own γ (Excl ()))).
+
+% Definition join_handle (l : loc) (Q : val → iProp Σ) : iProp Σ :=
+% ∃ γ, own γ (Excl ()) ∗ inv N (spawn_inv γ l Q).
+
+Note that for \ocamlin{Spawn} we must also impose the empty protocol on \ocamlin{f} as this expression will be forked-off.
+
+This allows us to implement standard multi-threaded programs which also use effect handlers.
+For example, we can prove the specification of the function below that is based on an analogous function in Eio which forks a thread and runs a new scheduler inside it.
+Note that same as in Eio the function blocks until the thread has finished executing, so it should be called in separate fiber.
+
+% Definition spawn_scheduler : val :=
+% (λ: "f",
+% let: "new_scheduler" := (λ: <>, run "f") in
+% let: "c" := spawn "new_scheduler" in
+% join "c")%V.
+
+% Lemma spawn_scheduler_spec (Q : val -> iProp Σ) (f: val) :
+% promiseInv -∗ EWP (f #()) <| Coop |> {{ _, True }} -∗
+% EWP (spawn_scheduler f) {{ _, True }}.
+
+The scheduler \ocamlin{run} and therefore also the \ocamlin{spawn_scheduler} function don't have interesting return values, so this part of the specification is uninteresting.
+What is more interesting is that they encapsulate the possible effects the given function \ocamlin{f} performs.
+
+\subsection*{C. A Note on Cancellation}
+\label{sec:apdx-cancellation}
+
+\begin{itemize}
+	\item That we tried to model cancellation but the feature is too permissive to give it a specification.
+	\item There is still an interesting question of safety (fibers cannot be added to a cancelled Switch).
+	\item But including switches \& cancellation in our model would entail too much work so we leave it for future work.
+\end{itemize}

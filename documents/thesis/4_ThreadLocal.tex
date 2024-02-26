@@ -1,0 +1,40 @@
+\section{Extending the Scheduler with Thread-Local Variables (WIP)}
+\label{sec:thread-local-vars}
+
+\begin{itemize}
+    \item How thread-local variables can be used.
+    \item Explain the GetContext effect in Eio and how we model it in our scheduler.
+    \item How we adapt our logical state to include GetContext.
+    \item And explain that we need to parameterize the protocol to solve the issue of shared knowledge between the scheduler and fiber.
+\end{itemize}
+
+\begin{figure}[ht]
+    \begin{alignat*}{2}
+        Coop \delta \coloneqq\; &  & \quad Fork\; \#    & \; !\; e\; (e)\; \{\later \ewp{e}{Coop}{\top}\}. ?\; ()\; \{ \top \}        \\
+                                &  & Suspend\;    \#    & \; !\; reg\; P\; (reg)\; \{isRegister\; reg\; P\}.?\; y\; (y)\; \{ P\; y \} \\
+                                &  & GetContext\;    \# & \; !\; ()\; \{\top\}.?\; ctx\; (ctx)\; \{ isFiberContext\; \delta\; ctx \}
+    \end{alignat*}
+    \caption{Definition of \proto{} Protocol with \efork{} \& \esuspend{} Effects.}
+    \label{fig:coop-protocol-ext}
+\end{figure}
+
+% Definition FORK_pre (Coop : pEff) (δ : gname): iEff Σ :=
+%   >> (ℓstate : loc) e >> !(Fork' #ℓstate e) {{fiberState δ ℓstate ∗ ▷ (fiberContext δ -∗ EWP e #() <|Coop δ |> {{_, fiberContext δ}}) }};
+%   << (_: val) << ?(#())        {{ fiberState δ ℓstate }} @ OS.
+%     (* a.d. TODO I think I can delete promiseInv from SUSPEND *)
+
+% Definition SUSPEND (δ : gname) : iEff Σ :=
+%   >> (f: val) (P: val → iProp Σ) >> !(Suspend' f) {{
+%     (* We call suspender with the waker function and waker receives a value satisfying P. *)
+%       ( (∀ (waker: val),
+%         (∀ (v: val), P v -∗  (EWP (waker v) <| ⊥ |> {{_, True }}) ) -∗
+%         (▷ EWP (f waker) <| ⊥ |> {{_, True  }}) ) 
+%     ∗
+%       fiberContext δ)%I
+%   }};
+%   << y           << ?(y)         {{ P y ∗ fiberContext δ }} @ OS.
+
+% Definition GET_CONTEXT (δ: gname ): iEff Σ :=
+%   >> (_: val) >> !(GetContext') {{ True }};
+%   << (state : loc) << ?(#state) 
+%       {{isFiberState δ state}} @ OS.

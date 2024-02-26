@@ -1,0 +1,114 @@
+\documentclass{article}
+
+% General package includes
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{mathtools}
+\usepackage{fontspec}
+\usepackage{changepage}
+\usepackage{todonotes}
+\usepackage{mathpartir}
+\usepackage{mdframed}
+\usepackage{stmaryrd}
+
+% For bibliography
+\usepackage{biblatex}
+\addbibresource{thesis.bib}
+
+% Settings page size
+\usepackage{geometry}
+\geometry{a4paper, margin=3cm}
+
+% For including images
+\usepackage{graphicx}
+% https://www.overleaf.com/learn/latex/Inserting_Images#The_folder_path_to_images
+\graphicspath{{./images/}}
+
+% Font configuration
+\setmonofont{Source Code Pro}
+\newfontfamily\symfont{FreeMono}
+\newfontfamily\symfontextra{FreeSerif}
+
+% Define some unicode characters missing from Source Code Pro
+\usepackage{newunicodechar}
+\newunicodechar{∗}{{\symfont ∗}}
+\newunicodechar{⊥}{{\symfont ⊥}}
+\newunicodechar{⊤}{{\symfont ⊤}}
+\newunicodechar{▷}{{\symfont ▷}}
+\newunicodechar{↦}{{\symfont ↦}}
+\newunicodechar{∨}{{\symfont ∨}}
+\newunicodechar{∈}{{\symfont ∈}}
+\newunicodechar{γ}{{\symfont γ}}
+\newunicodechar{⊢}{{\symfont ⊢}}
+
+  
+% For including source code blocks
+\usepackage{minted}
+\usepackage{xpatch}
+% Remove latex indent for source code
+\setminted{autogobble,linenos,fontsize=\footnotesize}
+% Define inline shortcuts without syntax highlighting
+\newmintinline[ocamlin]{text}{fontsize=\footnotesize}
+\newmintinline[coqin]{text}{}
+% disable comments using italics
+% from https://tex.stackexchange.com/a/469702
+\xpatchcmd{\minted}{\VerbatimEnvironment}{\VerbatimEnvironment\let\itshape\relax}{}{}
+
+\BeforeBeginEnvironment{minted}{\begin{mdframed}}
+\AfterEndEnvironment{minted}{\end{mdframed}}
+
+% Iris/separation logic definitions
+\usepackage{iris}
+
+% Some custom shortcuts
+\newcommand{\ocf}{OCaml~5}
+\newcommand{\done}{{\symfontextra ✓}}
+\newcommand{\tbd}{{\symfontextra ⌛}}
+\newcommand{\efork}{\textit{Fork}}
+\newcommand{\esuspend}{\textit{Suspend}}
+\newcommand{\egetctx}{\textit{GetContext}}
+\newcommand{\proto}{\textit{Coop}}
+\newcommand{\isreg}{\textit{isRegister}}
+\NewDocumentCommand\ewp{O{} m O{} m m}%
+  {\textlog{ewp}^{#1}_{#3}\spac#2\spac\left\langle#4\right\rangle\spac{\left\{#5\right\}}}
+\newcommand{\ewpt}{\textlog{ewp}}
+\newcommand{\gsReady}{\textit{Ready}}
+\newcommand{\gsPInv}{\textit{PromiseInv}}
+\newcommand{\gsIsQueue}{\textit{isQueue}}
+\newcommand{\gspwait}{\ocamlin{promise_waiting γ}}
+\newcommand{\gspdone}{\ocamlin{promise_done γ}}
+\newcommand{\gssignal}{\ocamlin{signal_all_permit}}
+
+\title{Verifying an Effect-Based Cooperative Concurrency Scheduler in Iris}
+\author{
+    Adrian Dapprich \\
+    Department of Computer Science\\
+    Saarland University \\\\
+    Advisors: Prof. Derek Dreyer \& Prof. François Pottier}
+% \institute{Foundations of Programming Group, MPI-SWS, Saarland University}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\newpage
+
+% \begin{abstract}
+%     TODO abstract
+% \end{abstract}
+
+\tableofcontents
+\newpage
+
+\include{1_Introduction}
+\include{2_Scheduler}
+\include{3_CQS}
+\include{4_ThreadLocal}
+\include{5_Evaluation}
+\include{6_Conclusion}
+\include{7_Appendix}
+
+\printbibliography
+
+\end{document}

@@ -1,0 +1,440 @@
+\section{Verifying a Simplified Eio Scheduler}
+\label{sec:scheduler}
+
+\todo{mention that all code examples are an OCaml rendering of the verified Hazel code, based on but not equal to the Eio code}
+
+Cooperative concurrency schedulers are commonly treated in the literature on effect handlers~\cite{dolan2018concurrent,leijen2017structured,de2021separation} because they are a lucid example for the usefulness of handling delimited continuations in this way.
+Generally, the scheduler contains an effect handler and a fiber is just a normal function.
+The fiber can yield execution by performing an effect, jumping to the effect handler (i.e. the scheduler) and providing it with the rest of the fiber's computation in the form of a continuation.
+The scheduler has a collection of continuations and by invoking one of them it schedules the next fiber.
+This approach is also used in Eio.
+
+We can therefore use the simple cooperative concurrency scheduler case study from the dissertation of de Vilhena~\cite{de2022proof} as a starting point for our verification work.
+In the following section we discuss the implementation of the simplified Eio model in more detail.
+Using the implementation we give an intution about what specifications the functions should satisfy and what kind of logical state is needed to prove these specifications.
+On this intuition we will then build a formalization in section~\ref{sec:sched-spec}.
+% But some key differences in the implementation of Eio allow simplifications of the logical state that we use in our proofs. 
+
+\subsection{Implementation}
+\label{sec:sched-impl}
+
+Let us first get an idea of how different components of the core Eio fiber abstraction interact by looking at their types.
+\ocamlin{Scheduler.run}\footnote{The scheduler's result is optional because the main fiber might deadlock.} is the main entrypoint to Eio and it is provided a function which represents the first fiber to be executed.
+The scheduler runs the main fiber and all forked-off fibers in a single thread.
+However, a fiber can also spawn new schedulers in separate threads to run other fibers in parallel as explained in~\ref{sec:apdx-mt}
+\ocamlin{Fiber.fork_promise} is also provided a function which represents a fiber, but this one will be forked in the current scheduler so that it runs concurrenctly.
+It returns a promise holding the eventual return value of the new fiber.
+The promise is thread-safe so that also fibers running in different threads can use the \ocamlin{Promise.await} function to wait until the value is available.
+Common problems like deadlocks are not prevented in any way and are the responsibility of the programmer.
+% The function sends the fiber to the scheduler by performing an effect, so it must always be called from a fiber itself.
+
+
+\begin{minted}{ocaml}
+    Scheduler.run : (() -> 'a) -> 'a option
+    Fiber.fork_promise : (() -> 'a) -> 'a Promise.t
+    Promise.await : 'a Promise.t -> 'a
+\end{minted}
+
+We present code examples in a pseudo-\ocf{} syntax because the concrete syntax of effect handlers is verbose.
+Instead, we use an overloading of the match syntax that is common in the literature which includes cases for handled effects.
+
+\begin{minted}[fontsize=\footnotesize]{ocaml}
+    (* declares an effect E that carries a value of type int and has a bool return value. *)
+    effect E : int -> bool
+
+    (* Matches on the expression e and evaluates the second branch if it performs the effect E.
+     * The continuation k captures the rest of the computation of e.
+     * It acts as a deep handler, i.e. even if evaluating e performs E more than once the 
+     * second branch will be evaluated every time. *)
+    match e with
+    | v -> ...
+    | effect (E v) k -> ...
+\end{minted}
+
+\subsubsection{\ocamlin{Scheduler.run}}
+\label{sec:sched-impl-run}
+
+As mentioned above this is the main entry point to the Eio library.
+It receives the main fiber as an argument and sets up the scheduler environment.
+
+The \ocamlin{run_queue} contains closures that will immediately invoke the continuation of an effect.
+This represents ready fibers which can continue execution from the point where they performed an effect.
+
+The \ocamlin{next} function pops one fiber (i.e. function) from the \ocamlin{run_queue} and executes it.
+If no more ready fibers remain -- either because all fibers terminated or there is a deadlock -- the next function just returns and the scheduler exits.
+
+The inner \ocamlin{execute} function is called once on each fiber to execute it and handle any performed effects.
+The return value of a fiber given to the \ocamlin{execute} function is always just unit.
+\begin{itemize}
+  \item The main fiber is wrapped in a closure that saves its return value in a reference and returns unit so that \ocamlin{execute} does not need to differentiate between the main fiber and any other fiber.
+  \item All other fibers are forked using \ocamlin{Fiber.fork_promise}, which also wraps them in a closure that saves their return value in a promise and returns unit.
+\end{itemize}
+
+This emphasizes the fact that an Eio scheduler is only used for running fibers.
+The interaction between fibers waiting for values of other fibers is handled separately in promises.
+
+Handling a \efork{} effect is simple because it just carries a new fiber to be executed so the handler recursively calls the \ocamlin{execute} function to execute it immediately.
+The execution of the original fiber is paused due to performing an effect and its continuation \ocamlin{k} is placed in the run queue so that it can be scheduled again.
+This prioritizes the execution of a new fiber and is a design decision by Eio.
+It would be equally valid to place the \ocamlin{fiber} argument in the run queue.
+
+Handling a \esuspend{} effect may look complicated at first due to the higher-order \ocamlin{register} function.
+This effect is used by fibers to suspend execution until some condition is met.
+The fiber defines this condition by constructing a \ocamlin{register} function that in turn receives a wakeup capability by the scheduler in form of the \ocamlin{waker} function.
+The key point is that as long as the continuation \ocamlin{k} is not invoked, the fiber will not continue execution.
+So the \ocamlin{waker} function wakes up a fiber by placing its continuation into the run queue.
+The \ocamlin{register} function is called by the scheduler right after the fiber suspends execution and can then install \ocamlin{waker} as a callback at a suitable place (or even call it directly).
+For example, to implement promises, the \ocamlin{waker} function is installed in a datastructure that will call the function after the promise is fulfilled.
+
+Note that the \ocamlin{waker} function's argument \ocamlin{v} has a \textit{locally abstract type}, which is a typical pattern in effect handlers.
+From the point of view of the fiber, the polymorphic type of the \esuspend{} effect is instanitated depending on how the effect's return value is used.
+But the scheduler does not get any information about this so the argument type of the continuation \ocamlin{k} and the \ocamlin{waker} function is still abstract.
+
+Waking up should be possible across thread boundaries, which is why the run queue in Eio needs to be thread-safe.
+For the verification we assume the specification of a suitable \ocamlin{Queue} module that supports thread-safe push and pop operations.
+
+% <!-- In our simplified model of Eio, the `Suspend` effect is only performed in the implementation of `Promise.await` which registers the `waker` callback to be called when the promise is fulfilled. -->
+
+\begin{minted}{ocaml}
+effect Fork : (() -> 'a) -> ()
+type 'a waker : 'a -> ()
+effect Suspend : ('a waker -> ()) -> 'a
+
+let run (main : () -> 'a) : option 'a =
+  let run_queue = Queue.create () in
+  let next () =
+    match Queue.pop run_queue with
+    | None -> ()
+    | Some cont -> cont ()
+  let rec execute fiber =
+    match fiber () with
+    | () -> next ()
+    | effect (Fork fiber) k ->
+      Queue.push run_queue (fun () -> invoke k ());
+      execute fiber
+    | effect (Suspend register) k =>
+      let waker = fun v -> Queue.push run_queue (fun () -> invoke k v) in
+      register waker;
+      next ()
+  in
+  let result = ref None in
+  execute (fun () -> result := main ());
+  !result
+\end{minted}
+
+\subsubsection{\ocamlin{Fiber.fork_promise}}
+\label{sec:sched-impl-fork}
+
+This is the basic way to create a new fiber in Eio and the only one we model in our case study.
+It will create a promise and spawn the provided function as a new fiber using the \efork{} effect.
+When \ocamlin{f} is reduced to a value \ocamlin{result}, it will fulfill the promise with that value and signal all fibers waiting for that result to wake up.
+The major difference to the implementation of de Vilhena is that promises in Eio are entirely handled by the fiber, and not in the effect handler code of the scheduler.
+This achieves a better separation of concerns and simplifies the logical state needed for the proof.
+
+\begin{minted}{ocaml}
+let fork_promise (f : () -> 'a) : 'a Promise.t =
+  let p = Promise.create () in
+  let fiber = fun () ->
+    let result = f () in
+    match Atomic.get p with
+    | Done _ -> error "impossible"
+    | Waiting cqs ->
+        Atomic.set p (Done result);
+        CQS.signal_all cqs 
+  in
+  perform (Fork fiber) 
+  p
+\end{minted}
+
+\subsubsection{\ocamlin{Promise.await}}
+\label{sec:sched-impl-await}
+
+This is the most complicated looking function in our case study which is partly due to the \esuspend{} effect and also due to the use of CQS functions.
+The purpose of \ocamlin{Promise.await p} is to suspend execution of the calling fiber until \ocamlin{p} is fulfilled and then return its value.
+The "suspend execution" part is handled by performing the \esuspend{} effect.
+Then, the "until \ocamlin{p} is fulfilled" part is implemented by using CQS~\cite{koval2023cqs} functions as described in the following.
+
+CQS is an implementation of the observer pattern and functionally similar to condition variables\footnote{\url{https://en.cppreference.com/w/cpp/thread/condition_variable}} in languages like C++ (as defined by the POSIX standard), allowing fibers to register callbacks that will be called when a condition is signalled.
+The difference is that traditional condition variables are always used together with a mutex to enable synchronization between different threads, while CQS is a lock-free datastructure implementing a similar API.
+
+Below we show the public API of the CQS module. The implementation and specification will be exapanded upon in section~\ref{sec:cqs}.
+\begin{minted}{ocaml}
+type callback = () -> ()
+type register_handle
+
+val create : () -> t
+val register : t -> callback -> register_handle option
+val try_cancel : register_handle -> bool
+val signal_all : t -> ()
+\end{minted}
+
+In the \ocamlin{Promise.await} function if the promise is not fulfilled initially the fiber should wait until that is the case so it registers the \ocamlin{waker} function with CQS by using \ocamlin{CQS.register}.
+In turn, the \ocamlin{Fiber.fork_promise} function is reponsible for fulfilling the promise and it uses \ocamlin{CQS.signal_all} to call all \ocamlin{waker} functions registered with CQS.
+Recall that calling a \ocamlin{waker} function will enqueue the fiber that performed the \esuspend{} effect in the scheduler's run queue so that it can continue execution.
+In the default case the following simplified chain of events is established:
+\begin{enumerate}
+  \item The fiber suspends execution at the point of evaluating \ocamlin{perform (Suspend register)}.
+  \item The \ocamlin{waker} function is registed with CQS.
+  \item The promise is fulfilled.
+  \item The \ocamlin{waker} function is called.
+  \item The fiber resumes execution at the point of evaluating \ocamlin{perform (Suspend register)}.
+\end{enumerate}
+Therefore, after the \esuspend{} effect returns we know the state of the promise is \ocamlin{Done} and the final value can be returned.
+
+But because CQS is lock-free and promises can be shared between different threads there are a number of possible interleavings that the \ocamlin{register} function must take care of aswell.
+The definition of the register function is interesting enough that we split it out into \ocamlin{make_register} and give a separate specification, even though it is not part of the public API of the module.
+First, there could be a race on the state of the promise itself.
+Right after the state is read in line 19 another thread might change the state to \ocamlin{Done} and go on to call \ocamlin{CQS.signal_all}.
+If that happes there is another race between the \ocamlin{CQS.register} in line 7 and the \ocamlin{CQS.signal_all} in the other thread.
+If \ocamlin{CQS.register} notices that there is a racing \ocamlin{CQS.signal_all} it will directly call the \ocamlin{waker}\footnote{TODO mention that this is just an optimization.}.
+Otherwise, the \ocamlin{waker} is registered but in fact the \ocamlin{CQS.signal_all} might have already finished before \ocamlin{CQS.register} even started.
+In this case the \ocamlin{waker} would be "lost" in the CQS, never to be called.
+To avoid this, \ocamlin{register} must check the state of the promise again in line 12, and if it is fulfilled try to cancel the \ocamlin{waker} registration.
+The cancel will fail if the \ocamlin{waker} function was already called.
+If it succeeds the \ocamlin{register} function has the responsibility of calling \ocamlin{waker} itself.
+
+\begin{minted}{ocaml}
+type 'a t = Done of 'a | Waiting of CQS.t
+
+let create () : 'a t = 
+  let cqs = CQS.create () in
+  Atomic.create (Waiting cqs)
+
+let make_register (p: 'a t) (cqs: CQS.t) : (() waker -> ()) = 
+  fun waker ->
+    let register_result = CQS.register cqs waker in
+    match register_result with
+    | None -> ()
+    | Some register_handle ->
+      match Atomic.get p with
+      | Done result ->  
+        if CQS.try_cancel register_handle
+        then waker ()
+        else ()
+      | Waiting _ -> ()
+
+let await (p: 'a t) : 'a = 
+  match Atomic.get p with
+  | Done result -> result
+  | Waiting cqs ->
+    let register = make_register p cqs
+    perform (Suspend register);
+    match Atomic.get p with
+    | Done result -> result 
+    | Waiting _ -> error "impossible"
+\end{minted}
+
+The only \textbf{safety} concerns in the above implementation are \ocamlin{Fiber.fork_promise} expecting the promise to be unfulfilled and \ocamlin{Promise.await} expecting the promise to be fulfilled in the last match.
+In both cases, the program would crash (signified by the \ocamlin{error} expression) if the expectation is violated.
+So to establish the safety of Eio we wish to prove that the expectations always hold and the two \ocamlin{error} expressions are never reached.
+In the next section we show how the first situation is addressed by defining a unique resource that is needed to fulfill a promise, and the latter is a consequence of the protocol of the \esuspend{} effect.
+
+\subsection{Specification}
+\label{sec:sched-spec}
+
+To prove specifications for an effectful program in Hazel we have to define not only ghost state constructs to track program state as usual but also protocols which describe the behavior of the program's effects.
+To use them in our Eio case study we adapt both the ghost state and the effect protocols from the cooperative concurrency scheduler case study from chapter 4 of de Vilhena's dissertation~\cite{de2022proof}
+
+\subsubsection{Protocols}
+\label{sec:sched-spec-protocols}
+
+First we look at the protocols for the \efork{} and \esuspend{} effect.
+In Hazels' protocol syntax they are formalized in the following way, where the precondition of \esuspend{} is given the name \isreg{} to describe the behavior of the fiber-defined \ocamlin{register} function.
+
+\begin{figure}[ht]
+  \begin{alignat*}{2}
+    isRegister\; reg\; P & \Coloneqq   & \forall waker.\; ( & \forall v.\;  P\; v \wand{} \ewp{waker\; v}{\bot}{\top}) \wand{} \later \ewp{reg\; waker}{\bot}{\top} \\
+    \proto{}             & \Coloneqq\; & \quad Fork\; \#    & \; !\; e\; (e)\; \{\later \ewp{e}{\proto{}}{\top}\}. ?\; ()\; \{ \top \}                              \\
+                         &             & Suspend\;    \#    & \; !\; reg\; P\; (reg)\; \{isRegister\; reg\; P\}.?\; y\; (y)\; \{ P\; y \}
+  \end{alignat*}
+  \caption{Definition of \proto{} Protocol with \efork{} \& \esuspend{} Effects.}
+  \label{fig:coop-protocol-simpl}
+\end{figure}
+
+The \efork{} effect stays almost the same compared to de Vilhena's case study.
+It accepts an arbitraty expression \ocamlin{e} which represents the computation that a new fiber executes.
+To perform the effect one must prove that \ocamlin{e} acts as a function that can be called on \ocamlin{()} and obeys the \ocamlin{Coop} protocol itself.
+This means spawned off fibers can again perform \efork{} and \esuspend{} effects.
+The \(\ewp{e}{\proto{}}{\top}\) is guarded behind a later modality because of the recursive occurrence of the \proto{} protocol.
+Since promise handling is done entirely in the fibers and the effect just hands off the fiber to the scheduler, the protocol is simplified in two ways compared to the original.
+First, the scheduler does not interact with the return value of the fiber so the \ewpt{} has a trivial postcondition.
+Second, because the scheduler does not create the promise, the protocol itself also has a trivial postcondition.
+
+The protocol for \esuspend{} is entirely new.
+From the type of the \esuspend{} effect we already know that some value can be transmitted from the party that calls the \ocamlin{waker} function to the fiber that performed the effect.
+The protocol now expresses the same idea on the level of resources.
+To suspend, a fiber must supply a function \ocamlin{register} that satisfies the \isreg{} predicate.
+This predicate says that \ocamlin{register} must be callable on a \ocamlin{waker} function and in turn gets to assume that the \ocamlin{waker} function is callable on an arbitrary value \ocamlin{v}, which satisfies the predicate \ocamlin{P}.
+Both must not perform effects.
+The predicate \ocamlin{P} appears twice in the definition of the protocol, once in the precondition of \ocamlin{waker} and then in the postcondition of the whole protocol.
+It signifies the resources that are transmitted from the party that calls the \ocamlin{waker} function to the fiber that performed the effect.
+
+By appropriately instantiating \ocamlin{P}, we can enforce that some condition holds before the fiber can be signalled to continue execution and we get to assume the resources \ocamlin{P v} for the rest of the execution.
+For example, in the \ocamlin{Promise.await} specification below, we ensure that the promise must be fulfilled before the effect returns by instantiating \ocamlin{P} with a resource that says the promise is fulfilled.
+
+\subsubsection{Logical State}
+\label{sec:sched-spec-state}
+
+The most basic ghost state we track is wether a promise is fulfilled or not.
+If a promise \ocamlin{p} is unfulfilled, two copies of \gspwait{} exist\todo{maybe use meta\_tokens to hide gamma}, one owned by the fiber and one by the invariant that tracks all promises.
+When fulfilling the promise, both copies can be combined and converted to a persistent \gspdone{} resource.
+The \gspwait{} and \gspdone{} resources cannot exist at the same time.
+This design allows us to deduce the current state of the promise depending on if we own a \gspwait{} or a \gspdone{}.
+This is formalized in the rules in figure~\ref{fig:promise-state-rules}.
+
+\begin{figure}
+  \caption{Logical Rules for the \textit{Promise State} Resource}.
+  \label{fig:promise-state-rules}
+\end{figure}
+
+The resource \gsPInv{} tracks the state of all existing promises by using an authoritative map which contains for each promise: a location \ocamlin{p} holding its current value, a ghost name \ocamlin{γ} that is used for the \gspwait{} and \gspdone{} resources, and a predicate \(Φ\) that describes the value the promise will eventually hold.
+Additionally, for each promise in the map we own some resources as part of \gsPInv{} that depend on the current state of the promise.
+
+As long as the promise is not fulfilled we own a broadcast, one copy of \gspwait{}, and a \gssignal{}.
+The \gssignal{} is used to call the \ocamlin{CQS.signal_all} function which must only be called once.
+When the promise has been fulfilled, we instead own a \gspdone{} and the knowledge that the final value satisfies the given postcondition \(Φ\).
+
+The \gsReady{} predicate expresses that \textit{f} is safe to be executed and is used as the invariant for a scheduler's run queue, i.e. it should hold for all fibers in the run queue that they can be executed.
+
+
+\begin{figure}[ht]
+  \begin{align*}
+    \gsPInv{}  \Coloneqq\;     & \exists M.\; isPromiseMap\; M \ast                                                                                                                        \\
+                               & \quad \forall (p, \gamma) \mapsto \Phi \in M.\;                                                                                                           \\
+                               & \qquad (\exists v.\; p \mapsto Done\; v \ast \texttt{promise\_done}\; \gamma \ast \always \Phi\; v)                                                       \\
+                               & \quad \vee (\exists cqs.\; p \mapsto Waiting\; cqs \ast \texttt{is\_cqs}\; cqs \ast \texttt{promise\_waiting}\; \gamma \ast \texttt{signal\_all\_permit}) \\
+    \gsReady{}\; f \Coloneqq\; & \ewp{f\; ()}{\bot}{\top}
+  \end{align*}
+  \caption{Logical State Definitions for the Verification of Scheduler \& Promise Modules}
+  \label{fig:logical-state-simpl}
+\end{figure}
+
+\begin{figure}[ht]
+  \begin{align*}
+    TODO\; combine promise waiting, contradiction for promise waiting and done, lookup promise, ...
+  \end{align*}
+  \caption{Derived Rules about the Logical State}
+\end{figure}
+
+\subsubsection{Comparison of Logical State}
+\label{sec:sched-spec-state-comparison}
+
+\todo{insert logical state from the dissertation}
+
+In de Vilhena's case study, the \gsReady{} predicate fulfills two roles.
+\begin{enumerate}
+  \item It expresses that all continuations in the scheduler's run-queue are safe to execute.
+  \item It expresses that all continuations in a promise's waiting-queue are safe to execute.
+\end{enumerate}
+
+It was necessary to have both \gsPInv{} and \gsIsQueue{} as preconditions because they describe global state so they had to be passed around.
+
+In our case study \gsPInv{} was dropped from the definition of Ready because it is now put into an Iris shareable invariant, so we don't need to pass it around explicitly.
+Similarly, the isQueue precondition was dropped from the definition of Ready because in Eio the run queue must be thread-safe, so our new isQueue is persistent and we don't need to pass it around explicitly.
+Therefore, our \gsReady{} is neither recursive nor mutually recursive with \gsPInv{} anymore, which simplifies its usage in Iris.
+We note that the (mutual) recursion was only necessary because \gsPInv{} was used to track global state but was not put into an Iris shareable invariant, so it had to be passed around explicitly in many places.
+
+We also split up the two uses of \gsReady{} and only use it under this name for the first role.
+In the case of a scheduler's run-queue the \ocamlin{Φ v} degenerates just to \ocamlin{v = ()}, so we can drop both from the definition and use \ocamlin{()} directly.
+This is why in our definition of \gsReady{} it is only an \ewpt{} without preconditions.
+
+For the second use case of describing the continuations in a promise's waiting-queue we now have another specialized version of \gsReady{}.
+A broadcast has the following invariant for all stored callbacks: \ocamlin{P v -∗ ewp (callback ()) <| ⊥ |> {{ ⊤ }}}.
+This is just \gsReady{} where \ocamlin{P v} replaces \ocamlin{Φ v}, which is the same \ocamlin{P} as in the definition of the \esuspend{} effect since the callbacks in a broadcast are \ocamlin{waker} functions.
+
+\subsubsection{\ocamlin{Scheduler.run}}
+\label{sec:sched-spec-run}
+
+The interesting part about the scheduler specification is that it proves \textbf{effect safety} of the runtime, i.e. no matter what a fiber does it will not crash the scheduler due to an unhandled effect.
+However, the specification only talks about effect safety and not about handling fibers correctly in any other way, e.g. regarding fairness of scheduling or just not dropping fibers.
+For example, a trivial function which ignores the \ocamlin{main} argument and immediately returns satisfies the same specificaiton.
+For a scheduler it would be desirable to prove these properties, too, but since they are liveness properties it is hard to do in Iris and not a focus of this thesis.
+
+\begin{minted}{coq}
+Lemma ewp_run (main : val) :
+  EWP main #() <| Coop |> {{ ⊤ }} -∗
+    EWP run main <| ⊥ |> {{ ⊤ }}.
+\end{minted}
+
+The proof proceeds as follows:
+- Creating the run queue also returns a persistent resource which is used for all later calls to the \ocamlin{next} function.
+- For the inner \efork{} function we use Löb induction since it is called recursively.
+- Since it is a deep effect handler we need to satisfy the \ocamlin{deep-handler} predicate for the \ocamlin{Coop} protocol.
+- The \efork{} case just recurses in the \efork{} function so we use the induction hypothesis.
+- For the \esuspend{} case we define the \ocamlin{waker} function and prove \ocamlin{P v -∗ EWP waker () <| ⊥ |> {{ ⊤ }}} in order to call the \ocamlin{register} function on it.
+This holds by construction of the \ocamlin{waker} function because \ocamlin{P v} is a precondition for invoking the fiber's continuation \ocamlin{k}.
+
+\subsubsection{\ocamlin{Fiber.fork_promise}}
+\label{sec:sched-spec-fork}
+
+For this specification, the \gsPInv{} argument is needed to interact with promises and the \ewpt{} proves that the new fiber is safe to execute and obeys the \ocamlin{Coop} protocol.
+In return, the caller gets a promise that will eventually hold a value satisfying the predicate \(Φ\).
+
+\begin{minted}{coq}
+Lemma ewp_fork_promise (f: val) Φ :
+  promiseInv ∗ EWP f #() <| Coop |> {{v, □ Φ v}}
+⊢ 
+  EWP (fork_promise f) <| Coop |> {{ y, 
+    ∃ (p: loc), ⌜ y = #p ⌝ ∗ isPromise p Φ}}.
+\end{minted}
+
+The proof proceeds as follows:
+- First, a new promise is created, which updates the \gsPInv{} invariant and yields one half of the \gspwait{} resource for that new promise.
+- We define the actual fiber and prove its \ewpt{}.
+- Evaluating \ocamlin{f} yields a value satisfying \(Φ\) as given by the \ewpt{}.
+- Because we own \gspwait{} the second branch of the match can be ruled out. Now the \gsPInv{} invariant is accessed to update the promise state to \ocamlin{Done}. This consumes both halves of the \gspwait{} resource and yields a \gspdone{}. We also take out the \gssignal{}.
+- We use this permit along with \gspdone{} to call \ocamlin{CQS.signal_all}. \gspdone{} is persistent so it can be used to call all wakers.
+- Using the \ewpt{} for the wrapped \ocamlin{f} we can perform a \efork{} effect.
+- Since the promise will be fulfilled with a value satisfying \(Φ\) we have the \ocamlin{isPromise p Φ} that we must return.
+
+\subsubsection{\ocamlin{Promise.await}}
+\label{sec:sched-spec-await}
+
+The implementation of \ocamlin{Promise.await} is very different from the original but still satisfies the same specification. \gsPInv{} and \textit{IsPromise} are both needed to interact with the promise's state.
+
+\begin{minted}{coq}
+Lemma ewp_await_make_register (p: loc) (cqs: val) Φ:
+  isPromise p Φ ∗ is_cqs cqs 
+⊢
+  EWP (make_register #p cqs) <| ⊥ |> {{register, 
+    ∀ (waker: val), (promise_done γ -∗ EWP waker #() <| ⊥ |> {{ ⊤ }}) -∗
+    promiseInv -∗ 
+      ▷ EWP register waker <| ⊥ |> {{ ⊤ }} }}.
+
+Lemma ewp_await (p: loc) Φ :
+  promiseInv ∗ isPromise p Φ ⊢ 
+    EWP await #p <| Coop |> {{v, □ Φ v}}.
+\end{minted}
+
+The proof of the \ocamlin{Promise.await} specification proceeds as follows:
+\begin{itemize}
+  \item For the first match on the promise state we don't have any resources to constrain the possible results.
+  \item If the promise is already fulfilled we can take the \ocamlin{Φ v} and return that.
+  \item If it is not fulfilled, then we get access to a CQS instance and can make the \ocamlin{register} function using the \textit{IsPromise} and \ocamlin{is_cqs} resources.
+  \item Using the \ewpt{} for the \ocamlin{register} function we can invoke the \esuspend{} effect and set \ocamlin{P _ := promise_done γ}.
+  \item As a result we now have the \gspdone{} resource and when we match on the promise again, the unfulfilled case can be ruled out.
+  \item So now we can take the \ocamlin{Φ v} and return it.
+\end{itemize}
+
+The proof of the \ocamlin{make_register} specification follows directly from the specifications of the CQS functions, which are explained in further detail in the next chapter.
+
+% <!-- We recall that when awaiting a promise, a fiber first checks if the promise is already fulfilled by atomically loading its state.
+% If it is not fulfilled, the fiber then performs a \esuspend{} effect and starts a suspend operation, providing the \ocamlin{waker} of the \esuspend{} effect as the handle.
+% The suspend operation might fail because the promise could have been fulfilled concurrently.
+% Since the promise could have been fulfilled in the meantime, the fiber must then again atomically load the state of the promise.
+
+% - If it has not been fulfilled the fiber does not need to do anything because it will eventually be woken up by a resume all operation invoking the \ocamlin{waker}.
+% - But if the promise has been fulfilled the fiber must attempt to cancel the suspend operation.
+%   That is because in this situation the suspend operation races with a concurrent resume all operation, which might already have invoked all \ocamlin{waker}s \textbf{before} this fiber was able to save its \ocamlin{waker} in the broadcast.
+%   In this case the \ocamlin{waker} would be lost and the fiber never resumes execution.
+%   If the \ocamlin{waker} has not been invoked yet (either because resume all has not arrived at this waker or it arrived before the waker was saved in the broadcast) the cancellation attempt succeeds and the fiber invokes its own \ocamlin{waker}.
+%   Otherwise we know that the \ocamlin{waker} has already been invoked, so the fiber does not need to do anything.
+
+% This complicated interplay between two fibers is due to CQS being lock-free but it ensures that fibers only resume execution when the promise is fulfilled and that all \ocamlin{waker}s will be eventually called. -->
+
+% <!-- \ocamlin{}`
+% Aside: All wakers are eventually called.
+% This statement is purely based on a reading of the code. It might be possible to formally prove this with an approach
+% like Iron~\cite{bizjak2019iron} or Transfinite Iris~\cite{spies2021transfinite} because it is a liveness property.
+% But for the Iron approach it is unclear to us how to formulate the linearity property.
+% \ocamlin{}` -->
