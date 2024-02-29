@@ -12,6 +12,21 @@
 \usepackage{mdframed}
 \usepackage{stmaryrd}
 
+% Moving figure captions closer to the contents.
+\usepackage[skip=3pt]{caption}
+
+% Styling links
+\usepackage{hyperref}
+\hypersetup{
+    %colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    %filecolor=magenta,      
+    urlcolor=blue,
+    % frenchlinks=true
+    }
+\urlstyle{same}
+
 % For bibliography
 \usepackage{biblatex}
 \addbibresource{thesis.bib}
@@ -26,6 +41,16 @@
 \graphicspath{{./images/}}
 
 % Font configuration
+\usepackage[
+    math-style=ISO,
+    bold-style=ISO,
+    partial=upright,
+    nabla=upright
+]{unicode-math}
+
+\setmainfont{Libertinus Serif}
+\setsansfont{Libertinus Sans}
+\setmathfont{Libertinus Math}
 \setmonofont{Source Code Pro}
 \newfontfamily\symfont{FreeMono}
 \newfontfamily\symfontextra{FreeSerif}
@@ -40,6 +65,7 @@
 \newunicodechar{∨}{{\symfont ∨}}
 \newunicodechar{∈}{{\symfont ∈}}
 \newunicodechar{γ}{{\symfont γ}}
+\newunicodechar{Φ}{{\symfont Φ}}
 \newunicodechar{⊢}{{\symfont ⊢}}
 
   
@@ -62,6 +88,8 @@
 \usepackage{iris}
 
 % Some custom shortcuts
+\newcommand{\hazel}{Hazel}
+\newcommand{\CC}{C\nolinebreak\hspace{-.05em}\raisebox{.4ex}{\tiny\bf +}\nolinebreak\hspace{-.10em}\raisebox{.4ex}{\tiny\bf +}}
 \newcommand{\ocf}{OCaml~5}
 \newcommand{\done}{{\symfontextra ✓}}
 \newcommand{\tbd}{{\symfontextra ⌛}}
@@ -69,16 +97,19 @@
 \newcommand{\esuspend}{\textit{Suspend}}
 \newcommand{\egetctx}{\textit{GetContext}}
 \newcommand{\proto}{\textit{Coop}}
+\newcommand{\protod}{\textit{Coop}~\ensuremath{\delta}}
 \newcommand{\isreg}{\textit{isRegister}}
 \NewDocumentCommand\ewp{O{} m O{} m m}%
-  {\textlog{ewp}^{#1}_{#3}\spac#2\spac\left\langle#4\right\rangle\spac{\left\{#5\right\}}}
-\newcommand{\ewpt}{\textlog{ewp}}
+  {\mathit{ewp}^{#1}_{#3}\spac\left(#2\right)\spac\left\langle#4\right\rangle\spac{\left\{#5\right\}}}
+\newcommand{\ewpt}{\textit{ewp}}
 \newcommand{\gsReady}{\textit{Ready}}
 \newcommand{\gsPInv}{\textit{PromiseInv}}
+\newcommand{\gsIsPr}{\textit{isPromise}}
 \newcommand{\gsIsQueue}{\textit{isQueue}}
-\newcommand{\gspwait}{\ocamlin{promise_waiting γ}}
-\newcommand{\gspdone}{\ocamlin{promise_done γ}}
-\newcommand{\gssignal}{\ocamlin{signal_all_permit}}
+\newcommand{\gsIsCQS}{\textit{isCQS}}
+\newcommand{\gspwait}{\textit{promiseWaiting}~\ensuremath{\gamma}}
+\newcommand{\gspdone}{\textit{promiseDone}~\ensuremath{\gamma}}
+\newcommand{\gssignal}{\textit{signalAllPermit}}
 
 \title{Verifying an Effect-Based Cooperative Concurrency Scheduler in Iris}
 \author{
@@ -91,12 +122,9 @@
 
 \begin{document}
 
+% TODO better title page
 \maketitle
 \newpage
-
-% \begin{abstract}
-%     TODO abstract
-% \end{abstract}
 
 \tableofcontents
 \newpage

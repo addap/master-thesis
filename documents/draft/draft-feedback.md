@@ -39,7 +39,7 @@
   - [x] remove mention of promiseInv from Suspend case of coop protocol
 - [ ] Separation between modules of OCaml code should be clearer
 - [ ] Clarify which parts of Iris definitions are part of a module's API and which are internal
-- [ ] In module hierarchy, explain what the arrows mean
+- [x] In module hierarchy, explain what the arrows mean
 - [x] page 5, "we discuss the implementation of the simplified Eio model in more
 detail to give an intution about what their specification and the logical
 state to prove them": not clear what "their" and "them" refers to.
@@ -269,12 +269,12 @@ unaware of the concept of "promise". Therefore `isRegister` should not mention
 Maybe `promiseInv` can be packaged inside an Iris invariant
 so it becomes persistent and can remain hidden inside the
 Promise module?
-- [ ] page 9, "However, the specification only talks about [...]" I suggest first
+- [x] page 9, "However, the specification only talks about [...]" I suggest first
 explaining the specification of `run` (help the reader decipher it; explain
 that it guarantees safety, no unhandled effects), and only later discuss its
 limitations (it does not guarantee fairness or deadlock freedom).
 - [x] page 10, "fairess"
-- [ ] page 10, "hard to do in Iris" : probably true, but it may be worth trying to
+- [x] page 10, "hard to do in Iris" : probably true, but it may be worth trying to
 explain (at the end of the thesis) why reasoning about fairness or liveness is
 difficult (difficult in general and/or difficult specifically in Iris).
 - [ ] page 10, "The proof proceeds as follows". This proof cannot be understood.

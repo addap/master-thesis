@@ -1,0 +1,6 @@
+{"rule":"LC_AFTER_PERIOD","sentence":"^\\QIn the Promise.await function if the promise is not fulfilled initially the fiber should wait until that is the case so it performs a effect.\\E$"}
+{"rule":"EN_A_VS_AN","sentence":"^\\QFrom the point of view of the fiber, the polymorphic type 'a of the \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q effect is instantiated depending on how the effect's return value is used.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\Q[PS-Contra] \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q Logical Rules for the PromiseState Resource.\\E$"}
+{"rule":"COMMA_PARENTHESIS_WHITESPACE","sentence":"^\\Q[PS-Create] .\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\Q[PS-Contra] \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q Rules for the PromiseState Resource.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QMaybe use metatokens to hide gamma\\E$"}
