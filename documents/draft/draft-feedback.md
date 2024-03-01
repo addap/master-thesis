@@ -277,18 +277,18 @@ limitations (it does not guarantee fairness or deadlock freedom).
 - [x] page 10, "hard to do in Iris" : probably true, but it may be worth trying to
 explain (at the end of the thesis) why reasoning about fairness or liveness is
 difficult (difficult in general and/or difficult specifically in Iris).
-- [ ] page 10, "The proof proceeds as follows". This proof cannot be understood.
+- [x] page 10, "The proof proceeds as follows". This proof cannot be understood.
 I think you will want to either remove the proof entirely or explain it in
 greater detail: ideally, show the code of `run` again, annotated with the
 iris assertion that holds at each point in the code, and comments explaining
 why this assertion holds.
-- [ ] page 10, "For this specification, the PromiseInv argument is needed to
+- [x] page 10, "For this specification, the PromiseInv argument is needed to
 interact with promises and the ewp proves that the new fiber is safe to
 execute and obeys the Coop protocol. In return, the caller gets a promise that
 will eventually hold a value satisfying the predicate Φ." This text is unclear
 and needs to be improved (I think). At first I did not even understand that
 this text is meant to be an explanation of the specification that follows.
-- [ ] page 10, "The proof proceeds as follows", same criticism. It is impossible
+- [x] page 10, "The proof proceeds as follows", same criticism. It is impossible
 to follow this proof without seeing the code.
 - [x] page 10, "we spin out its specification" : what does this mean?
 - [x] page 10, "different to" -> "different from"

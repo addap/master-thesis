@@ -311,16 +311,16 @@ The \gspwait{} and \gspdone{} resources cannot exist at the same time.
 This design allows us to deduce the current state of the promise depending on if we own a \gspwait{} or a \gspdone{}.
 This is formalized in the rules in figure~\ref{fig:promise-state-rules}.
 
-Other pieces of ghost state are \gsPInv{}, \gsIsPr{}, and \gsReady{} described in figure~\ref{fig:logical-state-simpl}.
-\gsPInv{} tracks additional resources for all existing promises by using an authoritative map which contains for each promise:
+Other pieces of ghost state are \gsPInvIn{}, \gsIsPr{}, and \gsReady{} described in figure~\ref{fig:logical-state-simpl}.
+\gsPInvIn{} tracks additional resources for all existing promises by using an authoritative map which contains for each promise:
 a location \(p\) holding its current program value, a ghost name \(\gamma\) that is used for the \gspwait{} and \gspdone{} resources, and a predicate \(Φ\) that describes the value the promise will eventually hold.
 
-Additionally, for each promise in the map we own some resources as part of \gsPInv{} that depend on the current state of the promise.
+Additionally, for each promise in the map we own some resources as part of \gsPInvIn{} that depend on the current state of the promise.
 As long as the promise is not fulfilled we own a broadcast\todo{Establish \textit{broadcast} as a name for \ocamlin{CQS}}, one copy of \gspwait{}, and a \gssignal{}.
 The \gssignal{} is used to call the \ocamlin{CQS.signal_all} function which must only be called once.
-When the promise has been fulfilled, we instead own a \gspdone{} and the knowledge that the final value satisfies the given postcondition \(Φ\).
+When the promise has been fulfilled, we instead own a \gspdone{} and the knowledge that the final value satisfies the given postcondition \(Φ\).\todo{\gsPInv{} is an invariant that wraps \gsPInvIn{} so that we can share it.}
 
-\gsIsPr{} is a persistent resource that denotes that \(p\) exists as a promise in \gsPInv{}. The \(pn\) ghost name is globally unique and included in the resource algebra we use for the proofs.
+\gsIsPr{} is a persistent resource that denotes that \(p\) exists as a promise in \gsPInvIn{}. The \(pn\) ghost name is globally unique and included in the resource algebra we use for the proofs.
 
 The \gsReady{} predicate describes fibers in a scheduler's \ocamlin{run_queue}.
 It expresses that \textit{f} is safe to be executed and is used as the invariant for a scheduler's run queue, i.e. it should hold for all fibers in the run queue that they can be executed.
@@ -350,10 +350,11 @@ It expresses that \textit{f} is safe to be executed and is used as the invariant
 
 \begin{figure}[ht]
   \begin{align*}
-    \gsPInv{}  \triangleq\;           & \exists M.\; \ownGhost{pn}{\authfull{}\; M} \ast                                                             \\
+    \gsPInvIn{}  \triangleq\;         & \exists M.\; \ownGhost{pn}{\authfull{}\; M} \ast                                                             \\
                                       & \quad \forall\, (p, \gamma) \mapsto \Phi \in M.\;                                                            \\
                                       & \qquad (\exists\, v.\; p \mapsto Done\; v \ast \gspdone{} \ast \always \Phi\; v)                             \\
                                       & \quad \vee (\exists\, cqs.\; p \mapsto Waiting\; cqs \ast \gsIsCQS{}\; cqs \ast \gspwait{} \ast \gssignal{}) \\
+    \gsPInv{} \triangleq\;            & \knowInv{\invN{}}{\gsPInvIn{}}                                                                               \\
     \gsIsPr{}\; p\; \Phi \triangleq\; & \exists \gamma.\; \ownGhost{pn}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}}          \\
     \gsReady{}\; f \triangleq\;       & \ewp{f\; ()}{\bot}{\top}
   \end{align*}
@@ -367,8 +368,9 @@ We show a detailed proof of the specification only for \ocamlin{Promise.await} b
 \subsubsection{\ocamlin{Scheduler.run}}
 \label{sec:sched-spec-run}
 
-The interesting part about the scheduler specification is that it proves \textbf{effect safety} of the runtime, i.e. no matter what a fiber does it will not crash the scheduler due to an unhandled effect.
+The interesting part about the scheduler specification \textsc{Spec-Run} is that it proves \textbf{effect safety} of the fiber runtime, i.e. no matter what a fiber does it will not crash the scheduler due to an unhandled effect.
 This is expressed by allowing the fiber \(main\) to perform effects according to the \proto{} protocol, but running the scheduler on the main fiber (\(run\; main\)) obeys the empty protocol, so no effects escape.
+Of course, the \ewpt{} itself also implies \textbf{safety} of running both the main fiber and the scheduler.\todo{Don't ignore the return value.}
 
 \[
   \inferrule[Spec-Run]
@@ -391,56 +393,95 @@ For a scheduler it would be desirable to prove these properties, too, but since 
 \subsubsection{\ocamlin{Fiber.fork_promise}}
 \label{sec:sched-spec-fork}
 
-For this specification, the \gsPInv{} argument is needed to interact with promises and the \ewpt{} proves that the new fiber is safe to execute and obeys the \ocamlin{Coop} protocol.
-In return, the caller gets a promise that will eventually hold a value satisfying the predicate \(Φ\).
+The specification \textsc{Spec-ForkPromise} expresses that we receive from \(fork\_promise\) a promise value \(p\) that will eventually hold a value satisfying \(\Phi\).
+It has two preconditions, for one we must give it an arbitrary expression \(f\) representing the new fiber.
+When called, \(f\) obeys the \proto{} protocol and returns some value \(v\) satisfying \(\Phi\).
+Also, \(fork\_promise\) needs the \gsPInv{} invariant to interact with the global collection of promises, because it creates a new promise and fulfills it after \(f\) has finished executing.
 
-\begin{minted}{coq}
-Lemma ewp_fork_promise (f: val) Φ :
-  promiseInv ∗ EWP f #() <| Coop |> {{v, □ Φ v}}
-⊢ 
-  EWP (fork_promise f) <| Coop |> {{ y, 
-    ∃ (p: loc), ⌜ y = #p ⌝ ∗ isPromise p Φ}}.
-\end{minted}
+\[
+  \inferrule[Spec-ForkPromise]
+  {\gsPInv{} \ast \ewp{f\;()}{\proto{}}{v,\; \always \Phi\; v}}
+  {\ewp{fork\_promise\; f}{\proto{}}{p,\; \gsIsPr{}\; p\; \Phi}}
+\]
 
-The proof proceeds as follows:
-- First, a new promise is created, which updates the \gsPInv{} invariant and yields one half of the \gspwait{} resource for that new promise.
-- We define the actual fiber and prove its \ewpt{}.
-- Evaluating \ocamlin{f} yields a value satisfying \(Φ\) as given by the \ewpt{}.
-- Because we own \gspwait{} the second branch of the match can be ruled out. Now the \gsPInv{} invariant is accessed to update the promise state to \ocamlin{Done}. This consumes both halves of the \gspwait{} resource and yields a \gspdone{}. We also take out the \gssignal{}.
-- We use this permit along with \gspdone{} to call \ocamlin{CQS.signal_all}. \gspdone{} is persistent so it can be used to call all wakers.
-- Using the \ewpt{} for the wrapped \ocamlin{f} we can perform a \efork{} effect.
-- Since the promise will be fulfilled with a value satisfying \(Φ\) we have the \ocamlin{isPromise p Φ} that we must return.
+% The proof proceeds as follows:
+% - First, a new promise is created, which updates the \gsPInvIn{} invariant and yields one half of the \gspwait{} resource for that new promise.
+% - We define the actual fiber and prove its \ewpt{}.
+% - Evaluating \ocamlin{f} yields a value satisfying \(Φ\) as given by the \ewpt{}.
+% - Because we own \gspwait{} the second branch of the match can be ruled out. Now the \gsPInvIn{} invariant is accessed to update the promise state to \ocamlin{Done}. This consumes both halves of the \gspwait{} resource and yields a \gspdone{}. We also take out the \gssignal{}.
+% - We use this permit along with \gspdone{} to call \ocamlin{CQS.signal_all}. \gspdone{} is persistent so it can be used to call all wakers.
+% - Using the \ewpt{} for the wrapped \ocamlin{f} we can perform a \efork{} effect.
+% - Since the promise will be fulfilled with a value satisfying \(Φ\) we have the \ocamlin{isPromise p Φ} that we must return.
 
 \subsubsection{\ocamlin{Promise.await}}
 \label{sec:sched-spec-await}
 
-The implementation of \ocamlin{Promise.await} is very different from the original but still satisfies the same specification. \gsPInv{} and \textit{IsPromise} are both needed to interact with the promise's state.
+The specification \textsc{Spec-Await} is the direct counterpart to \textsc{Spec-ForkPromise}.
+It shows that \(await\) consumes a promise \(p\) and eventually returns its value \(v\) satisfying \(\Phi\).
+The precondition \gsPInv{} is again necessary to interact with the global collection of promises and \gsIsPr{} is used to identify the promise \(p\) in that collection.
 
-\begin{minted}{coq}
-Lemma ewp_await_make_register (p: loc) (cqs: val) Φ:
-  isPromise p Φ ∗ is_cqs cqs 
-⊢
-  EWP (make_register #p cqs) <| ⊥ |> {{register, 
-    ∀ (waker: val), (promise_done γ -∗ EWP waker #() <| ⊥ |> {{ ⊤ }}) -∗
-    promiseInv -∗ 
-      ▷ EWP register waker <| ⊥ |> {{ ⊤ }} }}.
+If \(p\) is still unfulfilled the first time \(await\) checks the promise state, it will call \(make\_register\) to create a \ocamlin{register} function in order to perform the \esuspend{} effect.
+As the \textsc{Spec-MakeRegister} specification shows, it returns a suitable function that satisfies the \isreg{} predicate, instantiating \(P\) such that we receive a \gspdone{} resource when the effect returns.
+This resource can then be used to refute the case of the promise still being unfulfilled when \(await\) checks the promise state again.
 
-Lemma ewp_await (p: loc) Φ :
-  promiseInv ∗ isPromise p Φ ⊢ 
-    EWP await #p <| Coop |> {{v, □ Φ v}}.
-\end{minted}
+\begin{mathpar}
+  \inferrule[Spec-MakeRegister]
+  { \gsIsPr{}\; p\; \Phi \ast \gsIsCQS{}\; cqs }
+  { \ewp{make\_register\; p\; cqs}{\bot}{reg,\; \isreg{}\; reg\; (\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})}}
 
-The proof of the \ocamlin{Promise.await} specification proceeds as follows:
-\begin{itemize}
-  \item For the first match on the promise state we don't have any resources to constrain the possible results.
-  \item If the promise is already fulfilled we can take the \ocamlin{Φ v} and return that.
-  \item If it is not fulfilled, then we get access to a CQS instance and can make the \ocamlin{register} function using the \textit{IsPromise} and \ocamlin{is_cqs} resources.
-  \item Using the \ewpt{} for the \ocamlin{register} function we can invoke the \esuspend{} effect and set \ocamlin{P _ := promise_done γ}.
-  \item As a result we now have the \gspdone{} resource and when we match on the promise again, the unfulfilled case can be ruled out.
-  \item So now we can take the \ocamlin{Φ v} and return it.
-\end{itemize}
+  \and
 
-The proof of the \ocamlin{make_register} specification follows directly from the specifications of the CQS functions, which are explained in further detail in the next chapter.
+  \inferrule[Spec-Await]
+  { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi }
+  { \ewp{await\; p}{\proto{}}{v,\; \always \Phi\; v}}
+\end{mathpar}
+
+% \begin{figure}[ht]
+%   \begin{minted}{ocaml}
+% type 'a t = Done of 'a | Waiting of CQS.t
+
+% let create () : 'a t = 
+%   let cqs = CQS.create () in
+%   Atomic.create (Waiting cqs)
+
+% let make_register (p: 'a t) (cqs: CQS.t) : (() waker -> ()) = 
+%   fun waker ->
+%     let register_result = CQS.register cqs waker in
+%     match register_result with
+%     | None -> ()
+%     | Some register_handle ->
+%       match Atomic.get p with
+%       | Done result ->  
+%         if CQS.try_cancel register_handle
+%         then waker ()
+%         else ()
+%       | Waiting _ -> ()
+
+% let await (p: 'a t) : 'a = 
+%   match Atomic.get p with
+%   | Done result -> result
+%   | Waiting cqs ->
+%     let register = make_register p cqs
+%     perform (Suspend register);
+%     match Atomic.get p with
+%     | Done result -> result 
+%     | Waiting _ -> error "impossible"
+%   \end{minted}
+%   \caption{Implementation of \ocamlin{Promise.await}}
+%   \label{fig:sched-spec-await}
+% \end{figure}
+
+% The proof of the \ocamlin{Promise.await} specification proceeds as follows:
+% \begin{itemize}
+%   \item For the first match on the promise state we don't have any resources to constrain the possible results.
+%   \item If the promise is already fulfilled we can take the \ocamlin{Φ v} and return that.
+%   \item If it is not fulfilled, then we get access to a CQS instance and can make the \ocamlin{register} function using the \textit{IsPromise} and \ocamlin{is_cqs} resources.
+%   \item Using the \ewpt{} for the \ocamlin{register} function we can invoke the \esuspend{} effect and set \ocamlin{P _ := promise_done γ}.
+%   \item As a result we now have the \gspdone{} resource and when we match on the promise again, the unfulfilled case can be ruled out.
+%   \item So now we can take the \ocamlin{Φ v} and return it.
+% \end{itemize}
+
+% The proof of the \ocamlin{make_register} specification follows directly from the specifications of the CQS functions, which are explained in further detail in the next chapter.
 
 % <!-- We recall that when awaiting a promise, a fiber first checks if the promise is already fulfilled by atomically loading its state.
 % If it is not fulfilled, the fiber then performs a \esuspend{} effect and starts a suspend operation, providing the \ocamlin{waker} of the \esuspend{} effect as the handle.
@@ -466,25 +507,29 @@ The proof of the \ocamlin{make_register} specification follows directly from the
 \subsubsection{Comparison of Logical State}
 \label{sec:sched-spec-state-comparison}
 
-\todo{Insert logical state from the dissertation}
+\begin{figure}[ht]
+  \includegraphics[width=0.75\textwidth]{Hazel_state.png}
+\end{figure}
+\todo{replace png with latex}
 
-In de Vilhena's case study, the \gsReady{} predicate fulfills two roles.
+Since our logical state definitions are based on a case study of de Vilhena, we want to give a short comparison of what had to be changed when adapting it to our model of Eio.
+First, in the original case study the \gsReady{} predicate fulfills two roles.
 \begin{enumerate}
   \item It expresses that all continuations in the scheduler's run-queue are safe to execute.
   \item It expresses that all continuations in a promise's waiting-queue are safe to execute.
 \end{enumerate}
 
-\gsPInv{} and \gsIsQueue{} were both necessary as preconditions because they describe global state, so they had to be passed around.
+\gsPInv{} and \gsIsQueue{} were both necessary as preconditions because they are not persistent and need to be passed around explicitly.
 
-In our case study \gsPInv{} was dropped from the definition of Ready because it is now put into an Iris shareable invariant, so we don't need to pass it around explicitly.
+In our case study \gsPInv{} could be dropped from the definition of Ready because it is now put into an Iris shareable invariant, and can be passed implicitly.
 Similarly, the \gsIsQueue{} precondition was dropped from the definition of \gsReady{} because in Eio the run queue must be thread-safe, so the \gsIsQueue{} resource is persistent and can be passed to a fiber once when it is spawned.
 Therefore, our \gsReady{} is neither recursive nor mutually recursive with \gsPInv{} anymore, which simplifies its usage in Iris.
 We note that the (mutual) recursion was only necessary because \gsPInv{} was used to track global state but was not put into an Iris shareable invariant, so it had to be passed around explicitly in many places.
 
 We also split up the two uses of \gsReady{} and only use it under this name for the first role.
-In the case of a scheduler's run-queue the \ocamlin{Φ v} degenerates just to \ocamlin{v = ()}, so we can drop both from the definition and use \ocamlin{()} directly.
-This is why in our definition of \gsReady{} it is only an \ewpt{} without preconditions.
+In the case of a scheduler's run-queue, \(Φ\; v\) degenerates just to \(\ulcorner v = () \urcorner\), so we can drop both from the definition and use \(()\) directly.
+This is why our definition of \gsReady{} only contains an \ewpt{} without preconditions.
 
 For the second use case of describing the continuations in a promise's waiting-queue we now have another specialized version of \gsReady{}.
-A broadcast has the following invariant for all stored callbacks: \ocamlin{P v -∗ ewp (callback ()) <| ⊥ |> {{ ⊤ }}}.
-This is just \gsReady{} where \ocamlin{P v} replaces \ocamlin{Φ v}, which is the same \ocamlin{P} as in the definition of the \esuspend{} effect since the callbacks in a broadcast are \ocamlin{waker} functions.
+As explained in the next section, a broadcast has an invariant \(P\; v \wand \ewp{callback\; ()}{\bot}{\top}\) for all stored \(callback\)s.
+This is just \gsReady{} where \(P\; v\) replaces \(Φ\; v\), and it is the same \(P\) as in the definition of the \esuspend{} effect.

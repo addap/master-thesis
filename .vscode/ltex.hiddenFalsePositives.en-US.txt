@@ -4,3 +4,7 @@
 {"rule":"COMMA_PARENTHESIS_WHITESPACE","sentence":"^\\Q[PS-Create] .\\E$"}
 {"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\Q[PS-Contra] \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q Rules for the PromiseState Resource.\\E$"}
 {"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QMaybe use metatokens to hide gamma\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QThe specification Spec-ForkPromise expresses that we can give the \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q function an arbitrary expression \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q that must be callable on unit, obeys the protocol and returns some value \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QThe specification Spec-ForkPromise expresses that we can give the \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q function an arbitrary expression \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q that, when called, obeys the protocol and returns some value \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q satisfying \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QThe specification Spec-Await is the direct counterpart to Spec-ForkPromise.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QAs the Spec-MakeRegister specification shows, it returns a suitable function that satisfies the predicate, instantiating \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q such that we receive a \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q resource when the effect returns.\\E$"}
