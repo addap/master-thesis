@@ -204,7 +204,7 @@ let await (p: 'a t) : 'a =
 \end{figure}
 
 This is the most complicated looking function in our case study which is partly due to the \esuspend{} effect and also due to the use of CQS functions.
-The code is presented in figure~\ref{fig:sched-impl-await}.
+Its code is presented in figure~\ref{fig:sched-impl-await}.
 The purpose of \ocamlin{Promise.await p} is to suspend execution of the calling fiber until \ocamlin{p} is fulfilled with a value and then return this value.
 The "suspend execution" part is handled by performing the \esuspend{} effect.
 Then, the "until \ocamlin{p} is fulfilled" part is implemented by using CQS~\cite{koval2023cqs} functions as described in the following.
@@ -212,15 +212,23 @@ Then, the "until \ocamlin{p} is fulfilled" part is implemented by using CQS~\cit
 CQS is an implementation of the observer pattern and functionally similar to condition variables\footnote{\url{https://en.cppreference.com/w/cpp/thread/condition_variable}} in languages like \CC{} (as defined by the POSIX standard), allowing fibers to register callbacks that will be called when a condition is signalled.
 The difference is that traditional condition variables are always used together with a mutex to enable synchronization between different threads, while CQS is a lock-free data structure implementing a similar API.
 
-In figure~\ref{fig:sched-impl-cqs} show the public API of the CQS module. The implementation and specification will be expanded upon in section~\ref{sec:cqs}.
+In figure~\ref{fig:sched-impl-cqs} we show the public API of the CQS module.
+The \ocamlin{CQS.register} function registers a given callback with the data structure while \ocamlin{CQS.signal_all} calls all registered callbacks.
+The return value of \ocamlin{CQS.register} depends on whether the function detects a parallel execution of \ocamlin{CQS.signal_all}.
+If a parallel execution is detected, \ocamlin{CQS.register} will directly call the callback without waiting for \ocamlin{CQS.signal_all} to do it and return \ocamlin{Called}\footnote{This is purely an optimization. It would be equally valid for functional correctness to register the \ocamlin{waker} function in the data structure and let \ocamlin{CQS.signal_all} call it later.}.
+Otherwise, \ocamlin{CQS.register} returns a \ocamlin{Registered handle} value, where \ocamlin{handle} can be used to call the \ocamlin{CQS.try_cancel} function.
+\ocamlin{CQS.try_cancel} attempts to cancel a registered callback and returns whether the cancellation was successful.
+If it was successful, the previously registered callback will not be called when \ocamlin{CQS.signal_all} is executed.
+The implementation and specification of the functions will be expanded upon in section~\ref{sec:cqs}, for now we just explain their usage in the context of \ocamlin{Promise.await}.
 
 \begin{figure}[ht]
   \begin{minted}{ocaml}
 type callback = () -> ()
+type register_result = Called | Registered of register_handle
 type register_handle
 
 val create : () -> t
-val register : t -> callback -> register_handle option
+val register : t -> callback -> register_result
 val try_cancel : register_handle -> bool
 val signal_all : t -> ()
   \end{minted}
@@ -229,7 +237,7 @@ val signal_all : t -> ()
 \end{figure}
 
 In the \ocamlin{Promise.await} function if the promise is not fulfilled initially the fiber should wait until that is the case, so it performs a \esuspend{} effect.
-It defines a \ocamlin{register} function that registers the \ocamlin{waker} function with CQS by using \ocamlin{CQS.register}.
+The \ocamlin{register} function passed to the effect will register the \ocamlin{waker} function using \ocamlin{CQS.register}.
 When at some point the \ocamlin{CQS.signal_all} function is called -- this happens in \ocamlin{Fiber.fork_promise} -- all registered \ocamlin{waker}s will be called in turn.
 Recall that calling a \ocamlin{waker} function will enqueue the fiber that performed the \esuspend{} effect in the scheduler's run queue so that it can continue execution.
 
@@ -244,11 +252,11 @@ In the default case the following simplified chain of events happens:
 Therefore, after the \esuspend{} effect returns we know the state of the promise is \ocamlin{Done} and the final value can be returned.
 
 But because CQS is lock-free and promises can be shared between different threads there are a number of possible interleavings that the \ocamlin{register} function must take care of as well.
-The definition of the register function is interesting enough that we split it out into \ocamlin{make_register} and give a separate specification, even though it is not part of the public API of the module.
+The definition of the register function is interesting enough that we split it out into \ocamlin{make_register} and give a separate specification, which is not part of the public API of the module.
 First, there could be a race on the state of the promise itself.
-Right after the state is read in line 21 another thread might change the state to \ocamlin{Done} and go on to call \ocamlin{CQS.signal_all}.
+Right after the state is read in line 21 of figure~\ref{fig:sched-impl-await} another thread might change the state to \ocamlin{Done} and go on to call \ocamlin{CQS.signal_all}.
 If that happens there is another race between the \ocamlin{CQS.register} in line 9 and the \ocamlin{CQS.signal_all} in the other thread.
-If \ocamlin{CQS.register} notices that there is a racing \ocamlin{CQS.signal_all} it will directly call the \ocamlin{waker}\footnote{TODO mention that this is just an optimization.}.
+If \ocamlin{CQS.register} detects that there is a racing \ocamlin{CQS.signal_all} it will directly call the \ocamlin{waker}.
 Otherwise, the \ocamlin{waker} is registered but in fact the \ocamlin{CQS.signal_all} might have already finished before \ocamlin{CQS.register} even started.
 In this case the \ocamlin{waker} would be "lost" in the CQS, never to be called.
 To avoid this, \ocamlin{register} must check the state of the promise again in line 13, and if it is fulfilled try to cancel the \ocamlin{waker} registration.
