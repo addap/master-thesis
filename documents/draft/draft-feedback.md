@@ -300,3 +300,8 @@ explicitly isolate this function in the OCaml code, I think; it would probably
 help understand `await`, which becomes fairly easy to understand if one
 assumes that `make_register` does "the right thing". 
 
+# 2024-03-01
+- [ ] Explain functions given in figure 5
+- [ ] Write new types instead of using option/bool in figure 5
+- [ ] Split up fork_promise 
+- [ ] spec of CQS before proof of await spec

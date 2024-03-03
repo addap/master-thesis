@@ -2,20 +2,20 @@
 \label{sec:thread-local-vars}
 
 \begin{itemize}
-    \item How thread-local variables can be used.
-    \item Explain the GetContext effect in Eio and how we model it in our scheduler.
-    \item How we adapt our logical state to include GetContext.
-    \item And explain that we need to parameterize the protocol to solve the issue of shared knowledge between the scheduler and fiber.
+  \item How thread-local variables can be used.
+  \item Explain the GetContext effect in Eio and how we model it in our scheduler.
+  \item How we adapt our logical state to include GetContext.
+  \item And explain that we need to parameterize the protocol to solve the issue of shared knowledge between the scheduler and fiber.
 \end{itemize}
 
 \begin{figure}[ht]
-    \begin{alignat*}{2}
-        Coop \delta \coloneqq\; &  & \quad Fork\; \#    & \; !\; e\; (e)\; \{\later \ewp{e}{Coop}{\top}\}. ?\; ()\; \{ \top \}        \\
-                                &  & Suspend\;    \#    & \; !\; reg\; P\; (reg)\; \{isRegister\; reg\; P\}.?\; y\; (y)\; \{ P\; y \} \\
-                                &  & GetContext\;    \# & \; !\; ()\; \{\top\}.?\; ctx\; (ctx)\; \{ isFiberContext\; \delta\; ctx \}
-    \end{alignat*}
-    \caption{Definition of \proto{} Protocol with \efork{} \& \esuspend{} Effects.}
-    \label{fig:coop-protocol-ext}
+  \begin{alignat*}{2}
+    Coop \delta \coloneqq\; &  & \quad Fork\; \#    & \; !\; e\; (e)\; \{\later \ewp{e}{Coop}{\top}\}. ?\; ()\; \{ \top \}          \\
+                            &  & Suspend\;    \#    & \; !\; reg\; P\; (reg)\; \{gsIsRegister\; reg\; P\}.?\; y\; (y)\; \{ P\; y \} \\
+                            &  & GetContext\;    \# & \; !\; ()\; \{\top\}.?\; ctx\; (ctx)\; \{ isFiberContext\; \delta\; ctx \}
+  \end{alignat*}
+  \caption{Definition of \proto{} Protocol with \efork{} \& \esuspend{} Effects.}
+  \label{fig:coop-protocol-ext}
 \end{figure}
 
 % Definition FORK_pre (Coop : pEff) (δ : gname): iEff Σ :=

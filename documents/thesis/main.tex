@@ -10,7 +10,12 @@
 \usepackage{todonotes}
 \usepackage{mathpartir}
 \usepackage{mdframed}
+% needed for some symbols in Iris
 \usepackage{stmaryrd}
+\usepackage{array}
+\usepackage{makecell}
+\usepackage{cancel}
+\usepackage{xcolor}
 
 % Moving figure captions closer to the contents.
 \usepackage[skip=3pt]{caption}
@@ -76,6 +81,7 @@
 \setminted{autogobble,linenos,fontsize=\footnotesize}
 % Define inline shortcuts without syntax highlighting
 \newmintinline[ocamlin]{text}{fontsize=\footnotesize}
+\newmintinline[ocamlreal]{ocaml}{fontsize=\footnotesize}
 \newmintinline[coqin]{text}{}
 % disable comments using italics
 % from https://tex.stackexchange.com/a/469702
@@ -98,11 +104,12 @@
 \newcommand{\egetctx}{\textit{GetContext}}
 \newcommand{\proto}{\textit{Coop}}
 \newcommand{\protod}{\textit{Coop}~\ensuremath{\delta}}
-\newcommand{\isreg}{\textit{isRegister}}
+\newcommand{\gsIsReg}{\textit{isRegister}}
 \NewDocumentCommand\ewp{O{} m O{} m m}%
   {\mathit{ewp}^{#1}_{#3}\spac\left(#2\right)\spac\left\langle#4\right\rangle\spac{\left\{#5\right\}}}
 \newcommand{\ewpt}{\textit{ewp}}
 \newcommand{\gsReady}{\textit{Ready}}
+\newcommand{\gsPState}{\textit{PromiseState}}
 \newcommand{\gsPInvIn}{\textit{PInvInner}}
 \newcommand{\gsPInv}{\textit{PromiseInv}}
 \newcommand{\invN}{\ensuremath{\mathcal{N}}}
@@ -112,6 +119,9 @@
 \newcommand{\gspwait}{\textit{promiseWaiting}~\ensuremath{\gamma}}
 \newcommand{\gspdone}{\textit{promiseDone}~\ensuremath{\gamma}}
 \newcommand{\gssignal}{\textit{signalAllPermit}}
+% A variable number of quads
+% https://tex.stackexchange.com/a/330591
+\newcommand{\myquad}[1][1]{\hspace*{#1em}\ignorespaces}
 
 \title{Verifying an Effect-Based Cooperative Concurrency Scheduler in Iris}
 \author{
