@@ -16,6 +16,7 @@
 \usepackage{makecell}
 \usepackage{cancel}
 \usepackage{xcolor}
+\usepackage{longtable}
 
 % Moving figure captions closer to the contents.
 \usepackage[skip=3pt]{caption}
@@ -56,6 +57,7 @@
 \setmainfont{Libertinus Serif}
 \setsansfont{Libertinus Sans}
 \setmathfont{Libertinus Math}
+\setmathfont{Latin Modern Math}[range=\ast]
 \setmonofont{Source Code Pro}
 \newfontfamily\symfont{FreeMono}
 \newfontfamily\symfontextra{FreeSerif}
@@ -105,6 +107,8 @@
 \newcommand{\proto}{\textit{Coop}}
 \newcommand{\protod}{\textit{Coop}~\ensuremath{\delta}}
 \newcommand{\gsIsReg}{\textit{isRegister}}
+\newcommand{\gsIsWaker}{\textit{isWaker}}
+\newcommand{\gsIsCb}{\textit{isCallback}}
 \NewDocumentCommand\ewp{O{} m O{} m m}%
   {\mathit{ewp}^{#1}_{#3}\spac\left(#2\right)\spac\left\langle#4\right\rangle\spac{\left\{#5\right\}}}
 \newcommand{\ewpt}{\textit{ewp}}

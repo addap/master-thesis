@@ -272,12 +272,16 @@ For our Eio case study we adapt both the ghost state and the effect protocols fr
 First we look at the protocols for the \efork{} and \esuspend{} effect that are shown in figure~\ref{fig:coop-protocol-simpl}
 In \hazel{}s' protocol syntax they are formalized in the following way, where the precondition of \esuspend{} is given the name \gsIsReg{} to describe the behavior of the fiber-defined \ocamlin{register} function.
 
+% https://tex.stackexchange.com/a/586487
 \begin{figure}[ht]
-  \begin{alignat*}{2}
-    \proto{}             & \triangleq & \quad Fork\; \#  & \; !\; e\; (e)\; \left\{\later \ewp{e}{\proto{}}{\top}\right\}. ?\; ()\; \{ \top \}                                 \\
-                         &            & Suspend\;    \#  & \; !\; reg\; P\; (reg)\; \left\{\gsIsReg{}\; reg\; P\right\}.?\; y\; (y)\; \left\{ P\; y \right\}                   \\
-    \gsIsReg{}\; reg\; P & \triangleq & \forall waker.\; & \left( \forall v.\;  P\; v \wand{} \ewp{waker\; v}{\bot}{\top} \right) \wand{} \later \ewp{reg\; waker}{\bot}{\top}
-  \end{alignat*}
+  \begin{align*}
+    \gsIsWaker{}\; wkr\; P & \triangleq \forall v.   \;  P\; v \wand{} \ewp{wkr\; v}{\bot}{\top}                                                                       \\
+    \gsIsReg{}\; reg\; P   & \triangleq \forall wkr. \; \left( \gsIsWaker{}\; wkr\; P \right) \wand{} \later \ewp{reg\; wkr}{\bot}{\top}                               \\
+    \proto{}               & \triangleq \begin{aligned}[t]
+                                          Fork\;    & \# \; !\; e\; (e)\; \left\{\later \ewp{e}{\proto{}}{\top}\right\}. ?\; ()\; \{ \top \}               \\
+                                          Suspend\; & \# \; !\; reg\; P\; (reg)\; \left\{\gsIsReg{}\; reg\; P\right\}.?\; y\; (y)\; \left\{ P\; y \right\}
+                                        \end{aligned}
+  \end{align*}
   \caption{Definition of \proto{} Protocol with \efork{} \& \esuspend{} Effects.}
   \label{fig:coop-protocol-simpl}
 \end{figure}
@@ -344,7 +348,7 @@ It expresses that \textit{f} is safe to be executed and is used as the invariant
     { \gspwait{} \ast \gspdone{} }
     { \bot }
   \end{mathpar}
-  \caption{Rules for the \textit{PromiseState} Resource}.
+  \caption{Rules for the \gspwait{} and \gspdone{}.}
   \label{fig:promise-state-rules}
 \end{figure}
 
@@ -416,12 +420,11 @@ Also, \(fork\_promise\) needs the \gsPInv{} invariant to interact with the globa
 \label{sec:sched-spec-await}
 
 The specification \textsc{Spec-Await} is the direct counterpart to \textsc{Spec-ForkPromise}.
-It shows that \(await\) consumes a promise \(p\) and eventually returns its value \(v\) satisfying \(\Phi\).
+It shows that \(await\) consumes a promise \(p\) and eventually returns its value \(v\) satisfying the predicate \(\Phi\).
 The precondition \gsPInv{} is again necessary to interact with the global collection of promises and \gsIsPr{} is used to identify the promise \(p\) in that collection.
 
-If \(p\) is still unfulfilled the first time \(await\) checks the promise state, it will call \(make\_register\) to create a \ocamlin{register} function in order to perform the \esuspend{} effect.
-As the \textsc{Spec-MakeRegister} specification shows, it returns a suitable function that satisfies the \gsIsReg{} predicate, instantiating \(P\) such that we receive a \gspdone{} resource when the effect returns.
-This resource can then be used to refute the case of the promise still being unfulfilled when \(await\) checks the promise state again.
+If \(p\) is still unfulfilled the first time \(await\) checks the promise state, it will call \(make\_register\) to create a \ocamlin{register} function which it passes to the \esuspend{} effect.
+As the \textsc{Spec-MakeRegister} specification shows, \ocamlin{make_register} returns a suitable function that satisfies the \gsIsReg{} predicate, instantiating \(P\) with \((\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})\) so that we receive a \gspdone{} resource when the effect returns.
 
 \begin{mathpar}
   \inferrule[Spec-MakeRegister]
@@ -435,68 +438,117 @@ This resource can then be used to refute the case of the promise still being unf
   { \ewp{await\; p}{\proto{}}{v,\; \always \Phi\; v}}
 \end{mathpar}
 
-\begin{tabular}{@{}l@{}l@{}}
-  \ocamlreal{let make_register (p: 'a t) (cqs: CQS.t) : (() waker -> ()) =}                   &                                                           \\
-  \(\left\{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsCQS{}\; cqs \right\}\)                     &                                                           \\
-  \myquad[1] \ocamlreal{  fun (waker: () waker) ->}                                           & [ assume waker with \ewpt{} ]                             \\
-  \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsCQS{}\; cqs \ast                                                                             \\ (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) } \right\} \)                                           &                                                  \\
-  \myquad[2] \ocamlreal{  let cqsres = CQS.register cqs waker in}                             & [ spec of \ocamlin{CQS.register} ]                        \\
-  \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsCQS{}\; cqs \ast                                                                             \\ \textit{isCQSRegisterResult}\; cqsres } \right\}\) &                                            \\
-  \myquad[2] \ocamlreal{  match cqsres with}                                                  & [ CA on cqsres ]                                          \\
-  \hline
-  1. \(\left\{  cqsres = None \right\}\)                                                      &                                                           \\
-  \myquad[2] \ocamlreal{ | None -> () }                                                       & [ by {\color{red}done} ]                                  \\
-  \hline
-  2. \(\left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsCQS{}\; cqs \ast                                                                         \\ cqsres = Some\; handle \ast \textit{isCQSRegisterHandle}\; handle } \right\}\) & \\
-  \myquad[2] \ocamlreal{ | Some handle -> }                                                   & [ open \gsPInv{}, lookup p using \gsIsPr{}\; p ]          \\
-  \hphantom{.2.} \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsCQS{}\; cqs \ast                                                                       \\ \textit{isCQSRegisterHandle}\; handle \ast \gsPState{}\; p\; \gamma\; \Phi } \right\}\) &                                                  \\
-  \myquad[3] \ocamlreal{ match Atomic.get p with }                                            & [ CA on \gsPState{} ]                                     \\
-  \hline
-  2.1. \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsCQS{}\; cqs \ast                                                                                 \\ \textit{isCQSRegisterHandle}\; handle \ast                                                                                                           \\ p \mapsto Done\; result \ast \gspdone{} } \right\}\)  &                                                  \\
-  \myquad[3] \ocamlreal{| Done result -> }                                                    & [close \gsPInv{} ]                                        \\
-  \hphantom{.2.1.} \(\left\{ \makecell{ \gsIsCQS{}\; cqs \ast \textit{isCQSRegisterHandle}\; handle \ast                                                  \\ \gspdone{} } \right\}\) &                                                  \\
-  \myquad[4] \ocamlreal{ if CQS.try_cancel handle }                                           & [ spec of \ocamlin{CQS.try_cancel}, CA on return value  ] \\
-  \hline
-  2.1.1. \(\left\{ \gspdone{} \ast (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) \right\}\) &                                                           \\
-  \myquad[4] \ocamlreal{ then waker () }                                                      & [ by {\color{red}\ewpt{} with \gspdone{}} ]               \\
-  \hline
-  \myquad[4] \ocamlreal{ else () }                                                            & [ by {\color{red}done} ]                                  \\
-  \hline
-  2.2. \(\left\{ \cancel{\gsPInv{}} \ast p \mapsto Waiting\; \_  \right\}\)                   &                                                           \\
-  \myquad[3] \ocamlreal{| Waiting _ -> () }                                                   & [ close \gsPInv{}, by {\color{red}done} ]                 \\
-\end{tabular}
+In figures~\ref{fig:sched-spec-makeregister-proof} and~\ref{fig:sched-spec-await-proof} we give Hoare-style proof annotations for the two functions \ocamlin{make_register} and \ocamlin{Promise.await} from figure~\ref{fig:sched-impl-await}.
+The proof of \textsc{Spec-MakeRegister} uses the specifications of some CQS functions, which we briefly explain now and expand upon in section~\ref{sec:cqs-spec}.
 
-\begin{tabular}{@{}l@{}l@{}}
-  \ocamlreal{ let await (p: 'a t) : 'a = }                                                                       &                                                  \\
-  \( \left\{ \gsPInv{} \ast \gsIsPr{}\; p \right\} \)                                                            & [ open \gsPInv{}, lookup p using \gsIsPr{}\; p ] \\
-  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; p \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) &                                                  \\
-  \myquad[1] \ocamlreal{match Atomic.get p with}                                                                 & [ CA on \gsPState{} ]                            \\
-  \hline
-  1. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast                                                                                                                  \\ p \mapsto Done\; result \ast \always \Phi result } \right\} \)                                                       &                             \\
-  \myquad[1] \ocamlreal{| Done result -> }                                                                       & [ close \gsPInv{} ]                              \\
-  \hphantom{.1.} \( \left\{ \gsPInv{} \ast {\color{red}\always \Phi result} \right\} \)                          &                                                  \\
-  \myquad[2] \ocamlreal{result}                                                                                  & [ by {\color{red}assumption} ]                   \\
-  \hline
-  2. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; p \ast                                                                                               \\ p \mapsto Waiting\; cqs \ast \gsIsCQS{}\; cqs } \right\} \) &                                                  \\
-  \myquad[1] \ocamlreal{| Waiting cqs ->}                                                                        & [close \gsPInv{} ]                               \\
-  \hphantom{.2.} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                            \\ \gsIsCQS{}\; cqs } \right\} \) &                                                  \\
-  \myquad[2] \ocamlreal{let register = make_register p cqs}                                                      & [ spec of make\_register ]                       \\
-  \hphantom{.2.} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                            \\ \gsIsReg{}\; register } \right\} \) &                                                  \\
-  \myquad[2] \ocamlreal{perform (Suspend register);}                                                             & [ protocol of \esuspend{} ]                      \\
-  \hphantom{.2.} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                            \\ \gspdone{} } \right\} \) & [ open \gsPInv{}, lookup p using \gsIsPr{}\; p ] \\
-  \hphantom{.2.} \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{}                                                                                           \\ \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) & \\
-  \myquad[2] \ocamlreal{match Atomic.get p with}                                                                 & [ CA on \gsPState{} ]                            \\
-  \hline
-  2.1.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast                                                                                                               \\ p \mapsto Done\; result \ast \always \Phi result } \right\} \) &                                                  \\
-  \myquad[2] \ocamlreal{| Done result -> }                                                                       & [ close \gsPInv{} ]                              \\
-  \hphantom{.2.1.}  \( \left\{ \gsPInv{} \ast {\color{red}\always \Phi result}  \right\} \)                      &                                                  \\
-  \myquad[3] \ocamlreal{result}                                                                                  & [ by {\color{red}assumption} ]                   \\
-  \hline
-  2.1.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{} \ast                                                                                               \\ p \mapsto Waiting\; cqs \ast \gspwait{} } \right\} \) &                                                  \\
-  \myquad[2] \ocamlreal{| Waiting _ -> }                                                                         & [ use \textsc{PS-Contra} ]                       \\
-  \hphantom{.2.1.}  \( \left\{ \cancel{\gsPInv{}} \ast {\color{red}\bot} \right\} \)                             &                                                  \\
-  \myquad[3] \ocamlreal{error "impossible"}                                                                      & [ by {\color{red}contradiction} ]
-\end{tabular}
+\begin{align*}
+  \gsIsCb{}\; cb\; R                        & \triangleq R \wand \ewp{cb\; ()}{\bot}{\top}                                                       \\
+  \textit{isCQSRegisterResult}\; r\; cb\; R & \triangleq (\ulcorner r = Called \urcorner)                                                        \\
+                                            & \quad \vee (\ulcorner r = Registered\; h \urcorner \ast \textit{isCQSRegisterHandle}\; h\; cb\; R) \\
+  \textit{isCQSRegisterHandle}              & : Val \to Val \to iProp \to iProp
+\end{align*}
+
+\begin{mathpar}
+  \inferrule[Spec-CQSRegister]
+  { \gsIsCQS{}\; cqs \ast \gsIsCb{}\; callback\; R }
+  { \ewp{CQS.register\; cqs\; callback}{\bot}{r,\; \textit{isCQSRegisterResult}\; r\; callback\; R}}
+
+  \and
+
+  \inferrule[Spec-CQSTryCancel]
+  { \textit{isCQSRegisterHandle}\; h\; callback\; R }
+  { \ewp{CQS.try\_cancel\; h}{\bot}{b,\; if\; b\; then\; \gsIsCb{}\; callback\; R\; else\; \top}}
+\end{mathpar}
+
+The function \ocamlin{CQS.register} takes a \(callback\) that satisfies the \gsIsCb{} predicate to register it in the CQS data structure.
+This predicate is structurally similar to \gsIsWaker{} and, in fact, in the proof of \textsc{Spec-MakeRegister} we instantiate the precondition \(R\) with \(\gspdone{}\) and pass as the \ocamlin{callback} a \ocamlin{waker} function, which has the precondition \((\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})\) as described above.
+The result of \ocamlin{CQS.register} is either a value \(Called\), which expresses that it called the callback directly, or a register handle, which can be used to call \ocamlin{CQS.try_cancel}.
+
+\ocamlin{CQS.try_cancel} will attempt to cancel a previous registration identified by the given \(handle\).
+If the cancellation is successful, we get back the \(\gsIsCb{}\) resource so that we can call the \(callback\) in \ocamlin{make_register}.
+
+\paragraph*{Hoare-Style Proofs for \textsc{Spec-MakeRegister} and \textsc{Spec-Await}}
+
+In the proof below an opened invariant \(Inv\) is represented as \(\cancel{Inv}\) and resources that are not needed for the rest of the proof are dropped implicitly.
+
+The proof of \textsc{Spec-MakeRegister} is straightforward and follows from the specifications of \ocamlin{CQS.register} and \ocamlin{CQS.try_cancel}.
+For \textsc{Spec-Await}, the crux is that we define \textsc{Spec-MakeRegister} so that it returns a \(register\) function which satisfies \(\gsIsReg{}\; register\; (\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})\).
+Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect returns, and we can refute the case of the promise still being unfulfilled when checking the state of promise again for the last time.
+
+\begin{figure}[H]
+  {\setlength{\extrarowheight}{3pt}
+    \begin{tabular}{@{}ll@{}}
+      \ocamlreal{let make_register (p: 'a t) (cqs: CQS.t) : (() waker -> ()) =}                   &                                                           \\
+      \(\left\{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsCQS{}\; cqs \right\}\)                     &                                                           \\
+      \myquad[1] \ocamlreal{  fun (waker: () waker) ->}                                           & [ intro waker that satisfies \gsIsWaker{} ]               \\
+      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsCQS{}\; cqs \ast                                                                             \\ (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) } \right\} \)&\\
+      \myquad[2] \ocamlreal{  let cqsres = CQS.register cqs waker in}                             & [ apply \textsc{Spec-CQSRegister} ]                       \\
+      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsCQS{}\; cqs \ast                                                                             \\ \textit{isCQSRegisterResult}\; cqsres } \right\}\) &\\
+      \myquad[2] \ocamlreal{  match cqsres with}                                                  & [ CA on cqsres ]                                          \\[3pt]
+      \hline                                                                                                                                                  \\[-15pt]
+      1. \(\left\{  cqsres = None \right\}\)                                                      &                                                           \\
+      \myquad[2] \ocamlreal{ | None -> () }                                                       & [ by {\color{red}done} ]                                  \\[3pt]
+      \hline                                                                                                                                                  \\[-12pt]
+      2. \(\left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsCQS{}\; cqs \ast                                                                         \\ cqsres = Some\; handle \ast \textit{isCQSRegisterHandle}\; handle } \right\}\) & \\
+      \myquad[2] \ocamlreal{ | Some handle -> }                                                   & [ open \gsPInv{}, lookup \(p\) using \(\gsIsPr{}\; p\) ]  \\
+      \hphantom{.2.} \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsCQS{}\; cqs \ast                                                                       \\ \textit{isCQSRegisterHandle}\; handle \ast \gsPState{}\; p\; \gamma\; \Phi } \right\}\) &\\
+      \myquad[3] \ocamlreal{ match Atomic.get p with }                                            & [ CA on \gsPState{} ]                                     \\[3pt]
+      \hline                                                                                                                                                  \\[-12pt]
+      2.1. \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsCQS{}\; cqs \ast                                                                                 \\ \textit{isCQSRegisterHandle}\; handle \ast \\ p \mapsto Done\; result \ast \gspdone{} } \right\}\)  &\\
+      \myquad[3] \ocamlreal{| Done result -> }                                                    & [ close \gsPInv{} ]                                       \\
+      \hphantom{.2.1.} \(\left\{ \makecell{ \gsIsCQS{}\; cqs \ast \textit{isCQSRegisterHandle}\; handle \ast                                                  \\ \gspdone{} } \right\}\) &\\
+      \myquad[4] \ocamlreal{ if CQS.try_cancel handle }                                           & [ apply \textsc{Spec-CQSTryCancel}, CA on return value  ] \\[3pt]
+      \hline                                                                                                                                                  \\[-15pt]
+      2.1.1. \(\left\{ \gspdone{} \ast (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) \right\}\) & [ specialize assumption ]                                 \\
+      \hphantom{.2.1.1.} \(\left\{ {\color{red}\ewp{waker\; ()}{\bot}{\top}} \right\}\)           &                                                           \\
+      \myquad[4] \ocamlreal{ then waker () }                                                      & [ by {\color{red}apply} ]                                 \\[3pt]
+      \hline                                                                                                                                                  \\[-15pt]
+      2.1.2. \(\left\{ \top \right\}\)                                                            &                                                           \\
+      \myquad[4] \ocamlreal{ else () }                                                            & [ by {\color{red}done} ]                                  \\[3pt]
+      \hline                                                                                                                                                  \\[-15pt]
+      2.2. \(\left\{ \cancel{\gsPInv{}} \ast p \mapsto Waiting\; \_  \right\}\)                   &                                                           \\
+      \myquad[3] \ocamlreal{| Waiting _ -> () }                                                   & [ close \gsPInv{}, by {\color{red}done} ]
+    \end{tabular}}
+  \caption{Annotated proof of \textsc{Spec-MakeRegister}.}
+  \label{fig:sched-spec-makeregister-proof}
+\end{figure}
+
+\begin{figure}[H]
+  {\setlength{\extrarowheight}{3pt}
+    \begin{tabular}{@{}ll@{}}
+      \ocamlreal{ let await (p: 'a t) : 'a = }                                                                       &                                                                                                     \\
+      \( \left\{ \gsPInv{} \ast \gsIsPr{}\; p \right\} \)                                                            & [ open \gsPInv{}, lookup \(p\) using \(\gsIsPr{}\; p\) ]                                            \\
+      \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; p \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) &                                                                                                     \\
+      \myquad[1] \ocamlreal{match Atomic.get p with}                                                                 & [ CA on \gsPState{} ]                                                                               \\[3pt]
+      \hline                                                                                                                                                                                                               \\[-12pt]
+      1. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast                                                                                                                                                                     \\ p \mapsto Done\; result \ast \always (\Phi\; result) } \right\} \)                                                       &                             \\
+      \myquad[1] \ocamlreal{| Done result -> }                                                                       & [ close \gsPInv{} ]                                                                                 \\
+      \hphantom{.1.} \( \left\{ \gsPInv{} \ast {\color{red}\always (\Phi\; result)} \right\} \)                      &                                                                                                     \\
+      \myquad[2] \ocamlreal{result}                                                                                  & [ by {\color{red}assumption} ]                                                                      \\[3pt]
+      \hline                                                                                                                                                                                                               \\[-12pt]
+      2. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; p \ast                                                                                                                                                  \\ p \mapsto Waiting\; cqs \ast \gsIsCQS{}\; cqs } \right\} \) &                                                  \\
+      \myquad[1] \ocamlreal{| Waiting cqs ->}                                                                        & [ close \gsPInv{} ]                                                                                 \\
+      \hphantom{.2.} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                               \\ \gsIsCQS{}\; cqs } \right\} \) &                                                  \\
+      \myquad[2] \ocamlreal{let register = make_register p cqs}                                                      & [ apply \textsc{Spec-MakeRegister} ]                                                                \\
+      \hphantom{.2.} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                               \\ \gsIsReg{}\; register } \right\} \) &                                                  \\
+      \myquad[2] \ocamlreal{perform (Suspend register);}                                                             & [ protocol of \esuspend{} with \((P := \lambda v,\; \ulcorner v = () \urcorner \ast \gspdone{})\) ] \\
+      \hphantom{.2.} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                               \\ \gspdone{} } \right\} \) & [ open \gsPInv{}, lookup \(p\) using \(\gsIsPr{}\; p\) ] \\
+      \hphantom{.2.} \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{}                                                                                                                                              \\ \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) & \\
+      \myquad[2] \ocamlreal{match Atomic.get p with}                                                                 & [ CA on \gsPState{} ]                                                                               \\[3pt]
+      \hline                                                                                                                                                                                                               \\[-12pt]
+      2.1.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast                                                                                                                                                                  \\ p \mapsto Done\; result \ast \always (\Phi\; result) } \right\} \) &                                                  \\
+      \myquad[2] \ocamlreal{| Done result -> }                                                                       & [ close \gsPInv{} ]                                                                                 \\
+      \hphantom{.2.1.}  \( \left\{ \gsPInv{} \ast {\color{red}\always (\Phi\; result)}  \right\} \)                  &                                                                                                     \\
+      \myquad[3] \ocamlreal{result}                                                                                  & [ by {\color{red}assumption} ]                                                                      \\[3pt]
+      \hline                                                                                                                                                                                                               \\[-12pt]
+      2.2.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{} \ast                                                                                                                                                  \\ p \mapsto Waiting\; cqs \ast \gspwait{} } \right\} \) &                                                  \\
+      \myquad[2] \ocamlreal{| Waiting _ -> }                                                                         & [ specialize \textsc{PS-Contra} ]                                                                   \\
+      \hphantom{.2.2.}  \( \left\{ \cancel{\gsPInv{}} \ast {\color{red}\bot} \right\} \)                             &                                                                                                     \\
+      \myquad[3] \ocamlreal{error "impossible"}                                                                      & [ by {\color{red}contradiction} ]
+    \end{tabular}}
+  \caption{Hoare-style proof of \textsc{Spec-Await}.}
+  \label{fig:sched-spec-await-proof}
+\end{figure}
 
 % The proof of the \ocamlin{Promise.await} specification proceeds as follows:
 % \begin{itemize}
