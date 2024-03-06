@@ -17,9 +17,9 @@
         \begin{itemize}
           \item \hazel{} is an Iris language formalizing effect handlers using protocols.
           \item Syntax and semantics of protocols.
-          \item Since \ocf{} allows both effect handlers and mutable shared state we had to add a multi-threaded semantics to \hazel{}.
+          \item Since \ocf{} allows both effect handlers and mutable shared state we had to add a multithreaded semantics to \hazel{}.
         \end{itemize}
-  \item Inherent part of a scheduler is liveness, because it is responsible for running all fibers to completion. Unfortunately it is hard to prove liveness properties in Iris so we just focus on safety and effect safety.
+  \item Inherent part of a scheduler is liveness, because it is responsible for running all fibers to completion. Unfortunately it is hard to prove liveness properties in Iris, so we just focus on safety and effect safety.
 \end{itemize}
 
 \subsection{The Eio Library (WIP)}
@@ -30,14 +30,14 @@
   \item Implements switching between tasks using effect handlers.
   \item A fiber is a normal OCaml function which may perform effects that are handled by a scheduler.
   \item Each scheduler is only responsible for a single thread, more can be spawned.
-  \item It offers abstractions to operating system resources to fibers, e.g. network, filesystem, timers etc.
-  \item It also offers synchronization and message pasing constructs like mutexes \& channels which are specialized to handle fibers, i.e. a mutex does not suspend the system-level thread, but the fiber.
+  \item It offers abstractions to operating system resources to fibers, e.g. network, file system, timers etc.
+  \item It also offers synchronization and message passing constructs like mutexes \& channels which are specialized to handle fibers, i.e. a mutex does not suspend the system-level thread, but the fiber.
 \end{itemize}
 
 \subsection{Focus and Structure of the Thesis}
 \label{sec:intro-structure}
 
-Eio aims to be the standard cooperative concurrency library for \ocf{} so it includes many functions for structured concurrency of fibers (e.g. \ocamlin{Fiber.{first, any, both, all}}, which run two or more fibers and combine their results), support for cancelling fibers, abstractions for operating system resources, a different scheduler implementation per OS, and synchronization constructs like promises and mutexes.
+Eio aims to be the standard cooperative concurrency library for \ocf{}, so it includes many functions for structured concurrency of fibers (e.g. \ocamlin{Fiber.{first, any, both, all}}, which run two or more fibers and combine their results), support for cancelling fibers, abstractions for operating system resources, a different scheduler implementation per OS, and synchronization constructs like promises and mutexes.
 But for this work we restrict ourselves to verifying the safety and effect safety of Eio's core functionalities:
 \begin{enumerate}
   \item Running fibers in a "common denominator" scheduler that does not interact with any OS resources,
@@ -58,13 +58,13 @@ The diamond arrow between \ocamlin{Scheduler} and \ocamlin{Fiber} stands for the
 
 Fibers can fork off new fibers using the \efork{} effect and suspend execution using the \esuspend{} effect, which are both handled by the scheduler.
 The implementation of the fiber and scheduler functions are discussed in section~\ref{sec:sched-impl}.
-\textit{Promises} are built on top of the \textit{CQS} datastructure, which is a lock-free condition variable that is used by fibers to suspend execution until a promise is fulfilled.
+\textit{Promises} are built on top of the \textit{CQS} data structure, which is a lock-free condition variable that is used by fibers to suspend execution until a promise is fulfilled.
 The specification of promises is discussed in section~\ref{sec:sched-spec}.
 The CQS specification is already verified using Iris, but Eio uses a custom implementation for which we had to adapt the proof and we discuss this process in section~\ref{sec:cqs}.
 Fibers in Eio also have access to \textit{thread-local variables} by performing a \egetctx{} effect, which is discussed in section~\ref{sec:thread-local-vars}.
 They are thread-local in the sense that they are shared between all fibers of one scheduler.
 Finally, we discuss our addition of multi-threading to the \hazel{} operational semantics in order to model running schedulers in different threads.
-This turned out to be technically trivial so we only discuss it in the appendix and take a multi-threaded semantics and support for Iris \textit{shared invariants} as a given in the reminder of the main text.
+This turned out to be technically trivial, so we only discuss it in the appendix and take a multithreaded semantics and support for Iris \textit{shared invariants} as a given in the reminder of the main text.
 
 \subsection{Contributions}
 \label{sec:intro-contributions}

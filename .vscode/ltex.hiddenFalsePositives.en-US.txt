@@ -14,3 +14,4 @@
 {"rule":"WHITESPACE_RULE","sentence":"^\\Q[Spec-Await] \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q p await p  v, v\\E$"}
 {"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\Q[Spec-CQSTryCancel] isCQSRegisterHandle h callback R CQS.trycancel h  b, if b then callback R else\\E$"}
 {"rule":"WHITESPACE_RULE","sentence":"^\\Q[Spec-CQSTryCancel] isCQSRegisterHandle h callback R CQS.trycancel h  b, if b then callback R else\\E$"}
+{"rule":"COMMA_COMPOUND_SENTENCE","sentence":"^\\QThe CQS specification is already verified using Iris, but Eio uses a custom implementation for which we had to adapt the proof and we discuss this process in section \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}
