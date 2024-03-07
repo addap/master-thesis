@@ -21,24 +21,24 @@
   \end{tabular}
 \end{table}
 
-\subsection{Towards A Multi-Threaded Scheduler}
+\subsection{Towards A multithreaded Scheduler}
 \label{sec:apdx-mt}
 
-OCaml 5 added not only effect handlers but also the ability to use multiple threads of execution, which are called \textit{domains} (in the following we use the terms interchangeably).
-Each domain in OCaml 5 corresponds to one system-level thread and the usual rules of multi-threaded execution apply, i.e. domains are preemtively scheduled and can share memory.
+OCaml 5 added not only effect handlers but also the ability to use multiple threads of execution, which are called \emph{domains} (in the following we use the terms interchangeably).
+Each domain in OCaml 5 corresponds to one system-level thread and the usual rules of multithreaded execution apply, i.e. domains are preemtively scheduled and can share memory.
 Eio defines an operation to make use of multi-threading by forking off a new thread and running a separate scheduler in it.
 So while each Eio scheduler is only responsible for fibers in a single thread, fibers can await and communicate with fibers running in other threads.
 
 In order for a fiber to be able to await fibers in another thread, the \ocamlin{wakers_queue} [note it will be in the Simple Scheduler section] from above is actually a thread-safe queue based on something called CQS, which we will discuss in detail in a later section.
 
-Heaplang supports reasoning about multi-threaded programs by implementing fork and join operations for threads and defining atomic steps in the operational semantics, which enables the use of Iris \textit{invariants}.
-In contrast, \hazel{} did not define any multi-threaded operational semantics but it contained most of the building blocks for using invariants.
-In the following we explain how we added a multi-threaded operational semantics and enabled the use of invariants.
+Heaplang supports reasoning about multithreaded programs by implementing fork and join operations for threads and defining atomic steps in the operational semantics, which enables the use of Iris \emph{invariants}.
+In contrast, \hazel{} did not define any multithreaded operational semantics but it contained most of the building blocks for using invariants.
+In the following we explain how we added a multithreaded operational semantics and enabled the use of invariants.
 
 % \ocamlin{}`
 % Aside: Memory Model in OCaml 5
-% In the OCaml 5 memory model, \textit{atomic variables} are needed in order to access shared memory without introducing data races.
-% Instead of modelling atomic variables in \hazel{}, we continue to use normal references because the multi-threaded operational semantics by definition defines all memory operations to be sequentially consistent. This seems to be the standard approach and is done the same way in Heaplang.
+% In the OCaml 5 memory model, \emph{atomic variables} are needed in order to access shared memory without introducing data races.
+% Instead of modelling atomic variables in \hazel{}, we continue to use normal references because the multithreaded operational semantics by definition defines all memory operations to be sequentially consistent. This seems to be the standard approach and is done the same way in Heaplang.
 % \ocamlin{}`
 
 \subsubsection*{Adding Invariants to \hazel{}}
@@ -72,9 +72,9 @@ Therefore, invariants and effects do not interact in any interesting way.
 
 \subsubsection*{Adding Multi-Threading to \hazel{}}
 
-To allow reasoning in \hazel{} about multi-threaded programs we need a multi-threaded operational semantics as well as specifications for the new primitive operations \efork{}, \ocamlin{Cmpxcgh} and \ocamlin{FAA}.
+To allow reasoning in \hazel{} about multithreaded programs we need a multithreaded operational semantics as well as specifications for the new primitive operations \efork{}, \ocamlin{Cmpxcgh} and \ocamlin{FAA}.
 
-The language interface of Iris provides a multi-threaded operational semantics that is based on a thread-pool.
+The language interface of Iris provides a multithreaded operational semantics that is based on a thread-pool.
 The thread-pool is a list of expressions that represents threads running in parallel.
 At each step, one expressions is picked out of the pool at random and executed for one thread-local step.
 Each thread-local step additionally returns a list of forked-off threads, which are then added to the pool.
@@ -85,7 +85,7 @@ This is only relevant for the \efork{} operation as all other operations natural
 % (es_1 ++ e ++ es_2, \sigma) ->_mt (es_1 ++ e' ++ es_2 + es', \sigma')
 
 Heaplang implements multi-threading like this and for \hazel{} we do the same thing.
-We adapt \hazel{}'s thread-local operational semantics to include \efork{}, \ocamlin{Cmpxchg} and \ocamlin{FAA} operations and to track forked-off threads and get a multi-threaded operational semantics "for free" from Iris' language interface.
+We adapt \hazel{}'s thread-local operational semantics to include \efork{}, \ocamlin{Cmpxchg} and \ocamlin{FAA} operations and to track forked-off threads and get a multithreaded operational semantics "for free" from Iris' language interface.
 
 Additionally, we need to prove specifications for these three operations.
 \ocamlin{Cmpxchg} and \ocamlin{FAA} are standard so we will not discuss them here.
@@ -116,7 +116,7 @@ For \ocamlin{Spawn} \& \ocamlin{Join} we already need invariants as the point-to
 
 Note that for \ocamlin{Spawn} we must also impose the empty protocol on \ocamlin{f} as this expression will be forked-off.
 
-This allows us to implement standard multi-threaded programs which also use effect handlers.
+This allows us to implement standard multithreaded programs which also use effect handlers.
 For example, we can prove the specification of the function below that is based on an analogous function in Eio which forks a thread and runs a new scheduler inside it.
 Note that same as in Eio the function blocks until the thread has finished executing, so it should be called in separate fiber.
 

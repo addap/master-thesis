@@ -41,7 +41,7 @@ Eio aims to be the standard cooperative concurrency library for \ocf{}, so it in
 But for this work we restrict ourselves to verifying the safety and effect safety of Eio's core functionalities:
 \begin{enumerate}
   \item Running fibers in a "common denominator" scheduler that does not interact with any OS resources,
-  \item awaiting the result of other fibers using the \textit{promise} synchronization construct,
+  \item awaiting the result of other fibers using the \emph{promise} synchronization construct,
   \item and spawning new schedulers to run fibers in another thread.
 \end{enumerate}
 
@@ -58,13 +58,13 @@ The diamond arrow between \ocamlin{Scheduler} and \ocamlin{Fiber} stands for the
 
 Fibers can fork off new fibers using the \efork{} effect and suspend execution using the \esuspend{} effect, which are both handled by the scheduler.
 The implementation of the fiber and scheduler functions are discussed in section~\ref{sec:sched-impl}.
-\textit{Promises} are built on top of the \textit{CQS} data structure, which is a lock-free condition variable that is used by fibers to suspend execution until a promise is fulfilled.
+\emph{Promises} are built on top of the \emph{CQS} data structure, which is a lock-free condition variable that is used by fibers to suspend execution until a promise is fulfilled.
 The specification of promises is discussed in section~\ref{sec:sched-spec}.
 The CQS specification is already verified using Iris, but Eio uses a custom implementation for which we had to adapt the proof and we discuss this process in section~\ref{sec:cqs}.
-Fibers in Eio also have access to \textit{thread-local variables} by performing a \egetctx{} effect, which is discussed in section~\ref{sec:thread-local-vars}.
+Fibers in Eio also have access to \emph{thread-local variables} by performing a \egetctx{} effect, which is discussed in section~\ref{sec:thread-local-vars}.
 They are thread-local in the sense that they are shared between all fibers of one scheduler.
 Finally, we discuss our addition of multi-threading to the \hazel{} operational semantics in order to model running schedulers in different threads.
-This turned out to be technically trivial, so we only discuss it in the appendix and take a multithreaded semantics and support for Iris \textit{shared invariants} as a given in the reminder of the main text.
+This turned out to be technically trivial, so we only discuss it in appendix~\ref{sec:apdx-mt} and take a multithreaded semantics and support for Iris \emph{shared invariants} as a given in the reminder of the main text.
 
 \subsection{Contributions}
 \label{sec:intro-contributions}
