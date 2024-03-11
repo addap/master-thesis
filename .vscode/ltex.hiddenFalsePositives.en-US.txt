@@ -15,3 +15,8 @@
 {"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\Q[Spec-CQSTryCancel] isCQSRegisterHandle h callback R CQS.trycancel h  b, if b then callback R else\\E$"}
 {"rule":"WHITESPACE_RULE","sentence":"^\\Q[Spec-CQSTryCancel] isCQSRegisterHandle h callback R CQS.trycancel h  b, if b then callback R else\\E$"}
 {"rule":"COMMA_COMPOUND_SENTENCE","sentence":"^\\QThe CQS specification is already verified using Iris, but Eio uses a custom implementation for which we had to adapt the proof and we discuss this process in section \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}
+{"rule":"A_INFINITIVE","sentence":"^\\QCQS is implemented as a queue of cells with two pointers pointing to the beginning and end of the active cell range, the suspend pointer and the resume pointer.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QThe original CQS supports three operations that are interesting to us: suspend, tryCancel, and resume.\\E$"}
+{"rule":"A_INFINITIVE","sentence":"^\\QThe Broadcast.register function will advance the suspend pointer to allocate a fresh cell in the EMPTY logical state.\\E$"}
+{"rule":"A_INFINITIVE","sentence":"^\\QFor a register operation the suspend permit from the original CQS is not needed anymore since we do the enqueue registration internally.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QIn figures \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q we give Hoare-style proof annotations for the two functions make_register and Promise.await from figure \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}

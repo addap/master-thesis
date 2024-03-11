@@ -1,220 +1,174 @@
-\section{Verifying Eio's Customized CQS (WIP)}
-\label{sec:cqs}
+\section{Verifying Eio's Broadcast}
+\label{sec:broadcast}
 
-% <!-- In general, what is CQS? -->
+% <!-- In general, what is Broadcast/CQS? -->
 
-CQS~\cite{koval2023cqs} (for CancellableQueueSynchronizer) is an implementation of a synchronization primitive that allows execution contexts to wait until signalled.
-Its specification is already formally verified in Iris, which we adapted to use in our case study.
-The nature of a CQS execution context is kept abstract, but it is assumed that they support stopping execution and resuming with some value.
+In this section we go into detail on the \emph{broadcast} data structure that Eio uses in the implementation of \emph{promises}.
+The Eio implementation of broadcasts is an adaptation of something called \emph{CQS}~\cite{koval2023cqs}.
+CQS (for CancellableQueueSynchronizer) is a synchronization primitive that allows execution contexts to wait until signalled.
+Its specification is already formally verified in Iris, so we were able to adapt the proofs to use them in our case study.
+CQS keeps the nature of an execution context abstract, but it is assumed that they support stopping execution and resuming with some value.
 This is because CQS is designed to be used in the implementation of other synchronization constructs (e.g. mutex, barrier, promise, etc.) which take care of actually suspending and resuming execution contexts as required by their semantics.
 
 % <!-- How does Eio use CQS?  -->
 
-In the case of Eio an "execution context" is an Eio fiber so in the following we will always use the term fiber instead of execution context.
-Sill, CQS works across multiple threads, so fibers can use CQS to synchronize with fibers running in another thread.
-Eio implements a custom version of CQS adapted from the paper~\cite{koval2023cqs} which it calls \emph{broadcast} and uses in the implementation of the \emph{promise} synchronization construct.
-In this chapter we describe the behavior of Eio's \emph{customized CQS}, highlight differences to the \emph{original CQS}, and explain how we adapted the verification of the original CQS for our case study.
+In the case of Eio an "execution context" is an Eio fiber.
+Still, CQS is multithreaded, so fibers can use CQS functions to synchronize with fibers running in another thread.
+In the following we describe the behavior of Eio's \emph{broadcast}, highlight differences to the \emph{original CQS}, and explain how we adapted the verification of the original CQS for our case study.
 If something applies to both the customized and original version we just use the term \emph{CQS}.
 
-\subsection{Operations of CQS}
-\label{sec:cqs-operations}
-
-Since CQS is an implementation of the observer pattern, similar to condition variables in languages like \CC{}, it supports operations to register and signal callbacks.
+\subsection{Operations of Broadcast}
+\label{sec:broadcast-operations}
 
 % <!-- What are the operations supported by the original CQS. -->
 
-The original CQS supports three operations that are interesting to us.
-A \emph{register operation} (originally called \emph{resume operation}) is used by fibers to register a callback.
-Afterwards, the fiber can use a \emph{cancel operation} to try to cancel the \emph{suspend operation}.
-Finally, a \emph{signal operation} (originally called \emph{resume operation}) can be initiated from a different fiber and signals one registered callback.
-This fails if the \emph{suspend operation} associated to the callback had already been cancelled.
+The original CQS supports three operations that are interesting to us: \emph{suspend}, \emph{tryCancel}, and \emph{resume}.
+While we established Eio's broadcast as similar to condition variables where fibers can register callbacks to be notified about events, the original formulation of CQS uses a more abstract future-based interface for the same purpose.
 
-% <!-- Which operations does Eio add? -->
+For example, a \emph{suspend} operation is done by an execution context that wants to wait for an event.
+This operation creates and returns a new future.
+The future can then be used to stop execution because it is assumed that the program runtime supports suspending an execution context until a future is completed.
+But Eio cannot use this interface because it uses the customized CQS to \emph{build} the runtime that allows its execution contexts (i.e. fibers) to suspend until an event happens (i.e. a promise is fulfilled).
+So in the customized CQS, the \emph{suspend} operation is replaced by the \emph{register} operation, that takes a callback as an additional argument and registers it to be called later.
 
-These operations enable a single fiber to register a callback that is signalled on some event.
-Eio's customized CQS supports an additional operation called the \emph{signal-all operation}.
-As the name implies, it is used to signal all registered callbacks.
-This operation was added by Eio for the implementation of promises, so that \emph{all} fibers waiting on a promise can be signalled when the promise is fulfilled.
+Analogously, a \emph{resume} operation in the original CQS completed a single future which signalled the runtime to resume execution of the associated execution context.
+This is replaced by the \emph{signalAll} operation, which invokes all callbacks that are registered with the data structure.
+Eio uses \emph{signalAll} instead of a \emph{signal} operation to make the implementation of promises more straightforward.
+When a promise is fulfilled, \emph{all} fibers waiting on its value must continue execution, so the fine-grained control of a \emph{signal} operation is not needed.
 
 % % <!-- How to understand the operations?  -->
 
-To understand the operations it is helpful to view them in the context of their Eio implementation.
-An interaction with CQS as described in~\cite{koval2023cqs} is always guarded by first accessing some atomic variable.
-In the case of Eio, the atomic variable is the state variable of a promise, which is accessed in the functions \ocamlin{Promise.fulfill} and \ocamlin{Promise.await} as described in section~\ref{sec:sched-impl}.
-\ocamlin{Promise.await} will do \emph{register} and \emph{cancel operations} if necessary, \ocamlin{Promise.fulfill} will do a \emph{signal-all operation}.
+In the following we focus on the operations of Eio's broadcast, and to understand them it is helpful to view the context in which they are used.
+An interaction with the original CQS as described in~\cite{koval2023cqs} is always guarded by first accessing an atomic variable which encodes some information about CQS like the number of registered futures.
+This atomic variable is a part of the synchronization construction that is implemented using CQS.
+Thereby, it is ensured that operations only happen when they make sense (e.g. a \emph{resume} operation is not performed when no futures are available).
+For Eio's broadcast, figure~\ref{fig:cqs-usage} shows that the atomic variable is the state variable of a promise, which is accessed in the functions \ocamlin{Promise.fulfill} and \ocamlin{Promise.await} as was described in section~\ref{sec:sched-impl}.
+\ocamlin{Promise.await} will then perform \emph{register} and \emph{cancel} operations if necessary, and \ocamlin{Promise.fulfill} will do a \emph{signalAll} operation.
 
 \begin{figure}[ht]
-  \includegraphics[width=0.75\textwidth]{CQS_Outer_Atomic.png}
+  \includegraphics[width=\textwidth]{CQS_Outer_Atomic.png}
   \caption{Usage of CQS with an Outer Atomic Variable}
+  \label{fig:cqs-usage}
 \end{figure}
 
-It is important to note that since CQS is lock-free and fibers can run on different threads there can be a race between concurrent \emph{register}, \emph{cancel} and \emph{signal-all operations}.
-Possible interleavings and the necessity of the \emph{cancel operation} are explained in section~\ref{sec:sched-impl-await}.
+Note that because broadcast is a lock-free data structure and fibers can run on different threads, there can be a race between concurrent \emph{register}, \emph{tryCancel}, and \emph{signalAll} operations.
+Possible interleavings and the necessity of the \emph{cancel operation} were explained in section~\ref{sec:sched-impl-await}.
 
-% This example illustrates that a CQS instance always acts as a thread-safe store for cancellable callbacks.
-% More precisely, it is a FIFO queue but a \emph{signal-all operation} dequeues all elements at once.
-
-% <!-- What are the types of the operations. -->
-
-% % That CQS is "just" a store for cancellable callbacks is also reflected in the rather bare-bones types of the operations as implemented in OCaml.
-% We do a quick review of the types of the CQS operations as implemented in Eio.
-% A broadcast can be \ocamlin{create}d and shared between different threads.
-% New callbacks are inserted using the \ocamlin{register} function, yielding an optional \ocamlin{request} value.
-% If \ocamlin{suspend} returns \ocamlin{None} the callback has already been invoked due to a concurrent \ocamlin{signal_all}.
-% A \ocamlin{request} value can then be used to cancel the insertion, signifying that a fiber can only cancel its own callback.
-% The \ocamlin{signal_all} function (logically) consumes the CQS, which will become more clear when we present the specifications in section~\ref{sec:cqs-spec}.
-
-% \begin{figure}[ht]
-%   \begin{minted}{ocaml}
-% type t
-% type request
-
-% val create : unit -> t
-% val suspend : t -> (unit -> unit) -> request option
-% val cancel : request -> bool
-% val signal_all : t -> unit
-% \end{minted}
-%   \caption{Interface of the CQS Module}
-% \end{figure}
-
-\subsection{Implementation and Logical Interface of CQS}
-\label{sec:cqs-impl}
+\subsection{Implementation and Logical Interface of Broadcast}
+\label{sec:broadcast-impl}
 
 % <!-- Some general information how CQS is implemented and the logical state describing the entire queue. -->
 
 CQS is implemented as a queue of \emph{cells} with two pointers pointing to the beginning and end of the active cell range, the \emph{suspend pointer} and the \emph{resume pointer}.
 Cells not reachable from either pointer are garbage collected, but their logical state is still tracked.
 There is a stack of operations for manipulating these pointers to implement the higher-level functionality, but they are not part of the public API, so we do not focus on them.
-Each cell is a container for one callback and the logical state of the queue tracks the logical state of all existing cells shown in figure~\ref{fig:cqs-cell-states}.
+Each cell is a container for one callback and the logical state of the queue tracks the logical state of all existing cells.
+The possible logical states for a single cell are shown in figure~\ref{fig:cqs-cell-states} and there exist logical operations to change a cell's state.
 
-The number of active cells \ocamlin{n} (i.e. the length of the queue) is tracked by the logical resource \ocamlin{cqs_state n}.
+The number of active cells \(n\) (i.e. the length of the queue) is tracked by the logical resource \(CQSState\; n\).
 In normal usage of CQS, the atomic variable of the outer synchronization construct would encode the length of the queue in its value and keep this resource in an associated invariant.
 Changing the length of the queue is done using \emph{enqueue} and \emph{dequeue registration} logical operations when opening this invariant.
 
-As we saw before, however, for promises the exact length of the queue is irrelevant because the \emph{signal-all operation} will always set the length to 0.
-So in the adapted proof we keep the \ocamlin{cqs_state n} resource in the invariant of CQS itself.
+However, for promises the exact length of the queue is irrelevant because the \emph{signalAll} operation will always set the length to 0.
+So in the adapted proof for Eio's broadcast we keep the \(CQSState\; n\) resource in the invariant of the broadcast itself.
 As a consequence we also move the \emph{enqueue} and \emph{dequeue registration} out of the public logical API because they are now done internally.
 
-\subsection{Verification of the \ocamlin{Broadcast} Module}
-\label{sec:cqs-spec}
-
-In the following we describe the specifications we proved for the three operations \ocamlin{CQS.register}, \ocamlin{CQS.try_cancel} and \ocamlin{CQS.signal_all} of Eio's \ocamlin{Broadcast} module, in which points they differ from the specifications of the original CQS operations, and what changes we did to the internal logical state of CQS to carry out the proofs.
-
-% <!-- Futures vs. Callbacks -->
-
-The first major change was replacing the future-based interface of the \emph{register operation} with a callback-based interface.
-The original CQS did not support registering callbacks at all, which is why the operation was originally called \emph{suspend operation}.
-Performing a \emph{suspend operation} creates and returns a new future.
-The future can then be used to stop execution because it is assumed there is a runtime that allows suspending execution until the completion of a future.
-But Eio cannot use this interface because it uses the customized CQS to \emph{build} the runtime that allows fibers to suspend until the completion of a promise.
-As explained above, Eio implements CQS like a condition variable with a callback-based interface where the fiber performing the \emph{register operation} passes in a callback.
-Performing a \emph{signal operation} (or \emph{resume operation}) analogously invokes the callback, instead of completing the future.
-
-This changes the logical state of CQS only slightly.
-The original CQS tracked the state of the future for each cell and managed \emph{futureCancellation} and \emph{futureCompletion} tokens.
-In the customized CQS we analogously track the state of the callback for each cell and manage \emph{callbackInvokation} and \emph{callbackCancellation} tokens.
-
-For all three operations, the Eio implementation differs from the implementation already verified in the original CQS (i.e. some reordered instructions or a slightly different control flow) and they have different specifications as discussed below.
-However, the specifications of the underlying operations for manipulating the cell pointers are modular enough to allow us to prove the new specifications for \ocamlin{CQS.register} and \ocamlin{CQS.try_cancel}.
-Note that the presented specifications are cleaned up for readability.
-
-% Aside: Implementation of signal_all
-% Eio implements signal_all by atomically increasing the \emph{resume pointer} by some number n, instead of just 1 like in the original resume.
-% Because of technical differences between the infinte array implementation in the CQS mechanization & the infinite array implementation of Eio did not yet verify Eio's custom signal_all function.
-% Instead, I actually defined signal_all simply as a loop over a resume operation.
-% Since signal_all is only called once I posit that this verification is still valid but I still want to verify Eio's signal_all and remove this aside.
-
-The logical state of an individual cell is changed by the functions according to the following diagram.
-
 \begin{figure}[ht]
-  \includegraphics[width=0.75\textwidth]{Cell_States.png}
+  \includegraphics[width=\textwidth]{Cell_States.png}
   \caption{State Transition Diagram for a Single Cell.}
   \label{fig:cqs-cell-states}
 \end{figure}
 
-\subsubsection{\ocamlin{CQS.create}}
-\label{sec:cqs-spec-create}
+\subsection{Verification of Broadcast}
+\label{sec:broadcast-spec}
 
-Creating a CQS instance requires \ocamlin{inv_heap_inv} which is an Iris proposition that we are in a garbage-collected setting.
-It creates an \ocamlin{is_cqs γ cqs} which is a persistent resource that shows the value \ocamlin{cqs} is a CQS queue, along with a collection of ghost names we summarize with \ocamlin{γ}.
-The resource \ocamlin{cqs_state n} mentioned above is now kept inside \ocamlin{is_cqs γ q}.
-It also returns the unique resource \gssignal{}, which is held by the enclosing promise and allows calling the \ocamlin{CQS.signal_all} function once.\todo{translate code to latex math specifications}
+In the following we describe the specifications we proved for the functions implemented in Eio's \ocamlin{Broadcast} module, and what changes we did to the internal logical state of CQS to carry out the proofs.
+For all three operations, the Eio implementation differs from the implementation already verified in the original CQS (e.g. some reordered instructions or a slightly different control flow) and they have different specifications.
+However, the specifications of the underlying operations for manipulating cell pointers are modular enough to allow us to prove the new specifications for \ocamlin{Broadcast.create}, \ocamlin{Broadcast.register}, and \ocamlin{Broadcast.try_cancel}.
 
-\begin{minted}{coq}
-Theorem create_spec:
-{{{ inv_heap_inv }}}
-newThreadQueue #()
-{{{ γ q, RET q; is_cqs γ q ∗ signal_all_permit γ }}}.
-\end{minted}
+As for \ocamlin{Broadcast.signal_all}, Eio implements this function by atomically increasing the \emph{resume pointer} by the number \(n\) of registered callbacks and then processing all \(n\) cells between the old and new pointer position.
+Because of technical differences between the original CQS implementation of~\cite{koval2023cqs} and the broadcast implementation of Eio we opted to verify a different implementation of \ocamlin{Broadcast.signal_all}, that increments the \emph{resume pointer} \(n\) times in a loop.
+We argue this does not change the observable behaviors of the function since we ensure that it can only be called once.
 
-\subsubsection{\ocamlin{CQS.register}}
-\label{sec:cqs-spec-suspend}
+\subsubsection{\ocamlin{Broadcast.create}}
+\label{sec:broadcast-spec-create}
 
-For a \emph{register operation} the \emph{suspend permit} from the original CQS is not needed anymore since we do the \emph{enqueue registration} internally.
-The \ocamlin{is_waker} resource is defined as \ocamlin{R -∗ EWP cb () {{ ⊤ }}} and represents the permission to invoke the callback \ocamlin{cb}.
-We instantiate \ocamlin{R} with \gspdone{} so that the callback transports the knowledge that the promise has been fulfilled.
-\ocamlin{is_waker} is not persistent because the callback must be invoked only once and it might be accessed from a different thread.
+Creating a broadcast requires \(inv\_heap\_inv\) which is an Iris proposition which says that we are in a garbage-collected setting.
+As a result we get the persistent \(\gsIsBcst{}\; bcst\) resource that shows the value \(bcst\) is a broadcast.
+We also obtain the unique resource \gssignal{}, which is held by the enclosing promise and allows calling the \ocamlin{Broadcast.signal_all} function once.
 
-The \ocamlin{CQS.register} function will advance the \emph{suspend pointer} to allocate a new cell in the \textbf{EMPTY} logical state.
-If there is a concurrent call to \ocamlin{CQS.signal_all} which changed the cell to the \textbf{RESUMED} logical state before this function can \ocamlin{CAS} the callback into the cell, the callback is invoked immediately and \ocamlin{NONEV} is returned.
+\[
+  \inferrule[Spec-BroadcastCreate]
+  {inv\_heap\_inv}
+  {\ewp{create\; ()}{\bot}{bcst,\; \gsIsBcst{}\; bcst \ast \gssignal{}}}
+\]
+
+\subsubsection{\ocamlin{Broadcast.register}}
+\label{sec:broadcast-spec-suspend}
+
+% For a \emph{register} operation the \emph{suspend permit} from the original CQS is not needed anymore since we do the \emph{enqueue registration} internally.
+A \emph{register} operation takes a callback \(cb\) and the associated resource \(\gsIsCb{}\; cb\) which represents the permission to invoke the callback.
+We instantiate \(R\) with \gspdone{} so that the callback transports the knowledge that the promise has been fulfilled.
+\(\gsIsCb{}\) is not persistent because the callback must be invoked only once, and it might be accessed from a different thread.
+
+\begin{align*}
+  \gsIsCb{}\; cb\; R                            & \triangleq R \wand \ewp{cb\; ()}{\bot}{\top}                                                           \\
+  \emph{isBroadcastRegisterResult}\; r\; cb\; R & \triangleq (\ulcorner r = Called \urcorner)                                                            \\
+                                                & \quad \vee (\ulcorner r = Registered\; h \urcorner \ast \emph{isBroadcastRegisterHandle}\; h\; cb\; R) \\
+  \emph{isBroadcastRegisterHandle}              & : Val \to Val \to iProp \to iProp
+\end{align*}
+
+
+The \ocamlin{Broadcast.register} function will advance the \emph{suspend pointer} to allocate a fresh cell in the \textbf{EMPTY} logical state.
+If there is a concurrent call to \ocamlin{Broadcast.signal_all} which changed the cell to the \textbf{RESUMED} logical state before this function can save the callback into the fresh cell, the callback is invoked immediately and the value \(Called\) is returned.
 In this case, the state of the cell will be set to \textbf{TAKEN}.
-Otherwise, the callback is saved in the cell, which is advanced to the \textbf{CALLBACK(waiting)} logical state and an \ocamlin{is_suspend_result} resource is returned as the cancellation permit.
+Otherwise, the callback is saved in the cell, which is advanced to the \textbf{CALLBACK(waiting)} logical state, and a \(Registered\; handle\) value is returned along with a \(\textit{isBroadcastRegisterHandle}\) resource as the cancellation permit.
 
-\begin{minted}{coq}
-Theorem suspend_spec γ q k:
-{{{ is_cqs γ q ∗
-                is_waker V' k }}}
-suspend q k
-    {{{ v, RET v; ⌜v = NONEV⌝ ∨
-                        ∃ γk r, ⌜v = SOMEV r⌝ ∗
-                        is_suspend_result γ γk r k }}}.
-\end{minted}
+\[
+  \inferrule[Spec-BroadcastRegister]
+  { \gsIsBcst{}\; bcst \ast \gsIsCb{}\; callback\; R }
+  { \ewp{register\; bcst\; callback}{\bot}{r,\; \emph{isBroadcastRegisterResult}\; r\; callback\; R}}
+\]
 
-\subsubsection{\ocamlin{CQS.try_cancel}}
-\label{sec:cqs-spec-cance}
+\subsubsection{\ocamlin{Broadcast.try_cancel}}
+\label{sec:broadcast-spec-cance}
 
-The specification of the \emph{cancel operation} is a lot simplified compared to the original due to removed features.
-The \ocamlin{is_suspend_result} resource is used as a permission token and the \ocamlin{r} value is used to find the callback that should be cancelled.
+Given a \(textit{isBroadcastRegisterHandle}\; h\; cb\; R\), \ocamlin{Broadcast.try_cancel} will try to cancel the registration of the callback.
 
-If the callback had already been invoked by a concurrent call to \ocamlin{signal_all} (i.e. the logical state is \textbf{CALLBACK(resumed)}) the function returns \ocamlin{false} and no resources are returned to the caller.
-Otherwise, the permission to invoke the callback is returned and the cell is advanced to the \textbf{CALLBACK(cancelled)} logical state.
+If the callback had already been invoked by a call to \ocamlin{Broadcast.signal_all} (i.e. the logical state is \textbf{CALLBACK(resumed)}) the function returns \ocamlin{false} and no resources are returned to the caller.
+Otherwise, the permission to invoke the callback \(\gsIsCb{}\; cb\) is returned, and the cell is advanced to the \textbf{CALLBACK(cancelled)} logical state.
 
-\begin{minted}{coq}
-Theorem try_cancel_spec γ q γk r k:
-{{{ is_cqs γ q ∗
-                is_suspend_result γ γk r k }}}
-cancel r
-    {{{ (b: bool), RET #b; if b then is_waker V' k
-                        else True }}}.
-\end{minted}
+\[
+  \inferrule[Spec-BroadcastTryCancel]
+  { \emph{isBroadcastRegisterHandle}\; h\; cb\; R }
+  { \ewp{try\_cancel\; h}{\bot}{b,\; if\; b\; then\; \gsIsCb{}\; cb\; R\; else\; \top}}
+\]
 
-\subsubsection{\ocamlin{CQS.signal_all}}
-\label{sec:cqs-spec-signal-all}
+\subsubsection{\ocamlin{Broadcast.signal_all}}
+\label{sec:broadcast-spec-signal-all}
 
-The specification of the \emph{signal-all operation} is also a lot simplified compared to the specification of the original \emph{resume operation} because we removed multiple unused features.
-The \gssignal{} is a unique resource used to ensure the function can only be called once.
+To call \ocamlin{Broadcast.signal_all} the unique \(\gssignal{}\) resource is needed.
 The \ocamlin{R} resource must be duplicable because it will be used to invoke multiple callbacks, which have \ocamlin{R} as their precondition.
-It does not return any resources because its only effect is making an unknown number of fibers resume execution, which is not something we can easily formalize in Iris.
+The function does not return any resources because its only effect is making an unknown number of fibers resume execution, which is not something we can easily formalize in Iris.
 
-\begin{minted}{coq}
-Theorem signal_all_spec γ q:
-{{{ is_thread_queue γ q ∗
-                □ V' ∗
-                signal_all_permit γ }}}
-signal_all q
-    {{{ RET #(); True }}}.
-\end{minted}
+\[
+  \inferrule[Spec-BroadcastSignalAll]
+  { \gsIsBcst{}\; bcst \ast \always{}\;R \ast \gssignal{}}
+  { \ewp{signalAll\; bcst}{\bot}{\top} }
+\]
 
 \subsection{Features Removed from Original CQS}
-\label{sec:cqs-spec-removed-features}
+\label{sec:broadcast-spec-removed-features}
 
 The original CQS supports multiple additional features like a synchronous mode for suspend and resume, and also a smart cancellation mode.
 These features enlarge the state space of CQS and complicate the verification but are not used in Eio so when we ported the verification of CQS to our Eio case study we removed support for these features.
-This reduced the state space of a cell shown below (taken from the original paper) to something more manageable for us when adapting the proofs.
+This reduced the state space of a cell shown in figure~\ref{fig:cqs-cell-states-original} to something more manageable for us when adapting the proofs.
 
 \begin{figure}[ht]
-  \includegraphics[width=0.75\textwidth]{Cell_States_Original.png}
-  \caption{Cell States in the Original CQS}
+  \includegraphics[width=\textwidth]{Cell_States_Original.png}
+  \caption{Cell States in the Original CQS from~\cite{koval2023cqs} (page 42).}
+  \label{fig:cqs-cell-states-original}
 \end{figure}
 
-Due to this, the part of the verification of the original CQS that we had to customize for Eio shrunk by approximately 1300 lines of Coq code from the original 3600 lines of Coq code, while there is an additional ~4000 lines of Coq code that we did not need to adapt.
+The part of the verification of the original CQS that we had to customize for Eio was originally 3600 lines of Coq code but -- due to these simplifications -- we could reduce it by approximately 1300 lines of Coq code.
+Additionally, there are ~4000 lines of Coq code about lower-level functionality that we did not need to adapt when porting them to our case study.

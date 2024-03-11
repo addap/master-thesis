@@ -60,7 +60,7 @@ Fibers can fork off new fibers using the \efork{} effect and suspend execution u
 The implementation of the fiber and scheduler functions are discussed in section~\ref{sec:sched-impl}.
 \emph{Promises} are built on top of the \emph{CQS} data structure, which is a lock-free condition variable that is used by fibers to suspend execution until a promise is fulfilled.
 The specification of promises is discussed in section~\ref{sec:sched-spec}.
-The CQS specification is already verified using Iris, but Eio uses a custom implementation for which we had to adapt the proof and we discuss this process in section~\ref{sec:cqs}.
+The CQS specification is already verified using Iris, but Eio uses a custom implementation for which we had to adapt the proof and we discuss this process in section~\ref{sqc:broadcast}.
 Fibers in Eio also have access to \emph{thread-local variables} by performing a \egetctx{} effect, which is discussed in section~\ref{sec:thread-local-vars}.
 They are thread-local in the sense that they are shared between all fibers of one scheduler.
 Finally, we discuss our addition of multi-threading to the \hazel{} operational semantics in order to model running schedulers in different threads.

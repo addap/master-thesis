@@ -1,4 +1,4 @@
-\section{Verifying a Simplified Eio Scheduler}
+\section{Verifying a Simplified Eio Scheduler With Promises}
 \label{sec:scheduler}
 
 \todo{Mention that all code examples are an OCaml rendering of the verified \hazel{} code, based on but not equal to the Eio code}
@@ -140,15 +140,20 @@ For the verification we assume the specification of a suitable \ocamlin{Queue} m
 
 \begin{figure}[ht]
   \begin{minted}{ocaml}
+(* promise.ml *)
+let fulfill p result =
+  match Atomic.get p with
+  | Done _ -> error "impossible"
+  | Waiting bcst ->
+      Atomic.set p (Done result);
+      Broadcast.signal_all bcst
+  
+(* fiber.ml *)
 let fork_promise (f : () -> 'a) : 'a Promise.t =
   let p = Promise.create () in
   let fiber = fun () ->
     let result = f () in
-    match Atomic.get p with
-    | Done _ -> error "impossible"
-    | Waiting cqs ->
-        Atomic.set p (Done result);
-        CQS.signal_all cqs 
+    Promise.fulfill p result
   in
   perform (Fork fiber) 
   p
@@ -170,21 +175,21 @@ This achieves a better separation of concerns and simplifies the logical state n
 
 \begin{figure}[ht]
   \begin{minted}{ocaml}
-type 'a t = Done of 'a | Waiting of CQS.t
+type 'a t = Done of 'a | Waiting of Broadcast.t
 
 let create () : 'a t = 
-  let cqs = CQS.create () in
-  Atomic.create (Waiting cqs)
+  let bcst = Broadcast.create () in
+  Atomic.create (Waiting bcst)
 
-let make_register (p: 'a t) (cqs: CQS.t) : (() waker -> ()) = 
+let make_register (p: 'a t) (bcst: Broadcast.t) : (() waker -> ()) = 
   fun waker ->
-    let register_result = CQS.register cqs waker in
+    let register_result = Broadcast.register bcst waker in
     match register_result with
     | None -> ()
     | Some register_handle ->
       match Atomic.get p with
       | Done result ->  
-        if CQS.try_cancel register_handle
+        if Broadcast.try_cancel register_handle
         then waker ()
         else ()
       | Waiting _ -> ()
@@ -192,8 +197,8 @@ let make_register (p: 'a t) (cqs: CQS.t) : (() waker -> ()) =
 let await (p: 'a t) : 'a = 
   match Atomic.get p with
   | Done result -> result
-  | Waiting cqs ->
-    let register = make_register p cqs
+  | Waiting bcst ->
+    let register = make_register p bcst
     perform (Suspend register);
     match Atomic.get p with
     | Done result -> result 
@@ -203,23 +208,23 @@ let await (p: 'a t) : 'a =
   \label{fig:sched-impl-await}
 \end{figure}
 
-This is the most complicated looking function in our case study which is partly due to the \esuspend{} effect and also due to the use of CQS functions.
+This is the most complicated looking function in our case study which is partly due to the \esuspend{} effect and also due to the use of \emph{broadcast} functions.
 Its code is presented in figure~\ref{fig:sched-impl-await}.
 The purpose of \ocamlin{Promise.await p} is to suspend execution of the calling fiber until \ocamlin{p} is fulfilled with a value and then return this value.
 The "suspend execution" part is handled by performing a \esuspend{} effect.
-Then, the "until \ocamlin{p} is fulfilled" part is implemented by using CQS~\cite{koval2023cqs} functions as described in the following.
+Then, the "until \ocamlin{p} is fulfilled" part is implemented by using a \emph{broadcast} data structure.
 
-CQS is an implementation of the observer pattern and functionally similar to condition variables\footnote{\url{https://en.cppreference.com/w/cpp/thread/condition_variable}} in languages like \CC{} (as defined by the POSIX standard), allowing fibers to register callbacks that will be called when a condition is signalled.
-The difference is that traditional condition variables are always used together with a mutex to enable synchronization between different threads, while CQS is a lock-free data structure implementing a similar API.
+In Eio, a \emph{broadcast} is an implementation of the observer pattern and functionally similar to condition variables\footnote{\url{https://en.cppreference.com/w/cpp/thread/condition_variable}} in languages like \CC{} (as defined by the POSIX standard), allowing fibers to register callbacks that will be called when a condition is signalled.
+The difference is that traditional condition variables are always used together with a mutex to enable synchronization between different threads, broadcast is a lock-free data structure implementing a similar API.
 
-In figure~\ref{fig:sched-impl-cqs} we show the public API of the CQS module.
-The \ocamlin{CQS.register} function registers a given callback with the data structure while \ocamlin{CQS.signal_all} calls all registered callbacks.
-The return value of \ocamlin{CQS.register} depends on whether the function detects a parallel execution of \ocamlin{CQS.signal_all}.
-If a parallel execution is detected, \ocamlin{CQS.register} will directly call the callback and return \ocamlin{Called}\footnote{This is purely an optimization. It would be equally valid for functional correctness to register the \ocamlin{waker} function in the data structure and let \ocamlin{CQS.signal_all} call it later.}.
-Otherwise, \ocamlin{CQS.register} returns a \ocamlin{Registered handle} value, where \ocamlin{handle} can be used to call the \ocamlin{CQS.try_cancel} function.
-\ocamlin{CQS.try_cancel} attempts to cancel a registered callback and returns whether the cancellation was successful.
-If it was successful, the previously registered callback will not be called when \ocamlin{CQS.signal_all} is executed.
-The implementation and specification of the functions will be expanded upon in section~\ref{sec:cqs}, for now we just explain their usage in the context of \ocamlin{Promise.await}.
+In figure~\ref{fig:sched-impl-broadcast} we show the public API of the \ocamlin{Broadcast} module.
+The \ocamlin{Broadcast.register} function registers a given callback with the data structure while \ocamlin{Broadcast.signal_all} calls all registered callbacks.
+The return value of \ocamlin{Broadcast.register} depends on whether the function detects a parallel execution of \ocamlin{Broadcast.signal_all}.
+If a parallel execution is detected, \ocamlin{Broadcast.register} will directly call the callback and return \ocamlin{Called}\footnote{This is purely an optimization. It would be equally valid for functional correctness to register the \ocamlin{waker} function in the data structure and let \ocamlin{Broadcast.signal_all} call it later.}.
+Otherwise, \ocamlin{Broadcast.register} returns a \ocamlin{Registered handle} value, where \ocamlin{handle} can be used to call the \ocamlin{Broadcast.try_cancel} function.
+\ocamlin{Broadcast.try_cancel} attempts to cancel a registered callback and returns whether the cancellation was successful.
+If the cancellation was successful, the previously registered callback will not be called when \ocamlin{Broadcast.signal_all} is executed.
+The implementation and specification of the functions will be expanded upon in section~\ref{sec:broadcast}, for now we just explain their usage in the context of \ocamlin{Promise.await}.
 
 \begin{figure}[ht]
   \begin{minted}{ocaml}
@@ -232,33 +237,33 @@ val register : t -> callback -> register_result
 val try_cancel : register_handle -> bool
 val signal_all : t -> ()
   \end{minted}
-  \caption{Interface of the \ocamlin{CQS} module.}
-  \label{fig:sched-impl-cqs}
+  \caption{Interface of the \ocamlin{Broadcast} module.}
+  \label{fig:sched-impl-broadcast}
 \end{figure}
 
 In the \ocamlin{Promise.await} function if the promise is not fulfilled initially the fiber should wait until that is the case, so it performs a \esuspend{} effect.
-The \ocamlin{register} function passed to the effect will register the \ocamlin{waker} function using \ocamlin{CQS.register}.
-When at some point the \ocamlin{CQS.signal_all} function is called -- this happens in \ocamlin{Fiber.fork_promise} -- all registered \ocamlin{waker}s will be called in turn.
+The \ocamlin{register} function passed to the effect will register the \ocamlin{waker} function using \ocamlin{Broadcast.register}.
+When at some point the \ocamlin{Broadcast.signal_all} function is called -- this happens in \ocamlin{Fiber.fork_promise} -- all registered \ocamlin{waker}s will be called in turn.
 Recall that calling a \ocamlin{waker} function will enqueue the fiber that performed the \esuspend{} effect in the scheduler's run queue so that it can continue execution.
 
 In the default case the following simplified chain of events happens:
 \begin{enumerate}
   \item The fiber suspends execution at the point of evaluating \ocamlin{perform (Suspend register)}.
-  \item The \ocamlin{waker} function is registered with CQS.
+  \item The \ocamlin{waker} function is registered with a broadcast.
   \item The promise is fulfilled.
   \item The \ocamlin{waker} function is called.
   \item The fiber resumes execution at the point of evaluating \ocamlin{perform (Suspend register)}.
 \end{enumerate}
 Therefore, after the \esuspend{} effect returns we know the state of the promise is \ocamlin{Done} and the final value can be returned.
 
-But because CQS is lock-free and promises can be shared between different threads there are a number of possible interleavings that the \ocamlin{register} function must take care of as well.
+But because broadcast is a lock-free data structure and promises can be shared between different threads there are a number of possible interleavings that the \ocamlin{register} function must take care of as well.
 The definition of the register function is interesting enough that we split it out into \ocamlin{make_register} and give a separate specification, which is not part of the public API of the module.
 First, there could be a race on the state of the promise itself.
-Right after the state is read in line 21 of figure~\ref{fig:sched-impl-await} another thread might change the state to \ocamlin{Done} and go on to call \ocamlin{CQS.signal_all}.
-If that happens there is another race between the \ocamlin{CQS.register} in line 9 and the \ocamlin{CQS.signal_all} in the other thread.
-If \ocamlin{CQS.register} detects that there is a racing \ocamlin{CQS.signal_all} it will directly call the \ocamlin{waker}.
-Otherwise, the \ocamlin{waker} is registered but in fact the \ocamlin{CQS.signal_all} might have already finished before \ocamlin{CQS.register} even started.
-In this case the \ocamlin{waker} would be "lost" in the CQS, never to be called.
+Right after the state is read in line 21 of figure~\ref{fig:sched-impl-await} another thread might change the state to \ocamlin{Done} and go on to call \ocamlin{Broadcast.signal_all}.
+If that happens there is another race between the \ocamlin{Broadcast.register} in line 9 and the \ocamlin{Broadcast.signal_all} in the other thread.
+If \ocamlin{Broadcast.register} detects that there is a racing \ocamlin{Broadcast.signal_all} it will directly call the \ocamlin{waker}.
+Otherwise, the \ocamlin{waker} is registered but in fact the \ocamlin{Broadcast.signal_all} might have already finished before \ocamlin{Broadcast.register} even started.
+In this case the \ocamlin{waker} would be "lost" in the broadcast, never to be called.
 To avoid this, \ocamlin{register} must check the state of the promise again in line 13, and if it is fulfilled try to cancel the \ocamlin{waker} registration.
 The cancel will fail if the \ocamlin{waker} function was already called.
 If it succeeds the \ocamlin{register} function has the responsibility of calling \ocamlin{waker} itself, which is done in line 16.
@@ -328,8 +333,8 @@ Other pieces of ghost state are \gsPInvIn{}, \gsIsPr{}, and \gsReady{} described
 a location \(p\) holding its current program value, a ghost name \(\gamma\) that is used for the \gspwait{} and \gspdone{} resources, and a predicate \(Φ\) that describes the value the promise will eventually hold.
 
 Additionally, for each promise in the map we own some resources as part of \gsPInvIn{} that depend on the current state of the promise.
-As long as the promise is not fulfilled we own a broadcast\todo{Establish \emph{broadcast} as a name for \ocamlin{CQS}}, one copy of \gspwait{}, and a \gssignal{}.
-The \gssignal{} is used to call the \ocamlin{CQS.signal_all} function which must only be called once.
+As long as the promise is not fulfilled we own a broadcast, one copy of \gspwait{}, and a \gssignal{}.
+The \gssignal{} is used to call the \ocamlin{Broadcast.signal_all} function which must only be called once.
 When the promise has been fulfilled, we instead own a \gspdone{} and the knowledge that the final value satisfies the given postcondition \(Φ\).\todo{\gsPInv{} is an invariant that wraps \gsPInvIn{} so that we can share it.}
 
 \gsIsPr{} is a persistent resource that denotes that \(p\) exists as a promise in \gsPInvIn{}. The \(pn\) ghost name is globally unique and included in the resource algebra we use for the proofs.
@@ -363,7 +368,7 @@ It expresses that \emph{f} is safe to be executed and is used as the invariant f
 \begin{figure}[ht]
   \begin{align*}
     \gsPState{}\; p\; \gamma\; \Phi \triangleq\; & (\exists\, v.\; p \mapsto Done\; v \ast \gspdone{} \ast \always \Phi\; v)                                                    \\
-                                                 & \vee (\exists\, cqs.\; p \mapsto Waiting\; cqs \ast \gsIsCQS{}\; cqs \ast \gspwait{} \ast \gssignal{})                       \\
+                                                 & \vee (\exists\, bcst.\; p \mapsto Waiting\; bcst \ast \gsIsBcst{}\; bcst \ast \gspwait{} \ast \gssignal{})                        \\
     \gsPInvIn{}  \triangleq\;                    & \exists M.\; \ownGhost{pn}{\authfull{}\; M} \ast \forall\, (p, \gamma) \mapsto \Phi \in M.\; \gsPState{}\; p\; \gamma\; \Phi \\
     \gsPInv{} \triangleq\;                       & \knowInv{\invN{}}{\gsPInvIn{}}                                                                                               \\
     \gsIsPr{}\; p\; \Phi \triangleq\;            & \exists \gamma.\; \ownGhost{pn}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}}                          \\
@@ -420,7 +425,7 @@ Also, \(fork\_promise\) needs the \gsPInv{} invariant to interact with the globa
 % - We define the actual fiber and prove its \ewpt{}.
 % - Evaluating \ocamlin{f} yields a value satisfying \(Φ\) as given by the \ewpt{}.
 % - Because we own \gspwait{} the second branch of the match can be ruled out. Now the \gsPInvIn{} invariant is accessed to update the promise state to \ocamlin{Done}. This consumes both halves of the \gspwait{} resource and yields a \gspdone{}. We also take out the \gssignal{}.
-% - We use this permit along with \gspdone{} to call \ocamlin{CQS.signal_all}. \gspdone{} is persistent so it can be used to call all wakers.
+% - We use this permit along with \gspdone{} to call \ocamlin{Broadcast.signal_all}. \gspdone{} is persistent so it can be used to call all wakers.
 % - Using the \ewpt{} for the wrapped \ocamlin{f} we can perform a \efork{} effect.
 % - Since the promise will be fulfilled with a value satisfying \(Φ\) we have the \ocamlin{isPromise p Φ} that we must return.
 
@@ -436,8 +441,8 @@ As the \textsc{Spec-MakeRegister} specification shows, \ocamlin{make_register} r
 
 \begin{mathpar}
   \inferrule[Spec-MakeRegister]
-  { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi \ast \gsIsCQS{}\; cqs }
-  { \ewp{make\_register\; p\; cqs}{\bot}{reg,\; \gsIsReg{}\; reg\; (\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})}}
+  { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi \ast \gsIsBcst{}\; bcst }
+  { \ewp{make\_register\; p\; bcst}{\bot}{reg,\; \gsIsReg{}\; reg\; (\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})}}
 
   \and
 
@@ -447,65 +452,66 @@ As the \textsc{Spec-MakeRegister} specification shows, \ocamlin{make_register} r
 \end{mathpar}
 
 In figures~\ref{fig:sched-spec-makeregister-proof} and~\ref{fig:sched-spec-await-proof} we give Hoare-style proof annotations for the two functions \ocamlin{make_register} and \ocamlin{Promise.await} from figure~\ref{fig:sched-impl-await}.
-The proof of \textsc{Spec-MakeRegister} uses the specifications of some CQS functions, which we briefly explain now and expand upon in section~\ref{sec:cqs-spec}.
+The proof of \textsc{Spec-MakeRegister} uses the specifications of some broadcast functions.
+We briefly explain these specifications and their logical state definitions now and expand upon them in section~\ref{sec:broadcast-spec}.
 
 \begin{align*}
-  \gsIsCb{}\; cb\; R                      & \triangleq R \wand \ewp{cb\; ()}{\bot}{\top}                                                     \\
-  \emph{isCQSRegisterResult}\; r\; cb\; R & \triangleq (\ulcorner r = Called \urcorner)                                                      \\
-                                          & \quad \vee (\ulcorner r = Registered\; h \urcorner \ast \emph{isCQSRegisterHandle}\; h\; cb\; R) \\
-  \emph{isCQSRegisterHandle}              & : Val \to Val \to iProp \to iProp
+  \gsIsCb{}\; cb\; R                            & \triangleq R \wand \ewp{cb\; ()}{\bot}{\top}                                                           \\
+  \emph{isBroadcastRegisterResult}\; r\; cb\; R & \triangleq (\ulcorner r = Called \urcorner)                                                            \\
+                                                & \quad \vee (\ulcorner r = Registered\; h \urcorner \ast \emph{isBroadcastRegisterHandle}\; h\; cb\; R) \\
+  \emph{isBroadcastRegisterHandle}              & : Val \to Val \to iProp \to iProp
 \end{align*}
 
 \begin{mathpar}
-  \inferrule[Spec-CQSRegister]
-  { \gsIsCQS{}\; cqs \ast \gsIsCb{}\; callback\; R }
-  { \ewp{CQS.register\; cqs\; callback}{\bot}{r,\; \emph{isCQSRegisterResult}\; r\; callback\; R}}
+  \inferrule[Spec-BroadcastRegister]
+  { \gsIsBcst{}\; bcst \ast \gsIsCb{}\; callback\; R }
+  { \ewp{register\; bcst\; callback}{\bot}{r,\; \emph{isBroadcastRegisterResult}\; r\; callback\; R}}
 
   \and
 
-  \inferrule[Spec-CQSTryCancel]
-  { \emph{isCQSRegisterHandle}\; h\; callback\; R }
-  { \ewp{CQS.try\_cancel\; h}{\bot}{b,\; if\; b\; then\; \gsIsCb{}\; callback\; R\; else\; \top}}
+  \inferrule[Spec-BroadcastTryCancel]
+  { \emph{isBroadcastRegisterHandle}\; h\; cb\; R }
+  { \ewp{try\_cancel\; h}{\bot}{b,\; if\; b\; then\; \gsIsCb{}\; cb\; R\; else\; \top}}
 \end{mathpar}
 
-The function \ocamlin{CQS.register} takes a \(callback\) that satisfies the \gsIsCb{} predicate to register it in the CQS data structure.
-This predicate is structurally similar to \gsIsWaker{} and, in fact, in the proof of \textsc{Spec-MakeRegister} we instantiate the precondition \(R\) with \(\gspdone{}\) and pass as the \ocamlin{callback} a \ocamlin{waker} function, which has the precondition \((\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})\) as described above.
-The result of \ocamlin{CQS.register} is either a value \(Called\), which expresses that it called the callback directly, or a register handle, which can be used to call \ocamlin{CQS.try_cancel}.
+The function \ocamlin{Broadcast.register} takes a callback \(cb\) that satisfies the \gsIsCb{} predicate to register it in the broadcast data structure.
+This predicate is structurally similar to \gsIsWaker{} and, in fact, in the proof of \textsc{Spec-MakeRegister} we instantiate the precondition \(R\) with \(\gspdone{}\) and pass as the callback a \ocamlin{waker} function, which has the precondition \((\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})\) as described above.
+The result of \ocamlin{Broadcast.register} is either a value \(Called\), which expresses that it called the callback directly, or a register handle, which can be used to call \ocamlin{Broadcast.try_cancel}.
 
-\ocamlin{CQS.try_cancel} will attempt to cancel a previous registration identified by the given \(handle\).
-If the cancellation is successful, we get back the \(\gsIsCb{}\) resource so that we can call the \(callback\) in \ocamlin{make_register}.
+\ocamlin{Broadcast.try_cancel} will attempt to cancel a previous registration identified by the given \(handle\).
+If the cancellation is successful, we get back the \(\gsIsCb{}\) resource so that we can call the callback in \ocamlin{make_register}.
 
 \paragraph*{Hoare-Style Proofs for \textsc{Spec-MakeRegister} and \textsc{Spec-Await}}
 
 In the proof below an opened invariant \(Inv\) is represented as \(\cancel{Inv}\) and resources that are not needed for the rest of the proof are dropped implicitly.
 
-The proof of \textsc{Spec-MakeRegister} is straightforward and follows from the specifications of \ocamlin{CQS.register} and \ocamlin{CQS.try_cancel}.
+The proof of \textsc{Spec-MakeRegister} is straightforward and follows from the specifications of \ocamlin{Broadcast.register} and \ocamlin{Broadcast.try_cancel}.
 For \textsc{Spec-Await}, the crux is that we define \textsc{Spec-MakeRegister} so that it returns a \(register\) function which satisfies \(\gsIsReg{}\; register\; (\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})\).
 Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect returns, and we can refute the case of the promise still being unfulfilled when checking the state of promise again for the last time.
 
 \begin{figure}[H]
   {\setlength{\extrarowheight}{3pt}
     \begin{tabular}{@{}ll@{}}
-      \ocamlreal{let make_register (p: 'a t) (cqs: CQS.t) : (() waker -> ()) =}                   &                                                           \\
-      \(\left\{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsCQS{}\; cqs \right\}\)                     &                                                           \\
+      \ocamlreal{let make_register (p: 'a t) (bcst: Broadcast.t) : (() waker -> ()) =}             &                                                           \\
+      \(\left\{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \right\}\)                      &                                                           \\
       \myquad[1] \ocamlreal{  fun (waker: () waker) ->}                                           & [ intro waker that satisfies \gsIsWaker{} ]               \\
-      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsCQS{}\; cqs \ast                                                                             \\ (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) } \right\} \)&\\
-      \myquad[2] \ocamlreal{  let cqsres = CQS.register cqs waker in}                             & [ apply \textsc{Spec-CQSRegister} ]                       \\
-      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsCQS{}\; cqs \ast                                                                             \\ \emph{isCQSRegisterResult}\; cqsres } \right\}\) &\\
-      \myquad[2] \ocamlreal{  match cqsres with}                                                  & [ CA on cqsres ]                                          \\[3pt]
+      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \ast                                                                              \\ (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) } \right\} \)&\\
+      \myquad[2] \ocamlreal{  let regres = Broadcast.register bcst waker in}                       & [ apply \textsc{Spec-BroadcastRegister} ]                       \\
+      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \ast                                                                              \\ \emph{isBroadcastRegisterResult}\; regres } \right\}\) &\\
+      \myquad[2] \ocamlreal{  match regres with}                                                  & [ CA on regres ]                                          \\[3pt]
       \hline                                                                                                                                                  \\[-15pt]
-      1. \(\left\{  cqsres = None \right\}\)                                                      &                                                           \\
+      1. \(\left\{  regres = None \right\}\)                                                      &                                                           \\
       \myquad[2] \ocamlreal{ | None -> () }                                                       & [ by {\color{red}done} ]                                  \\[3pt]
       \hline                                                                                                                                                  \\[-12pt]
-      2. \(\left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsCQS{}\; cqs \ast                                                                         \\ cqsres = Some\; handle \ast \emph{isCQSRegisterHandle}\; handle } \right\}\) & \\
+      2. \(\left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \ast                                                                          \\ regres = Some\; handle \ast \emph{isBroadcastRegisterHandle}\; handle } \right\}\) & \\
       \myquad[2] \ocamlreal{ | Some handle -> }                                                   & [ open \gsPInv{}, lookup \(p\) using \(\gsIsPr{}\; p\) ]  \\
-      \hphantom{.2.} \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsCQS{}\; cqs \ast                                                                       \\ \emph{isCQSRegisterHandle}\; handle \ast \gsPState{}\; p\; \gamma\; \Phi } \right\}\) &\\
+      \hphantom{.2.} \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsBcst{}\; bcst \ast                                                                        \\ \emph{isBroadcastRegisterHandle}\; handle \ast \gsPState{}\; p\; \gamma\; \Phi } \right\}\) &\\
       \myquad[3] \ocamlreal{ match Atomic.get p with }                                            & [ CA on \gsPState{} ]                                     \\[3pt]
       \hline                                                                                                                                                  \\[-12pt]
-      2.1. \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsCQS{}\; cqs \ast                                                                                 \\ \emph{isCQSRegisterHandle}\; handle \ast \\ p \mapsto Done\; result \ast \gspdone{} } \right\}\)  &\\
+      2.1. \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsBcst{}\; bcst \ast                                                                                  \\ \emph{isBroadcastRegisterHandle}\; handle \ast \\ p \mapsto Done\; result \ast \gspdone{} } \right\}\)  &\\
       \myquad[3] \ocamlreal{| Done result -> }                                                    & [ close \gsPInv{} ]                                       \\
-      \hphantom{.2.1.} \(\left\{ \makecell{ \gsIsCQS{}\; cqs \ast \emph{isCQSRegisterHandle}\; handle \ast                                                    \\ \gspdone{} } \right\}\) &\\
-      \myquad[4] \ocamlreal{ if CQS.try_cancel handle }                                           & [ apply \textsc{Spec-CQSTryCancel}, CA on return value  ] \\[3pt]
+      \hphantom{.2.1.} \(\left\{ \makecell{ \gsIsBcst{}\; bcst \ast \emph{isBroadcastRegisterHandle}\; handle \ast                                               \\ \gspdone{} } \right\}\) &\\
+      \myquad[4] \ocamlreal{ if Broadcast.try_cancel handle }                                     & [ apply \textsc{Spec-BroadcastTryCancel}, CA on return value  ] \\[3pt]
       \hline                                                                                                                                                  \\[-15pt]
       2.1.1. \(\left\{ \gspdone{} \ast (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) \right\}\) & [ specialize assumption ]                                 \\
       \hphantom{.2.1.1.} \(\left\{ {\color{red}\ewp{waker\; ()}{\bot}{\top}} \right\}\)           &                                                           \\
@@ -534,10 +540,10 @@ Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect r
       \hphantom{.1.} \( \left\{ \gsPInv{} \ast {\color{red}\always (\Phi\; result)} \right\} \)                      &                                                                                                     \\
       \myquad[2] \ocamlreal{result}                                                                                  & [ by {\color{red}assumption} ]                                                                      \\[3pt]
       \hline                                                                                                                                                                                                               \\[-12pt]
-      2. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; p \ast                                                                                                                                                  \\ p \mapsto Waiting\; cqs \ast \gsIsCQS{}\; cqs } \right\} \) &                                                  \\
-      \myquad[1] \ocamlreal{| Waiting cqs ->}                                                                        & [ close \gsPInv{} ]                                                                                 \\
-      \hphantom{.2.} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                               \\ \gsIsCQS{}\; cqs } \right\} \) &                                                  \\
-      \myquad[2] \ocamlreal{let register = make_register p cqs}                                                      & [ apply \textsc{Spec-MakeRegister} ]                                                                \\
+      2. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; p \ast                                                                                                                                                  \\ p \mapsto Waiting\; bcst \ast \gsIsBcst{}\; bcst } \right\} \) &                                                  \\
+      \myquad[1] \ocamlreal{| Waiting bcst ->}                                                                       & [ close \gsPInv{} ]                                                                                 \\
+      \hphantom{.2.} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                               \\ \gsIsBcst{}\; bcst } \right\} \) &                                                  \\
+      \myquad[2] \ocamlreal{let register = make_register p bcst}                                                      & [ apply \textsc{Spec-MakeRegister} ]                                                                \\
       \hphantom{.2.} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                               \\ \gsIsReg{}\; register } \right\} \) &                                                  \\
       \myquad[2] \ocamlreal{perform (Suspend register);}                                                             & [ protocol of \esuspend{} with \((P := \lambda v,\; \ulcorner v = () \urcorner \ast \gspdone{})\) ] \\
       \hphantom{.2.} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                               \\ \gspdone{} } \right\} \) & [ open \gsPInv{}, lookup \(p\) using \(\gsIsPr{}\; p\) ] \\
@@ -549,7 +555,7 @@ Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect r
       \hphantom{.2.1.}  \( \left\{ \gsPInv{} \ast {\color{red}\always (\Phi\; result)}  \right\} \)                  &                                                                                                     \\
       \myquad[3] \ocamlreal{result}                                                                                  & [ by {\color{red}assumption} ]                                                                      \\[3pt]
       \hline                                                                                                                                                                                                               \\[-12pt]
-      2.2.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{} \ast                                                                                                                                                  \\ p \mapsto Waiting\; cqs \ast \gspwait{} } \right\} \) &                                                  \\
+      2.2.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{} \ast                                                                                                                                                  \\ p \mapsto Waiting\; bcst \ast \gspwait{} } \right\} \) &                                                  \\
       \myquad[2] \ocamlreal{| Waiting _ -> }                                                                         & [ specialize \textsc{PS-Contra} ]                                                                   \\
       \hphantom{.2.2.}  \( \left\{ \cancel{\gsPInv{}} \ast {\color{red}\bot} \right\} \)                             &                                                                                                     \\
       \myquad[3] \ocamlreal{error "impossible"}                                                                      & [ by {\color{red}contradiction} ]
