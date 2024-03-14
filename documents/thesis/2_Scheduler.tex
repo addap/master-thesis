@@ -163,7 +163,7 @@ let fork_promise (f : () -> 'a) : 'a Promise.t =
 \end{figure}
 
 
-This function is the basic way to create a new fiber in Eio and the only one we model in our case study.
+This function is the basic way to create a new fiber in Eio and the only one we model in our development.
 The code is presented in figure~\ref{fig:sched-impl-fork}.
 It will create a promise and spawn the provided function as a new fiber using the \efork{} effect.
 When \ocamlin{f} is reduced to a value \ocamlin{result}, it will fulfill the promise with that value and signal all fibers waiting for that result to wake up.
@@ -208,7 +208,7 @@ let await (p: 'a t) : 'a =
   \label{fig:sched-impl-await}
 \end{figure}
 
-This is the most complicated looking function in our case study which is partly due to the \esuspend{} effect and also due to the use of \emph{broadcast} functions.
+This is the most complicated looking function in our development which is partly due to the \esuspend{} effect and also due to the use of \emph{broadcast} functions.
 Its code is presented in figure~\ref{fig:sched-impl-await}.
 The purpose of \ocamlin{Promise.await p} is to suspend execution of the calling fiber until \ocamlin{p} is fulfilled with a value and then return this value.
 The "suspend execution" part is handled by performing a \esuspend{} effect.
@@ -277,7 +277,7 @@ In the next section we show how the first situation is addressed by defining a u
 \label{sec:sched-spec}
 
 To prove specifications for an effectful program in \hazel{} we have to define not only ghost state constructs to track program state as usual but also protocols which describe the behavior of the program's effects.
-For our Eio case study we adapt both the ghost state and the effect protocols from the cooperative concurrency scheduler case study from chapter 4 of de Vilhena's dissertation~\cite{de2022proof}.
+For our Eio development we adapt both the ghost state and the effect protocols from the cooperative concurrency scheduler development from chapter 4 of de Vilhena's dissertation~\cite{de2022proof}.
 
 \subsubsection{Protocols}
 \label{sec:sched-spec-protocols}
@@ -606,7 +606,7 @@ Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect r
 \todo{replace png with latex}
 
 Since our logical state definitions are based on a case study of de Vilhena, we want to give a short comparison of what had to be changed when adapting it to our model of Eio.
-First, in the original case study the \gsReady{} predicate fulfills two roles.
+First, in the original development the \gsReady{} predicate fulfills two roles.
 \begin{enumerate}
   \item It expresses that all continuations in the scheduler's run-queue are safe to execute.
   \item It expresses that all continuations in a promise's waiting-queue are safe to execute.
@@ -614,7 +614,7 @@ First, in the original case study the \gsReady{} predicate fulfills two roles.
 
 \gsPInv{} and \gsIsQueue{} were both necessary as preconditions because they are not persistent and need to be passed around explicitly.
 
-In our case study \gsPInv{} could be dropped from the definition of Ready because it is now put into an Iris shareable invariant, and can be passed implicitly.
+In our development \gsPInv{} could be dropped from the definition of Ready because it is now put into an Iris shareable invariant, and can be passed implicitly.
 Similarly, the \gsIsQueue{} precondition was dropped from the definition of \gsReady{} because in Eio the run queue must be thread-safe, so the \gsIsQueue{} resource is persistent and can be passed to a fiber once when it is spawned.
 Therefore, our \gsReady{} is neither recursive nor mutually recursive with \gsPInv{} anymore, which simplifies its usage in Iris.
 We note that the (mutual) recursion was only necessary because \gsPInv{} was used to track global state but was not put into an Iris shareable invariant, so it had to be passed around explicitly in many places.

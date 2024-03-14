@@ -6,7 +6,7 @@
 In this section we go into detail on the \emph{broadcast} data structure that Eio uses in the implementation of \emph{promises}.
 The Eio implementation of broadcasts is an adaptation of something called \emph{CQS}~\cite{koval2023cqs}.
 CQS (for CancellableQueueSynchronizer) is a synchronization primitive that allows execution contexts to wait until signalled.
-Its specification is already formally verified in Iris, so we were able to adapt the proofs to use them in our case study.
+Its specification is already formally verified in Iris, so we were able to adapt the proofs to use them in our development.
 CQS keeps the nature of an execution context abstract, but it is assumed that they support stopping execution and resuming with some value.
 This is because CQS is designed to be used in the implementation of other synchronization constructs (e.g. mutex, barrier, promise, etc.) which take care of actually suspending and resuming execution contexts as required by their semantics.
 
@@ -14,7 +14,7 @@ This is because CQS is designed to be used in the implementation of other synchr
 
 In the case of Eio an "execution context" is an Eio fiber.
 Still, CQS is multithreaded, so fibers can use CQS functions to synchronize with fibers running in another thread.
-In the following we describe the behavior of Eio's \emph{broadcast}, highlight differences to the \emph{original CQS}, and explain how we adapted the verification of the original CQS for our case study.
+In the following we describe the behavior of Eio's \emph{broadcast}, highlight differences to the \emph{original CQS}, and explain how we adapted the verification of the original CQS for our development.
 If something applies to both the customized and original version we just use the term \emph{CQS}.
 
 \subsection{Operations of Broadcast}
@@ -161,7 +161,7 @@ The function does not return any resources because its only effect is making an 
 \label{sec:broadcast-spec-removed-features}
 
 The original CQS supports multiple additional features like a synchronous mode for suspend and resume, and also a smart cancellation mode.
-These features enlarge the state space of CQS and complicate the verification but are not used in Eio so when we ported the verification of CQS to our Eio case study we removed support for these features.
+These features enlarge the state space of CQS and complicate the verification but are not used in Eio so when we ported the verification of CQS to our Eio development we removed support for these features.
 This reduced the state space of a cell shown in figure~\ref{fig:cqs-cell-states-original} to something more manageable for us when adapting the proofs.
 
 \begin{figure}[ht]
@@ -171,4 +171,4 @@ This reduced the state space of a cell shown in figure~\ref{fig:cqs-cell-states-
 \end{figure}
 
 The part of the verification of the original CQS that we had to customize for Eio was originally 3600 lines of Coq code but -- due to these simplifications -- we could reduce it by approximately 1300 lines of Coq code.
-Additionally, there are ~4000 lines of Coq code about lower-level functionality that we did not need to adapt when porting them to our case study.
+Additionally, there are ~4000 lines of Coq code about lower-level functionality that we did not need to adapt when porting them to our development.
