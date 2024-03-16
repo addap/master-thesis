@@ -26,10 +26,9 @@ The original CQS supports three operations that are interesting to us: \emph{sus
 While we established Eio's broadcast as similar to condition variables where fibers can register callbacks to be notified about events, the original formulation of CQS uses a more abstract future-based interface for the same purpose.
 
 For example, a \emph{suspend} operation is done by an execution context that wants to wait for an event.
-This operation creates and returns a new future.
-The future can then be used to stop execution because it is assumed that the program runtime supports suspending an execution context until a future is completed.
+This operation creates and returns a new future which is used to stop execution because it is assumed that the program runtime supports suspending an execution context until a future is completed.
 But Eio cannot use this interface because it uses the customized CQS to \emph{build} the runtime that allows its execution contexts (i.e. fibers) to suspend until an event happens (i.e. a promise is fulfilled).
-So in the customized CQS, the \emph{suspend} operation is replaced by the \emph{register} operation, that takes a callback as an additional argument and registers it to be called later.
+So for broadcasts the \emph{suspend} operation is replaced by the \emph{register} operation, that takes a callback as an additional argument and registers it to be called later.
 
 Analogously, a \emph{resume} operation in the original CQS completed a single future which signalled the runtime to resume execution of the associated execution context.
 This is replaced by the \emph{signalAll} operation, which invokes all callbacks that are registered with the data structure.

@@ -4,27 +4,31 @@
 % General information about the GetContext effect and that it's used to implement thread-local variables
 
 So far we have looked at a protocol \(\proto{}\) that has two effects which suffice to model fibers that can suspend and fork off new fibers.
-But in Eio fibers can use an effect called \egetctx{} that we discuss in this section.
-For each fiber the scheduler keeps track of context metadata -- mostly fiber-specific and not modelled in our development -- but it also includes something called \emph{thread-local variables}.
+But in Eio fibers can use an additional effect called \egetctx{} that we discuss in this section.
+For each fiber the scheduler keeps track of context metadata, one part of which are \emph{thread-local variables}.
 Thread-local variables are state that is shared between all fibers of one scheduler (hence thread-local) and a fiber gets access to them via the \egetctx{} effect.
 
 % Example of how thread-local variables can be used for a tracing log.
 
-Since all fibers of one scheduler execute in one system-level thread, they have exclusive access to the thread-local variables while they are running.
-This allows a handy form of restricted shared state without the overhead of synchronization primitives in multithreaded data structures.
+Since all fibers of one scheduler execute concurrently on one system-level thread, they have exclusive access to the thread-local variables while they are running.
+This allows a practical form of shared state without the overhead of synchronization primitives of multithreaded data structures.
 Two example use-cases are per-scheduler tracing of events, where all fibers of one scheduler write to a common log,
-and inter-fiber message passing, where fibers can use a simple queue to exchange messages.
+and inter-fiber message passing, where fibers use a simple queue to exchange messages.
+Of course, this comes with the restriction that it is only usable for fibers running in the same thread.
 
 % What we want to verify about thread-local variables. 
 
-In Eio thread-local variables are stored in a dictionary from variable names to arbitrary values and expose an intended API that only allows adding new entries.
+In Eio thread-local variables are represented by a dictionary from variable names to arbitrary values and expose an intended API that only allows adding new entries.
 However, it is still possible for fibers to arbitrarily modify the whole dictionary, so for demonstration purposes we model thread-local variables as a single mutable reference that is part of the context record: \ocamlin{ctx.tlv}.
-The most basic properties we want to prove about thread-local variables are:
+Properties we want to prove about thread-local variables are:
 \begin{enumerate}
   \item Each time a fiber performs a \egetctx{} effect it will receive the same reference.
   \item As long as a fiber does not perform other effects like \efork{} or \esuspend{}, it holds exclusive ownership of the reference.
 \end{enumerate}
+
 Code examples illustrating the properties are shown in figure~\ref{fig:tlv-example}.
+Note that these are only the most basic properties showing that \ocamlin{ctx.tlv} acts like a normal reference, but one that can be accessed via an effect.
+To enable modular proofs of concrete fibers using thread-local variables, we include in our logical state a predicate \(T\) on the stored value that can be instantiated by fibers as needed.
 
 \begin{figure}
   \begin{minted}{ocaml}
@@ -37,6 +41,7 @@ let fiber2 () =
   let ctx = perform (GetContext ()) in
   let v = !ctx.tlv in
   (* some computation that does not perform Fork/Suspend *)
+  ...
   assert (!ctx.tlv == v)
   \end{minted}
   \caption{Constructed example of safety for thread-local variables.}
@@ -46,42 +51,56 @@ let fiber2 () =
 \subsection{Changes to Logical State}
 
 % How do we extend the protocol and change the logical state.
-To handle thread-local variables in our development we must amend the definition of \gsReady{} from section~\ref{sec:sched-spec-state}.
-\begin{itemize}
-  \item ready needs fiber resource precondition so that each fiber receives it when it is running.
-  \item tlvAg is used to show that the thread-local variables are always the same location
-  \item isfibercontext holds the exclusive right to access the thread-local variables along with a predicate on what value they contain.
-  \item fiberresource is used since we mostly don't care about the concrete location. A fiber has this resource when it is running.
-\end{itemize}
+To handle thread-local variables in our development we must change both the implementation and logical state definitions.
+The necessary changes to the implementation are trivial, so we just refer to the mechanization\footnote{TODO insert link}.
+For the logical state we define \(\gsFiberResources{}\) that a fiber receives when it starts running and relinquishes when it stops.
+The new definitions are described in figure~\ref{fig:logical-state-ext}.
+\(\gsTLVAg{}\; \delta\; tlv\) is used to show the uniqueness of the location \(tlv\).
+\(\gsIsFiberContext{}\; \delta\; tlv\) represents the context that is tracked for each fiber, where \(\delta\) is a shorthand for multiple ghost names.
+It expresses that the location \(tlv\) is a thread-local variable which maps to some value \(v\) satisfying \(T\).
+The predicate T is hidden behind a \(\gsSavedPred{}\) indirection to make the mechanization easier.
+\(\gsFiberResources{}\; \delta\) is then used to abstract away the concrete location \(tlv\).
+Finally, we must change the definition of \(\gsReady{}\) to require \(\gsFiberResources{}\) as a precondition because it is needed to invoke the continuations saved in the scheduler's run-queue.
 
 \begin{figure}[ht]
   \begin{align*}
-    \gsTLVAg{}\; \delta\; l \triangleq\;              & \ownGhost{\delta}{agree(l)}                                     \\
-    \gsIsFiberContext{}\; \delta\; l\; T \triangleq\; & \gsTLVAg{}\; \delta\; l \ast \exists v\; l \mapsto v \ast T\; v \\
-    \gsFiberResources{}\; \delta\; T \triangleq\;     & \exists\; l.\; \gsIsFiberContext{}\; \delta\; l\; T             \\
+    \gsTLVAg{}\; \delta\; tlv \triangleq\;            & \ownGhost{\delta}{agree(tlv)}  \qquad \textrm{Persistent}(\gsTLVAg{}\; \delta\; tlv)                      \\
+    \gsIsFiberContext{}\; \delta\; tlv\; \triangleq\; & \gsTLVAg{}\; \delta\; tlv \ast \exists T\; v.\; tlv \mapsto v \ast \gsSavedPred{}\; \delta\; T \ast T\; v \\
+    \gsFiberResources{}\; \delta\; \triangleq\;       & \exists\; tlv.\; \gsIsFiberContext{}\; \delta\; tlv\;                                                     \\
     \gsReady{}\; \delta\; f \triangleq\;              & \gsFiberResources{}\; \delta\; \wand{} \ewp{f\; ()}{\bot}{\top}
   \end{align*}
   \caption{Logical State Definitions for the Verification of Scheduler \& Promise Modules}
   \label{fig:logical-state-ext}
 \end{figure}
 
-Since we now have a resource that a fiber must own while running, we must also amend the definition of protocols.
+The effect protocols of \efork{} and \esuspend{} are amended so that they pass \(\gsFiberResources{}\) from a fiber to the scheduler and from there to the next running fiber via the protocol pre- and postconditions as shown in figure~\ref{fig:coop-protocol-ext}.
+The \efork{} effect now also passes the concrete reference that should be used as the thread-local variable of the new fiber.
+A fiber uses the \egetctx{} effect to receive the fiber context value and a copy of \(\gsTLVAg{}\).
+This is used to show that the reference \(ctx.tlv\) is equal to the one from \(\gsFiberResources{}\) that the fiber already owns so that the contained points-to predicate can be used.
 
-\begin{itemize}
-  \item Fork \& Suspend now take and return a fiberResources.
-  \item GetContext returns the actual location and an TLVAg, which is used to prove that the location returned is the same as the one from the fiberResource
-        which the fiber already owns.
-  \item The crux is that now the ptocols \protod{} is parameterized by the ghost name that "identifies" the thread-local variable location.
-        This is because both the scheduler and fiber must know and agree on the location. \todo{better explanation}
-\end{itemize}
+The crux is that now the protocol \protod{} is parameterized by the ghost name \(\delta\) that identifies the thread-local variable.
+This so that both the fiber and the scheduler agree on this ghost name.
 
 \begin{figure}[ht]
-  \begin{alignat*}{2}
-    \protod{} \coloneqq\; &  & \quad Fork\; \#    & \; !\; e\; (e)\; \{\later \ewp{e}{Coop}{\top}\}.\; ?\; ()\; \{ \top \}           \\
-                          &  & Suspend\;    \#    & \; !\; reg\; P\; (reg)\; \{gsIsRegister\; reg\; P\}.\; ?\; y\; (y)\; \{ P\; y \} \\
-                          &  & GetContext\;    \# & \; !\; ()\; \{\top\}.\; ?\; ctx\; (ctx)\; \{ \gsTLVAg{}\; \delta\; ctx \}
-  \end{alignat*}
+  \begin{equation*}
+    \protod{} \triangleq \begin{aligned}[t]
+      Fork\;       & \#\; \begin{aligned}[t]
+                             & !\; tlv\; e\; ((tlv, e))\; \begin{aligned}[t]
+                                         & \big\{ \gsFiberResources{}\; \delta\; T \ast \gsTLVAg{}\; \delta\; tlv\; \ast                              \\
+                                         & \later\; (\gsFiberResources{}\; \delta\; T \wand{} \ewp{e}{Coop}{\gsFiberResources{}\; \delta\; T}) \big\}
+                                      \end{aligned} . \\
+                             & ?\; ()\; \{ \gsFiberResources{}\; \delta\; T \}
+                          \end{aligned}                                 \\
+      Suspend\;    & \#\; \begin{aligned}[t]
+                             & !\; reg\; P\; (reg)\; \{\gsFiberResources{}\; \delta\; T \ast \gsIsReg{}\; reg\; P\}. \\
+                             & ?\; y\; (y)\; \{ \gsFiberResources{}\; \delta\; T \ast P\; y \}
+                          \end{aligned} \\
+      GetContext\; & \#\; !\; ()\; \{\top\}.\; ?\; ctx\; (ctx)\; \{ \gsTLVAg{}\; \delta\; ctx.tlv \}
+    \end{aligned}
+  \end{equation*}
   \caption{Definition of extended \protod{} protocol with \efork{}, \esuspend{}, and \egetctx{} effects.}
   \label{fig:coop-protocol-ext}
 \end{figure}
+
+These changes suffice to prove the safety of the two examples in figure~\ref{fig:tlv-example}.
 
