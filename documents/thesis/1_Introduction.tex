@@ -4,6 +4,12 @@
 \begin{itemize}
   \item As a motivation for the work: program verification, \textbf{safety} and why we care about it.
   \item Iris is a new separation logic which allows proving safety for programs using mutable shared state.
+        \begin{itemize}
+          \item A separation logic allows reasoning about resources that can only be used once.
+          \item Iris' concept of ghost state. It's a representation of the program state on a logical level.
+          \item persistent resources represent \emph{knowledge} and are freely duplicable.
+          \item \emph{shared invariants} represent resources that always exist. It is allowed to take a resource out of an invariant for one atomic step of computation, if the invariant is fixed up in the end.
+        \end{itemize}
   \item Many programs nowadays user user-level concurrency to handle a big number of tasks. As an example for \ocf{} there exists the Eio library which provides concurrency primitives using effect handlers.
   \item Effect handlers are a versatile concept which allow a modular treatment of effects, the implementation in form of a handler is separated from the code using the effect, and it's more lightweight than monads. Give a simple example of state.
         \begin{itemize}

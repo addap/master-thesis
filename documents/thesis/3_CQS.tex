@@ -23,7 +23,7 @@ If something applies to both the customized and original version we just use the
 % <!-- What are the operations supported by the original CQS. -->
 
 The original CQS supports three operations that are interesting to us: \emph{suspend}, \emph{tryCancel}, and \emph{resume}.
-While we established Eio's broadcast as similar to condition variables where fibers can register callbacks to be notified about events, the original formulation of CQS uses a more abstract future-based interface for the same purpose.
+While we established Eio's broadcast as an implementation of a signalling mechanism where fibers can register callbacks to be notified about events, the original formulation of CQS uses a more abstract future-based interface for the same purpose.
 
 For example, a \emph{suspend} operation is done by an execution context that wants to wait for an event.
 This operation creates and returns a new future which is used to stop execution because it is assumed that the program runtime supports suspending an execution context until a future is completed.
@@ -42,7 +42,7 @@ An interaction with the original CQS as described in~\cite{koval2023cqs} is alwa
 This atomic variable is a part of the synchronization construction that is implemented using CQS.
 Thereby, it is ensured that operations only happen when they make sense (e.g. a \emph{resume} operation is not performed when no futures are available).
 For Eio's broadcast, figure~\ref{fig:cqs-usage} shows that the atomic variable is the state variable of a promise, which is accessed in the functions \ocamlin{Promise.fulfill} and \ocamlin{Promise.await} as was described in section~\ref{sec:sched-impl}.
-\ocamlin{Promise.await} will then perform \emph{register} and \emph{cancel} operations if necessary, and \ocamlin{Promise.fulfill} will do a \emph{signalAll} operation.
+\ocamlin{Promise.await} then performs \emph{register} and \emph{cancel} operations if necessary, and \ocamlin{Promise.fulfill} does a \emph{signalAll} operation.
 
 \begin{figure}[ht]
   \includegraphics[width=\textwidth]{CQS_Outer_Atomic.png}

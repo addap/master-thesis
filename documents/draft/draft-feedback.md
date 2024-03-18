@@ -12,7 +12,7 @@
 - [x] just use one gamma instead of 4/5 in operation spec
 - [x] since resume_all permit is unique, queue becomes useless after resume all has been called.
 - [x] fix math character issue in markdown
-- [ ] rewrite in latex
+- [x] rewrite in latex
 
 # 2024-02-05
 
@@ -21,10 +21,10 @@
   Just mention that we had to change Hazel in the introduction
 - [x] briefly say that effect handlers don't ineract with multithreading. 
   We can readon about programss that have both (introduction)
-- [ ] Improve the description of CQS.
-  - [ ] When explaining the await function in chapter 2, briefly describe what service it provides and that the implementation is due to it being lock-free. 
+- [x] Improve the description of CQS.
+  - [x] When explaining the await function in chapter 2, briefly describe what service it provides and that the implementation is due to it being lock-free. 
     Also here we can explain why the cancel function is necessary.
-  - [ ] Introduction of CQS respective suspend & cancel operation are not understandable. 
+  - [x] Introduction of CQS respective suspend & cancel operation are not understandable. 
     Since we explain the await function before we can delete a lot of it and not talk about "handles" at all, just use callbacks directly.
 - [x] choose different names for CQS functions (maybe just enqueue dequeue) (maybe register-signal_all [subject-observer system])
   I think the condition variable is the closest match
@@ -305,3 +305,165 @@ assumes that `make_register` does "the right thing".
 - [x] Write new types instead of using option/bool in figure 5
 - [x] Split up fork_promise 
 - [x] spec of CQS before proof of await spec
+
+- [x] page 5, line 14, `effect` could be highlighted as a keyword.
+
+- [x] Figure 2: `option 'a` should be `'a option` (and the code should ideally
+be type-checked by OCaml!). Lines 10-11, missing `in`. Lines 15-16 and
+18-20, I would suggest indenting deeper.
+
+- [x] page 6, "The only non-effect case of the match just runs the next fiber
+because there are two types of fibers and their return value is always ()".
+The word "because" suggests a logical implication, but it is not clear at all
+why the existence of two types of fibers implies that one must call `next()`
+at line 13. These two points should probably be separated. In fact, instead of
+emphasizing that "there are two types of fibers", you could on the contrary
+emphasize "we adopt the convention that all fibers return a unit value", and
+only then explain how the main fiber and the child fibers are able to respect
+this convention.
+
+- [x] page 6, "The main fiber is wrapped in a saves its". Typo.
+
+- [x] page 6, "Handling a Fork effect [...]". Here and elsewhere, I suggest adding
+pointers from the text to the figure (using line numbers) so the reader knows
+exactly what part of the code you are describing.
+
+- [x] page 6, "in form of" → "in the form of"?
+
+- [x] Figure 2, outside of `execute`, you could define the local function
+
+  let wakeup k v =
+    Queue.push run_queue (fun () -> invoke k v)
+
+which could then be used at line 15 and at lines 18-19, which would become
+just `register (wakeup k)`.
+>>> I prefer not to do that. It does not save space, and the partial application of wakeup is more confusing in my opinion than spelling out the closure twice.
+
+- [x] page 7, "is thread-safe queue" → missing "a"
+
+- [x] page 7, "For the verification we assume the specification of a suitable Queue
+module that supports thread-safe push and pop operations." OCaml's Queue
+module is in fact not thread-safe, so perhaps you should rename your Queue
+module to emphasize that it cannot be OCaml's Queue module. What data
+structure does eio use?
+
+- [ ] Figure 3 depends on the definition of the type `promise`, but this definition
+is given only in Figure 4. I believe that lines 5-9 in Figure 3 could be
+isolated in a new function `Promise.fulfill p result`. This would allow the
+concrete representation of promises to be truly encapsulated inside the
+`Promise` module. Then the whole fiber in Figure 3 could become
+`let fiber () = Promise.fulfill p (f())`.
+
+- [x] page 7, "It will create [...] it will fulfill". I have read in a style guide
+that it is recommended to always use the present tense. It is simpler and
+usually works well.
+
+- [x] page 7, "The major difference to" →
+  "The major difference with"?
+  "The major difference with respect to"?
+
+- [x] page 7, "complicated looking" → "complex"?
+
+- [ ] Section 2.1.3, I suggest explaining the definition of the type `promise`
+(i.e., the internal representation of promises) before explaining the
+functions `fulfill` and `await`.
+
+- [x] page 7, "using CQS [3] functions" → "using CQS [3]" or "using CQS functions [3]".
+Do not put a citation in the middle of two words that should form a unit.
+
+- [x] page 7, "CQS is an implementation of the observer pattern". Actually, I take
+that back. Although there is some similarity with the observer pattern, this
+pattern is a sequential programming idiom, and we are talking about concurrent
+programming here. I think you could say "CQS is a signaling mechanism. It is
+functionally similar to condition variables...".
+
+- [x] page 7, "C++" is ugly. Also, condition variables exist not only in C++ but
+also in C and Java and other languages (even OCaml). They are a POSIX thing.
+
+- [x] page 7, "In figure 5 show"
+
+- [x] Figure 5 and elsewhere, `type callback = () -> ()` is not valid OCaml. The
+unit type is `unit`.
+
+- [x] Figure 5, the declaration `type t` is missing.
+
+- [x] Figure 5, should the type `callback` be named `waker` or `observer` or
+`recipient`? That might be clearer.
+
+- [x] page 7, "The implementation and specification will be expanded upon in section
+3." It is a little problematic to let the reader guess what the CQS functions
+do. In particular, the meaning of the `option` in the result of `register` is
+not obvious. One might think that `None` means `error` (registration failed),
+but I think it actually means "registration succeeded and the waker has been
+signaled already" (right?). And `Some` means registration was successful
+(right?). Using a dedicated algebraic data type (instead of `option`) would
+help. The meaning of `bool` in the result of `cancel` is perhaps easier to
+guess (`true` means successfully canceled and waker has not been called,
+`false` means could not cancel because waker has been called already?) but a
+dedicated algebraic data type would help, anyway. Also, I am thinking that
+maybe `cancel` should be renamed to `unregister`, because it does not cancel
+an *ongoing* registration operation; instead it *undoes* a *successful*
+registration operation (right?).
+
+- [x] page 7, "[...] a lock-free data structure implementing a similar API". The API
+is perhaps "similar" but not the same: condition variables offer a blocking
+`await` function (which atomically releases a lock and suspends the current
+thread) whereas CQS simply allows registering a "wakeup" (or "observer")
+function and does not offer a suspension service.
+
+- [x] page 7, "if the promise is not fulfilled initially the fiber should wait" →
+insert "then" for greater clarity
+
+- [x] page 8, "the CQS.register" → "the call to CQS.register"
+(same remark on next line)
+
+- [x] page 8, "If CQS.register notices that there is a racing CQS.signal_all it will
+directly call the waker". And what value does CQS.register return in this
+case? More generally, what happens if CQS.register is called *after* the
+signal has been sent? I assume that CQS.register recognizes this situation and
+immediately invokes the waker and returns `None`. But I am not sure that my
+understanding is correct. Does `None` mean "signal has been sent already;
+waker has been invoked", or does it mean "signal has been sent already; waker
+may or may not have been invoked"? I believe it is the former. And I believe
+that the result `Some register_handle` means "registration successful, but the
+signal may have been sent already (and missed), so please check". These
+conventions should be clarified up front, otherwise we have to infer them by
+reading the code of `make_register`. It think it is preferable to explicitly
+give the convention and let the reader *check* that `make_register` makes
+sense, rather than let the reader *infer* the convention based on the code of
+`make_register`.
+
+- [x] page 9, "The only safety concerns in the above implementation are
+Fiber.fork_promise expecting the promise to be unfulfilled after the fiber has
+finished execution, and Promise.await expecting the promise to be fulfilled in
+the last match". Again (here and elsewhere) pointers to the code (with explicit
+line numbers) would be helpful.
+
+- [x] page 9, "a unique resource that is needed to fulfill a promise" →
+  "an affine permission to fulfill a promise"
+
+- [x] page 9, "the first [...] the latter" →
+  use first / second
+   or former / latter
+
+- [x] page 9, "as usual" sounds a bit surprising/frightening. Perhaps you could
+begin with a sentence that recalls how ghost state is commonly used in Iris,
+with a suitable citation (e.g. "Iris from the ground up", or the Iris lecture
+notes, or a suitable example of your choosing), then continue to say that in
+this case you also need to define a protocol.
+
+- [x] page 9, "that are shown in figure 6" → missing period.
+
+- [x] page 9, "The Fork effect accepts an arbitrary expression e" → this is a
+call-by-value language, so I would expect `e` to be a value, not an expression.
+What kind of value is it? A first-class function?
+In the definition of `Coop`, is `(e)` a typo? Should it be `e()`?
+
+- [x] page 9, you could note that the definition of `isRegister` says that `reg` can
+be called at most once, and `reg` can call `waker` at most once.
+
+- [x] page 9, "It signifies the resources that are transmitted from the party that
+calls the waker function to the fiber that performed the effect." OK, but you
+might clarify that whoever calls "waker" must guarantee that P holds, and in
+return, a fiber that awakens after performing a Suspend effect can assume that
+P holds.
