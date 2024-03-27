@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[titlepage]{article}
 
 % General package includes
 \usepackage{amsmath}
@@ -143,7 +143,11 @@
 
 % TODO better title page
 \maketitle
-\newpage
+
+\clearpage{\thispagestyle{empty}}
+~\clearpage
+
+\include{0_Abstract}
 
 \tableofcontents
 \newpage

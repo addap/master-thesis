@@ -1,4 +1,4 @@
-\section{Verifying a Simplified Eio Scheduler With Promises}
+\section{Verifying a Simplified Eio Scheduler with Promises}
 \label{sec:scheduler}
 
 \todo{Mention that all code examples are an OCaml rendering of the verified \hazel{} code, based on but not equal to the Eio code}
@@ -38,26 +38,6 @@ Common problems like deadlocks are not prevented in any way and are the responsi
   Promise.await : 'a Promise.t -> 'a
 \end{minted}
 
-We present code examples in a simplified syntax\footnote{This syntax is planned to be implemented in \ocf{} in the future: \url{https://github.com/ocaml/ocaml/pull/12309}} because the concrete syntax of effect handlers in \ocf{} is verbose.
-We use an overloading of the \ocamlin{match} expression, which includes cases for handled effects, that is common in the literature.
-
-\begin{minted}[fontsize=\footnotesize,escapeinside=@@]{ocaml}
-    (* declares an effect E that carries an int and has a bool return value. *)
-    effect E : int -> bool
-
-    (* Evaluates the expression e and if the effect E is performed 
-     * control is transferred to the second branch.
-     * The continuation k captures the rest of the computation of e.
-     * The match acts as a deep handler, i.e. even if during the 
-     * evaluation of e the effect E is performed multiple times, the
-     * second branch will be evaluated every time.
-     * When e is reduced to a value, the non-effect branches are 
-     * used for pattern matching as usual. *)
-    match e with
-    | v -> ...
-    | @\texttt{\textbf{effect}}@ (E v) k -> ...
-\end{minted}
-
 \subsubsection{\ocamlin{Scheduler.run}}
 \label{sec:sched-impl-run}
 
@@ -68,7 +48,7 @@ type 'a waker : 'a -> unit
 effect Suspend : ('a waker -> unit) -> 'a
 
 let run (main : unit -> 'a) : 'a option =
-  let run_queue = Lf_queue.create () in
+  let run_queue = Lf_queue.create () in @\label{ln:run6}@
   let next () =
     match Lf_queue.pop run_queue with
     | None -> ()
@@ -96,7 +76,7 @@ let run (main : unit -> 'a) : 'a option =
 As mentioned above this is the main entry point to the Eio library and its code is shown in figure~\ref{fig:sched-impl-run}.
 It sets up the scheduler environment and runs the main fiber that is passed as an argument.
 
-The \ocamlin{run_queue} (line 6) contains closures that will immediately invoke the continuation of an effect.
+The \ocamlin{run_queue} (line~\ref{ln:run6}) contains closures that will immediately invoke the continuation of an effect.
 This represents ready fibers which can continue execution from the point where they performed an effect.
 The \ocamlin{next} function (line 7) pops one fiber (i.e. function) from the \ocamlin{run_queue} and executes it.
 If no more ready fibers remain -- either because all fibers terminated or there is a deadlock -- the \ocamlin{next} function returns and the scheduler exits.
@@ -142,6 +122,12 @@ For the verification we assume the specification of a suitable \ocamlin{Lf_queue
 \begin{figure}[ht]
   \begin{minted}{ocaml}
 (* promise.ml *)
+type 'a t = Done of 'a | Waiting of Broadcast.t
+
+let create () : 'a t = 
+  let bcst = Broadcast.create () in
+  Atomic.create (Waiting bcst)
+
 let fulfill p result =
   match Atomic.get p with
   | Done _ -> error "impossible"
@@ -159,15 +145,17 @@ let fork_promise (f : unit -> 'a) : 'a Promise.t =
   perform (Fork fiber) 
   p
   \end{minted}
-  \caption{Implementation of \ocamlin{Fiber.fork_promise}}
+  \caption{Subset of the interface of the \ocamlin{Promise} module \& implementation of \ocamlin{Fiber.fork_promise}}
   \label{fig:sched-impl-fork}
 \end{figure}
 
-
-This function is the basic way to create a new fiber in Eio and the only one we model in our development.
+This function is the basic way to fork a new fiber in Eio and the only one we model in our development.
 The code is presented in figure~\ref{fig:sched-impl-fork}.
-It creates a promise (line 11) and spawns the provided function as a new fiber using the \efork{} effect (line 16).
-When \ocamlin{f} is reduced to a value \ocamlin{result}, it fulfills the promise with that value (line 14), which will signal all fibers waiting for that result to wake up (line 7).
+It creates a promise (line 17) and spawns the provided function as a new fiber using the \efork{} effect (line 22).
+Promises are always created in a \ocamlin{Waiting} (or unfulfilled) state and calling \ocamlin{Promise.fulfill} will move it to the \ocamlin{Done} state, at which point the final value can be retrieved.
+The meaning of the \ocamlin{Broadcast.t} is explained in the next section.
+
+When \ocamlin{f} is reduced to a value \ocamlin{result}, \ocamlin{Fiber.fork_promise} then fulfills the promise with that value (line 20), which will signal all fibers waiting for that result to wake up (line 13).
 The major difference with respect to the implementation of de Vilhena is that promises in Eio are entirely handled by the fiber, and not in the effect handler code of the scheduler.
 This achieves a better separation of concerns and simplifies the logical state needed for the proof.
 
@@ -176,12 +164,6 @@ This achieves a better separation of concerns and simplifies the logical state n
 
 \begin{figure}[ht]
   \begin{minted}{ocaml}
-type 'a t = Done of 'a | Waiting of Broadcast.t
-
-let create () : 'a t = 
-  let bcst = Broadcast.create () in
-  Atomic.create (Waiting bcst)
-
 let make_register (p: 'a t) (bcst: Broadcast.t) : (unit waker -> unit) = 
   fun waker ->
     let register_result = Broadcast.register bcst waker in
@@ -190,9 +172,9 @@ let make_register (p: 'a t) (bcst: Broadcast.t) : (unit waker -> unit) =
     | Some register_handle ->
       match Atomic.get p with
       | Done result ->  
-        if Broadcast.try_cancel register_handle
-        then waker ()
-        else ()
+          if Broadcast.try_cancel register_handle
+          then waker ()
+          else ()
       | Waiting _ -> ()
 
 let await (p: 'a t) : 'a = 
@@ -270,7 +252,7 @@ To avoid this, \ocamlin{register} must check the state of the promise again (lin
 The cancellation will fail if the \ocamlin{waker} function was already called.
 Otherwise, the cancellation succeeds and the \ocamlin{register} function has the responsibility of calling \ocamlin{waker} itself (line 16).
 
-The only \textbf{safety} concerns in the above implementation are \ocamlin{Fiber.fork_promise} expecting the promise to be unfulfilled after the fiber has finished execution (figure~\ref{fig:sched-impl-fork} line 4),
+The only \textbf{safety} concerns in the above implementation are \ocamlin{Fiber.fork_promise} expecting the promise to be unfulfilled after the fiber has finished execution (figure~\ref{fig:sched-impl-fork} line 10),
 and \ocamlin{Promise.await} expecting the promise to be fulfilled in the last match (figure~\ref{fig:sched-impl-await} line 28).
 In both cases, the program would crash (signified by the \ocamlin{error} expression) if the expectation is violated.
 So to establish the safety of Eio we wish to prove that the expectations always hold, and the two \ocamlin{error} expressions are never reached.
@@ -390,12 +372,12 @@ We show a detailed proof of the specification only for \ocamlin{Promise.await} b
 
 The interesting part about the scheduler specification \textsc{Spec-Run} is that it proves \textbf{effect safety} of the fiber runtime, i.e. no matter what a fiber does it will not crash the scheduler due to an unhandled effect.
 This is expressed by allowing the fiber \(main\) to perform effects according to the \proto{} protocol, but running the scheduler on the main fiber (\(run\; main\)) obeys the empty protocol, so no effects escape.
-Of course, the \ewpt{} itself also implies \textbf{safety} of running both the main fiber and the scheduler.\todo{Don't ignore the return value.}
+Of course, the \ewpt{} itself also implies \textbf{safety} of running both the main fiber and the scheduler.
 
 \[
   \inferrule[Spec-Run]
-  {\ewp{main\; ()}{\proto{}}{\top}}
-  {\ewp{run\; main}{\bot}{\top}}
+  {\ewp{main\; ()}{\proto{}}{v,\; \always \Phi\; v}}
+  {\ewp{run\; main}{\bot}{v,\; \always \Phi\; v}}
 \]
 
 % The proof proceeds as follows:
@@ -496,7 +478,8 @@ Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect r
 \begin{figure}[H]
   {\setlength{\extrarowheight}{3pt}
     \begin{tabular}{@{}ll@{}}
-      \ocamlreal{let make_register (p: 'a t) (bcst: Broadcast.t) : (unit waker -> unit) =}        &                                                                 \\
+      \ocamlreal{let make_register (p: 'a t) (bcst: Broadcast.t)}                                 &                                                                 \\
+      \myquad[2] \ocamlreal{: (unit waker -> unit) =}                                             &                                                                 \\
       \(\left\{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \right\}\)                   &                                                                 \\
       \myquad[1] \ocamlreal{  fun (waker: unit waker) ->}                                         & [ intro waker that satisfies \gsIsWaker{} ]                     \\
       \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \ast                                                                                 \\ (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) } \right\} \)&\\

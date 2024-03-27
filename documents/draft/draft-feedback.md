@@ -37,7 +37,7 @@
 
 - [x] Separate scheduler proof & spec from promise proof & spec.
   - [x] remove mention of promiseInv from Suspend case of coop protocol
-- [ ] Separation between modules of OCaml code should be clearer
+- [x] Separation between modules of OCaml code should be clearer
 - [ ] Clarify which parts of Iris definitions are part of a module's API and which are internal
 - [x] In module hierarchy, explain what the arrows mean
 - [x] page 5, "we discuss the implementation of the simplified Eio model in more
@@ -347,7 +347,7 @@ module is in fact not thread-safe, so perhaps you should rename your Queue
 module to emphasize that it cannot be OCaml's Queue module. What data
 structure does eio use?
 
-- [ ] Figure 3 depends on the definition of the type `promise`, but this definition
+- [x] Figure 3 depends on the definition of the type `promise`, but this definition
 is given only in Figure 4. I believe that lines 5-9 in Figure 3 could be
 isolated in a new function `Promise.fulfill p result`. This would allow the
 concrete representation of promises to be truly encapsulated inside the
@@ -364,7 +364,7 @@ usually works well.
 
 - [x] page 7, "complicated looking" → "complex"?
 
-- [ ] Section 2.1.3, I suggest explaining the definition of the type `promise`
+- [x] Section 2.1.3, I suggest explaining the definition of the type `promise`
 (i.e., the internal representation of promises) before explaining the
 functions `fulfill` and `await`.
 
