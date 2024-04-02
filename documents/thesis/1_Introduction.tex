@@ -23,37 +23,51 @@ In order to formally verify the code that uses effect handlers we use the \hazel
 There is a growing need for the formal verification of programs or computer systems to provide a high assurance that they are "safe to use".
 Formal verification means mathematically modelling programs to enable rigorous proofs about their properties.
 As such, it also entails mathematically defining when a program is "safe to use".
-Two important concepts behind this intuition are \textbf{safety} and \textbf{specifications}\todo{Sounds weird but which formulation is better?}.
+Two important concepts behind this intuition are \textbf{safety} and \textbf{functional correctness}.
 By safety, we mean that when evaluating a given program according to the rules of the language
 it will never get into a state where there are no rules of how to evaluate it further.
 In some languages this is called \emph{undefined behavior}, but we often model it as crashing the program.
-Safety is the baseline for the type of program verification that we do and as a next step we can prove that programs obey certain specifications.
+Safety is the baseline for the type of program verification that we do and as a next step we can show that programs are functionally correct by proving that they obey a \textbf{specification}.
 Specifications further restrict the possible program executions to a defined set of "good behaviors", such as "this program will compute the n-th Fibonacci number for a given input n".
 
 \paragraph{Separation Logic}
 We express specifications as logical propositions and do all reasoning in a separation logic called \emph{Iris}~\cite{jung2018iris}.
-Separation logics~\cite{?} are based on Hoare logic and are a type of affine logic that have a \emph{separating conjunction} connective \(P \ast Q\) in addition to the standard logical connectives.
+Separation logics~\cite{?} are based on Hoare logic, which has the \emph{Hoare triple} construct \(\{P\}\,s\,\{Q\}\) to encode the specification of a program.
+It means that given preconditions \(P\), execution of the program \(s\) either diverges or terminates so that the postcondition \(Q\) holds\footnote{We only look at expression-based languages where \(Q\) is allowed to mention the final value of \(s\).}.
+Further, separation logics are a type of affine logic that have a \emph{separating conjunction} connective \(P \ast Q\) in addition to the standard logical connectives.
+
 The separating conjunction allows an interpretation of propositions as \emph{resources} that can be split up into disjoint parts \(P\) and \(Q\).
 The most prominent example of a resource is the proposition \(l \mapsto v\), representing a heap fragment where the location \(l\) holds the value \(v\).
 This also implies \emph{ownership} over the location \(l\), i.e. no one else can access the location as long as we have that resource.
 A separating conjunction of heap fragments \(l \mapsto v \ast l' \mapsto v'\) additionally implies that \(l \neq l'\), because the heap fragments are necessarily disjoint.
 The dual connective of a separating conjunction is the \emph{magic wand} \(P \wand Q\), which follows the elimination rule \(P \ast (P \wand Q) \vdash Q\).
+
 Another type of proposition is duplicable \emph{knowledge}, which is also called \emph{persistent}.
-For example, Hoare triples \(\{P\}\,e\,\{Q\}\) are persistent because the expression \(e\) can be evaluated multiple times.
+For example, Hoare triples \(\{P\}\,s\,\{Q\}\) are defined as persistent because under the given assumptions \(P\) the evaluation of \(s\) should always be valid.
 Separation logics have been successfully applied in many program verification developments~\cite{?,?,?} as they are useful for modular reasoning about stateful and multithreaded programs.
 
 \paragraph{Iris}
 Iris is not only a separation logic, but a whole separation logic framework implemented in Coq that can be instantiated with different programming languages.
 This allows us to layer different \emph{program logics} on top of the base separation logic, which contain additional reasoning rules about the evaluation of programs in a concrete language.
-Proving specifications in Iris normally follow the schema of first defining so-called \emph{ghost state} that models the possible state space of a program,
-and deriving additional rules that modify this ghost state, representing the logical steps that a program takes.
+Verifying a program in Iris follows the schema of first deciding which specifications are necessary for each of the program's components.
+These are expressed using predicates in the logic.
+If necessary, one can also use so-called \emph{ghost state},
+which is a versatile feature of Iris that allows keeping track of program state and mutating it during a proof.
+For complicated programs we often define ghost state and derive additional rules that modify it, in order to model the complex state space and state transitions of the program execution.
 Ghost state updates in Iris are restricted to happen under an \emph{update modality} \(\upd P\).
 
-Afterwards, one will attempt to prove a (partial) \emph{weakest precondition} \(\wpre{e}{v.\, Q\, v}\) for the program expression \(e\).
-This establishes the \textbf{safety} of the expression \(e\) due to a soundness lemma of the weakest precondition.
-Also, it means that if evaluating \(e\) eventually terminates (i.e. divergence is permitted), the final value \(v\) will satisfy \(Q\; v\), thereby proving a \textbf{specification} for the expression \(e\).
+The last step in proving the program specification consists of deriving a (partial) \emph{weakest precondition} \(\wpre{e}{v.\, Q\, v}\) for the program expression \(e\).
+The weakest precondition is defined such that, if evaluation of \(e\) eventually terminates (i.e. divergence is permitted) in a final value \(v\), it must satisfy \(Q\; v\).
+The name comes from the fact that this proposition is by definition the weakest precondition \(P\) that makes the Hoare triple \(\{P\}\,e\,\{v.\,Q\,v\}\) true and Hoare triples are
+even defined this way in Iris:
+\[
+  \{P\}\,e\,\{v.\,Q\,v\} \coloneq \always (P \wand \wpre{e}{v.\, Q\, v})
+\]
+Since propositions are affine by default, the \emph{persistence modality} \(\always P\) is used to define Hoare triples as persistent.
+Therefore, deriving a weakest precondition for an expression \(e\) proves its specification in terms of the assumptions \(P\) and conclusion \(Q\).
+It will also establish the safety of the expression due to a soundness lemma of the logic.
 
-One powerful feature of Iris are \emph{shared invariants} \(\knowInv{\mathcal{N}}{I}\), which represent knowledge that a resource will not change over time, so they are persistent.
+One other powerful feature of Iris are \emph{shared invariants} \(\knowInv{\mathcal{N}}{I}\), which represent knowledge that a resource will not change over time, so they are also persistent.
 They are used to encapsulate a resource \(I\) in order to share it under the restriction that the invariant can only be opened for one atomic step of execution at a time.
 If the invariant is opened, the contained resource \(I\) can be accessed but must be restored at the end of the execution step.
 This ensures that even in the presence of multiple threads executing in parallel, the invariant will never be observably violated.
@@ -69,8 +83,7 @@ which transfers control to an appropriate effect handler.
 They are often called "resumable exceptions" because analogous to exception handlers, one installs an effect handler around an expression \ocamlin{e} to handle its effects,
 but the effect handler also receives a delimited continuation \ocamlin{k}, representing the rest of the computation of \ocamlin{e} from the point where the effect was performed.
 
-We present code examples in a simplified \ocf{} syntax
-\footnote{This syntax is planned to be implemented in \ocf{} in the future: \url{https://github.com/ocaml/ocaml/pull/12309}}
+We present code examples in a simplified \ocf{} syntax\footnote{This syntax is planned to be implemented in \ocf{} in the future: \url{https://github.com/ocaml/ocaml/pull/12309}}
 as shown in figure~\ref{fig:effect-example}, because the concrete syntax of effect handlers is verbose.
 We use an overloading of the \ocamlin{match} expression, which includes cases for handled effects, that is common in the literature.
 
@@ -128,10 +141,11 @@ The syntax is inspired by session types, which also define a type of communicati
 Intuitively, the part after the exclamation mark gets "sent" to the effect handler and the part after the question mark is "received" as an answer.
 \(\overrightarrow{x}\) and \(\overrightarrow{y}\) are binders whose scope extends from their position all the way to the right.
 The client who performs the effect transmits the value \(v\) to the effect handler and must prove the proposition \(P\).
-In return, it will receive from the effect handler a value \(w\) and gets to assume \(Q\).
-In total, this can be thought of as an analogue to an imaginary Hoare triple where we explicitly name the handler that will handle the effect.
+In return, the client will receive from the effect handler a value \(w\) and gets to assume \(Q\).
+In total, this can be thought of as an analogue to a Hoare triple like \(\{P\}\, handler\; v\, \{w,\; Q\; w\}\), where we explicitly name the handler that will handle the effect.
+But the client only indirectly invokes the effect handler by evaluating a \(perform\) expression, so in practice we prove the following Hoare triple.
 \[
-  \{P\}\; handler\; v\; \{w,\; Q\; w\}
+  \{P\}\, perform\; v\, \{w,\; Q\; w\}
 \]
 
 Apart from the above there are three additional ways to define protocols.
@@ -150,8 +164,7 @@ Note that internally the program can of course perform effects, but an effect ha
 \label{sec:intro-eio}
 
 We first give a general overview of the functionality provided by the Eio library before discussing what we focus on in our verification work in the next section.
-Eio is a library for cooperative user-level concurrency where individual tasks are represented by \emph{fibers}
-\footnote{Note that these are technically different from the existing fiber concept in \ocf{}, where a fiber denotes a stack frame under an effect handler, and the runtime stack is a linked list of those fibers. But since Eio fibers are evaluated under an effect handler, they all have an associated OCaml fiber. See also: \url{https://v2.ocaml.org/manual/effects.html\#s:effects-fibers}}.
+Eio is a library for cooperative user-level concurrency where individual tasks are represented by \emph{fibers}\footnote{Note that these are technically different from the existing fiber concept in \ocf{}, where a fiber denotes a stack frame under an effect handler, and the runtime stack is a linked list of those fibers. But since Eio fibers are evaluated under an effect handler, they all have an associated OCaml fiber. See also: \url{https://v2.ocaml.org/manual/effects.html\#s:effects-fibers}}.
 Fibers are just OCaml functions that are allowed to perform a defined set of effects to interact with the cooperative scheduler.
 A scheduler is responsible for running an arbitrary amount of fibers in a single thread.
 However, if multithreading is required it is possible to spawn additional schedulers in new threads, providing some initial fiber.

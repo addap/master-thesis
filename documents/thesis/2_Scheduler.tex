@@ -3,7 +3,9 @@
 
 \todo{Mention that all code examples are an OCaml rendering of the verified \hazel{} code, based on but not equal to the Eio code}
 
-Cooperative concurrency schedulers for user-level threads (i.e. \emph{fibers}) are commonly treated in the literature on effect handlers~\cite{dolan2018concurrent,leijen2017structured,de2021separation} because they are a lucid example for their usefulness.
+Cooperative concurrency schedulers for user-level threads (i.e. \emph{fibers}) are commonly treated in the literature
+on effect handlers~\cite{dolan2018concurrent,leijen2017structured,de2021separation} to because they are a good example for the usefulness
+of manipulating delimited continuations with effect handlers.
 Generally, the architecture contains an effect handler as the scheduler and fibers are normal functions which perform effects to yield execution.
 This is because performing an effect causes execution to jump to the enclosing effect handler (i.e. the scheduler), providing it with the rest of the fiber's computation in the form of a delimited continuation.
 The scheduler keeps track of a collection of these continuations and by invoking one of them the next fiber is scheduled.
@@ -172,7 +174,7 @@ let make_register (p: 'a t) (bcst: Broadcast.t) : (unit waker -> unit) =
     | Some register_handle ->
       match Atomic.get p with
       | Done result ->  
-          if Broadcast.try_cancel register_handle
+          if Broadcast.try_unregister register_handle
           then waker ()
           else ()
       | Waiting _ -> ()
@@ -205,7 +207,7 @@ The \ocamlin{Broadcast.register} function attempts to register a given callback 
 For \ocamlin{Broadcast.register}, a return value of \ocamlin{Called} means that it already called the supplied callback because the function detected the signal while it was running.
 Otherwise, a return value of \ocamlin{Registered register_handle} means that the callback was registered but the signal might have been already sent but missed.
 It is the responsibility of the caller to check if the signal was already sent and if it was, to then cancel the registration again
-This is done by calling the \ocamlin{Broadcast.try_cancel} function on the \ocamlin{register_handle}, which returns a boolean indicating the cancellation status.
+This is done by calling the \ocamlin{Broadcast.try_unregister} function on the \ocamlin{register_handle}, which returns a boolean indicating the cancellation status.
 If the cancellation was successful, the previously registered callback will not be called when \ocamlin{Broadcast.signal_all} is executed.
 The implementation and specification of the functions will be expanded upon in section~\ref{sec:broadcast}, for now we just explain their usage in the context of \ocamlin{Promise.await}.
 
@@ -218,7 +220,7 @@ type register_handle
 
 val create : unit -> t
 val register : t -> signal -> register_result
-val try_cancel : register_handle -> bool
+val try_unregister : register_handle -> bool
 val signal_all : t -> unit
   \end{minted}
   \caption{Interface of the \ocamlin{Broadcast} module.}
@@ -457,21 +459,21 @@ We briefly explain these specifications and their logical state definitions now 
 
   \inferrule[Spec-BroadcastTryCancel]
   { \emph{isBroadcastRegisterHandle}\; h\; cb\; R }
-  { \ewp{try\_cancel\; h}{\bot}{b,\; if\; b\; then\; \gsIsCb{}\; cb\; R\; else\; \top}}
+  { \ewp{try\_unregister\; h}{\bot}{b,\; if\; b\; then\; \gsIsCb{}\; cb\; R\; else\; \top}}
 \end{mathpar}
 
 The function \ocamlin{Broadcast.register} takes a callback \(cb\) that satisfies the \gsIsCb{} predicate to register it in the broadcast data structure.
 This predicate is structurally similar to \gsIsWaker{} and, in fact, in the proof of \textsc{Spec-MakeRegister} we instantiate the precondition \(R\) with \(\gspdone{}\) and pass as the callback a \ocamlin{waker} function, which has the precondition \((\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})\) as described above.
-The result of \ocamlin{Broadcast.register} is either a value \(Called\), which expresses that it called the callback directly, or a register handle, which can be used to call \ocamlin{Broadcast.try_cancel}.
+The result of \ocamlin{Broadcast.register} is either a value \(Called\), which expresses that it called the callback directly, or a register handle, which can be used to call \ocamlin{Broadcast.try_unregister}.
 
-\ocamlin{Broadcast.try_cancel} will attempt to cancel a previous registration identified by the given \(handle\).
+\ocamlin{Broadcast.try_unregister} will attempt to cancel a previous registration identified by the given \(handle\).
 If the cancellation is successful, we get back the \(\gsIsCb{}\) resource so that we can call the callback in \ocamlin{make_register}.
 
 \paragraph*{Hoare-Style Proofs for \textsc{Spec-MakeRegister} and \textsc{Spec-Await}}
 
 In the proof below an opened invariant \(Inv\) is represented as \(\cancel{Inv}\) and resources that are not needed for the rest of the proof are dropped implicitly.
 
-The proof of \textsc{Spec-MakeRegister} is straightforward and follows from the specifications of \ocamlin{Broadcast.register} and \ocamlin{Broadcast.try_cancel}.
+The proof of \textsc{Spec-MakeRegister} is straightforward and follows from the specifications of \ocamlin{Broadcast.register} and \ocamlin{Broadcast.try_unregister}.
 For \textsc{Spec-Await}, the crux is that we define \textsc{Spec-MakeRegister} so that it returns a \(register\) function which satisfies \(\gsIsReg{}\; register\; (\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})\).
 Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect returns, and we can refute the case of the promise still being unfulfilled when checking the state of promise again for the last time.
 
@@ -498,7 +500,7 @@ Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect r
       2.1. \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsBcst{}\; bcst \ast                                                                                     \\ \emph{isBroadcastRegisterHandle}\; handle \ast \\ p \mapsto Done\; result \ast \gspdone{} } \right\}\)  &\\
       \myquad[3] \ocamlreal{| Done result -> }                                                    & [ close \gsPInv{} ]                                             \\
       \hphantom{.2.1.} \(\left\{ \makecell{ \gsIsBcst{}\; bcst \ast \emph{isBroadcastRegisterHandle}\; handle \ast                                                  \\ \gspdone{} } \right\}\) &\\
-      \myquad[4] \ocamlreal{ if Broadcast.try_cancel handle }                                     & [ apply \textsc{Spec-BroadcastTryCancel}, CA on return value  ] \\[3pt]
+      \myquad[4] \ocamlreal{ if Broadcast.try_unregister handle }                                 & [ apply \textsc{Spec-BroadcastTryCancel}, CA on return value  ] \\[3pt]
       \hline                                                                                                                                                        \\[-15pt]
       2.1.1. \(\left\{ \gspdone{} \ast (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) \right\}\) & [ specialize assumption ]                                       \\
       \hphantom{.2.1.1.} \(\left\{ {\color{red}\ewp{waker\; ()}{\bot}{\top}} \right\}\)           &                                                                 \\

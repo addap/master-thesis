@@ -467,3 +467,74 @@ calls the waker function to the fiber that performed the effect." OK, but you
 might clarify that whoever calls "waker" must guarantee that P holds, and in
 return, a fiber that awakens after performing a Suspend effect can assume that
 P holds.
+
+# 2024-03-29
+- [x] p.2, "safety and specifications": I think you mean "safety and
+functional correctness"?
+
+- [x] p.2, "Hoare triples {𝑃} 𝑒 {𝑄} are persistent because the expression 𝑒 can be
+evaluated multiple times": actually, we *define* Hoare triples to be
+persistent because we *usually want* to allow e to be evaluated multiple times;
+but there is also a one-shot variant of Hoare triples, which allows e to be
+evaluated only once (and there are examples of this in your dissertation).
+
+- [x] p.2, "Proving specifications in Iris normally follow the schema of first
+defining so-called ghost state". This is often true for complex programs,
+typically concurrent programs where multiple threads have different (but
+coherent) views of a shared state. In simpler (sequential) programs, ghost
+state may be unnecessary. I would suggest writing that the first step in
+program verification is to first express the specification (what the
+program is supposed to do) in terms of well-chosen (concrete or abstract)
+predicates, and only in a second step, deciding how to implement these
+abstract predicates, writing down the ghost state and invariants that the
+implementation needs, and verifying the code.
+
+- [x] p.2, you mention both "Hoare triples" and "weakest preconditions". It would be
+good to clarify that these are a connection between these notions, or use only
+one of them. A "weakest precondition" should actually be called a "Hoare
+double", or just a "program specification", for short; that would be clearer
+in my opinion.
+
+- [x] p.4, "this can be thought of as an analogue to an imaginary Hoare triple":
+it is actually the Hoare triple for `perform v`.
+
+- [x] p.6, "they are a lucid example for their usefulness", the two "they" refer
+to different things
+
+- [x] Section 3.1, I think it is confusing to mix the description of the API offered
+by Broadcast and the discussion of the differences with the original CQS. I
+would expect to see the Broadcast API explained first, then (elsewhere, later)
+a discussion of the differences with the original CQS.
+
+- [x] Section 3.2, "CQS is implemented [...]": do you mean "Broadcast is implemented
+[...]"? The section title says you are discussing Broadcast, but the text
+refers to CQS. This is again confusing.
+
+- [x] Section 3.2, "a queue of cells with two pointers" : are these cells stored
+contiguously inside an array, or is this a linked list of cells where each
+cell is a separate memory block in the heap?
+
+- [x] p.17, "a stack of operations" → "a set of operations"?
+
+- [x] p.18, the text refers the reader to Figure 13 (state transition diagram), but
+the various states in the diagram are not explained. (Are they explained later
+on?)
+
+- [x] p.19, "𝑖𝑛𝑣_ℎ𝑒𝑎𝑝_𝑖𝑛𝑣 is an Iris proposition which says that we are in a
+garbage-collected setting". I don't know what this means!
+
+- [x] p.19, "The Broadcast.register function will advance the suspend pointer to
+allocate a fresh cell in the EMPTY logical state". The text mentions internal
+states (EMPTY, RESUMED, TAKEN, CALLBACK) but the specification of `register`
+that follows this text (Spec-BroadcastRegister) does not mention any of these
+states. So I am confused; I do not clearly understand whether the text is
+supposed to help me read the public specification of `register` or whether it
+is intended to give me additional information beyond this public
+specification.
+
+- [x] p.19, 𝑡𝑒𝑥𝑡𝑖𝑡𝑖𝑠
+
+- [ ] Figure 17, the definition of `Coop δ` mentions `T`, which is not bound
+anywhere. Is it somehow globally fixed? Or should it also be a parameter
+of `Coop`? Oh, actually, in Figure 16, `fiberResources δ` does not have
+a parameter `T`, but in Figure 17 it has one.
