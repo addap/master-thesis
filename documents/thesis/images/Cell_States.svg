@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="170mm"
+   height="50mm"
+   viewBox="0 0 170 50"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="Cell_States.svg"
+   inkscape:version="1.3.2 (091e20ef0f, 2023-11-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="1.4142136"
+     inkscape:cx="395.62624"
+     inkscape:cy="156.2706"
+     inkscape:window-width="1920"
+     inkscape:window-height="1014"
+     inkscape:window-x="0"
+     inkscape:window-y="526"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     showgrid="true" />
+  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="Triangle"
+       refX="3"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135" />
+    </marker>
+    <linearGradient
+       id="swatch7"
+       inkscape:swatch="solid">
+      <stop
+         style="stop-color:#660000;stop-opacity:1;"
+         offset="0"
+         id="stop7" />
+    </linearGradient>
+    <rect
+       x="209.51036"
+       y="1.6836103"
+       width="348.43408"
+       height="232.96095"
+       id="rect4" />
+    <marker
+       style="overflow:visible"
+       id="Triangle-9"
+       refX="3"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135-0" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Triangle-0"
+       refX="3"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135-4" />
+    </marker>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g10"
+       transform="translate(-17.142578,-17.891274)"
+       inkscape:connector-avoid="true">
+      <rect
+         style="fill:#cfe2f3;fill-opacity:1;stroke:#0b5394;stroke-width:0.219719;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="rect1"
+         width="23.8381"
+         height="12.491513"
+         x="82.9366"
+         y="20.415127" />
+      <rect
+         style="fill:#cfe2f3;fill-opacity:1;stroke:#0b5394;stroke-width:0.549296;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="rect1-02"
+         width="22.358093"
+         height="10.791306"
+         x="83.676605"
+         y="21.26523" />
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+         x="86.1745"
+         y="28.51226"
+         id="text3"><tspan
+           sodipodi:role="line"
+           id="tspan3"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+           x="86.1745"
+           y="28.51226">EMPTY</tspan></text>
+    </g>
+    <g
+       id="g11"
+       transform="translate(-24.742973,-17.273091)"
+       inkscape:connector-avoid="true">
+      <rect
+         style="fill:#b6d7a8;fill-opacity:1;stroke:#274e13;stroke-width:0.269305;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-9"
+         width="33.995148"
+         height="9.7306948"
+         x="26.852602"
+         y="21.177353" />
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+         x="28.553734"
+         y="27.894077"
+         id="text3-69"><tspan
+           sodipodi:role="line"
+           id="tspan3-33"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+           x="28.553734"
+           y="27.894077">SIGNALLED</tspan></text>
+    </g>
+    <g
+       id="g12"
+       transform="translate(-21.82452,-21.936582)"
+       inkscape:connector-avoid="true">
+      <rect
+         style="fill:#b6d7a8;fill-opacity:1;stroke:#274e13;stroke-width:0.622907;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-6"
+         width="30.197384"
+         height="9.3770933"
+         x="25.833031"
+         y="52.871323" />
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+         x="28.942924"
+         y="59.411247"
+         id="text3-64"><tspan
+           sodipodi:role="line"
+           id="tspan3-00"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+           x="28.942924"
+           y="59.411247">INVOKED</tspan></text>
+    </g>
+    <text
+       xml:space="preserve"
+       transform="scale(0.26458333)"
+       id="text4"
+       style="white-space:pre;shape-inside:url(#rect4);display:inline;fill:#000000;fill-opacity:1" />
+    <g
+       id="g14"
+       transform="translate(-36.267592,-23.444795)"
+       inkscape:connector-avoid="true">
+      <rect
+         style="fill:#b6d7a8;fill-opacity:1;stroke:#274e13;stroke-width:0.739321;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-8"
+         width="30.080971"
+         height="13.260678"
+         x="117.95638"
+         y="55.834595" />
+      <g
+         id="g6"
+         transform="translate(-4.9925083,-1.7416141)">
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+           x="124.31571"
+           y="64.516991"
+           id="text3-1"><tspan
+             sodipodi:role="line"
+             id="tspan3-3"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+             x="124.31571"
+             y="64.516991">CALLBACK</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+           x="133.90985"
+           y="67.615791"
+           id="text5"><tspan
+             sodipodi:role="line"
+             id="tspan5"
+             style="stroke-width:0.264583"
+             x="133.90985"
+             y="67.615791">invoked</tspan></text>
+      </g>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+       x="39.3647"
+       y="6.2824974"
+       id="text5-9"><tspan
+         sodipodi:role="line"
+         id="tspan5-1"
+         style="stroke-width:0.264583"
+         x="39.3647"
+         y="6.2824974">signalAll</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+       x="20.027981"
+       y="23.464014"
+       id="text5-9-8"><tspan
+         sodipodi:role="line"
+         id="tspan5-1-7"
+         style="stroke-width:0.264583"
+         x="20.027981"
+         y="23.464014">register</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+       x="92.02005"
+       y="6.2824974"
+       id="text5-9-0"><tspan
+         sodipodi:role="line"
+         id="tspan5-1-4"
+         style="stroke-width:0.264583"
+         x="92.02005"
+         y="6.2824974">register</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+       x="101.59807"
+       y="25.779634"
+       id="text5-9-1"><tspan
+         sodipodi:role="line"
+         id="tspan5-1-0"
+         style="stroke-width:0.264583"
+         x="101.59807"
+         y="25.779634">signalAll</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+       x="132.49493"
+       y="25.779634"
+       id="text5-9-2"><tspan
+         sodipodi:role="line"
+         id="tspan5-1-05"
+         style="stroke-width:0.264583"
+         x="132.49493"
+         y="25.779634">tryUnregister</tspan></text>
+    <g
+       id="g13"
+       transform="translate(-36.267592,-23.189129)"
+       inkscape:connector-avoid="true">
+      <rect
+         style="fill:#ea9999;fill-opacity:1;stroke:#660000;stroke-width:0.703603;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-3"
+         width="31.296396"
+         height="13.296396"
+         x="158.58089"
+         y="55.561069" />
+      <g
+         id="g7"
+         transform="translate(-0.68823185,-0.76661322)">
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+           x="161.24365"
+           y="63.294792"
+           id="text3-4"><tspan
+             sodipodi:role="line"
+             id="tspan3-0"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+             x="161.24365"
+             y="63.294792">CALLBACK</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+           x="165.7578"
+           y="66.376656"
+           id="text5-7"><tspan
+             sodipodi:role="line"
+             id="tspan5-5"
+             style="stroke-width:0.264583"
+             x="165.7578"
+             y="66.376656">cancelled</tspan></text>
+      </g>
+    </g>
+    <g
+       id="g15"
+       transform="translate(-24.474874,-19.2318)"
+       inkscape:connector-avoid="true">
+      <rect
+         style="fill:#ffe599;fill-opacity:1;stroke:#be615d;stroke-width:0.308434;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-0"
+         width="31.691566"
+         height="13.691566"
+         x="139.27866"
+         y="21.155626" />
+      <g
+         id="g5"
+         transform="translate(-0.46392861,-1.9653433)">
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+           x="141.9147"
+           y="29.828465"
+           id="text3-6"><tspan
+             sodipodi:role="line"
+             id="tspan3-2"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.64444px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+             x="141.9147"
+             y="29.828465">CALLBACK</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:#000000;fill-opacity:1;stroke-width:0.264583"
+           x="151.25908"
+           y="32.927261"
+           id="text5-72"><tspan
+             sodipodi:role="line"
+             id="tspan5-8"
+             style="stroke-width:0.264583"
+             x="151.25908"
+             y="32.927261">waiting</tspan></text>
+      </g>
+    </g>
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 65.794022,8.7696094 -29.689245,-10e-8"
+       id="path9"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#g10"
+       inkscape:connection-end="#g11" />
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle-9)"
+       d="m 19.107203,13.634957 0,17.299784"
+       id="path9-8"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#g11"
+       inkscape:connection-end="#g12" />
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle-0)"
+       id="path9-9"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#g10"
+       inkscape:connection-end="#g15"
+       d="m 89.632122,8.7696095 25.171658,0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro';fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.499999;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       x="71.102592"
+       y="25.190321"
+       id="text12"><tspan
+         sodipodi:role="line"
+         id="tspan12"
+         style="stroke:#000000;stroke-width:0.5;stroke-opacity:1"
+         x="71.102592"
+         y="25.190321" /></text>
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+       d="m 130.64957,15.615393 v 12.281844 h 0.0291"
+       id="path15"
+       inkscape:connector-type="orthogonal"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#g15" />
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+       d="m 130.40566,27.896472 h 7.55095 v 0.03815"
+       id="path16"
+       inkscape:connector-type="orthogonal"
+       inkscape:connector-curvature="0" />
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#Triangle)"
+       d="m 137.96149,32.37194 v -4.472877 h 0.023"
+       id="path17"
+       inkscape:connector-type="orthogonal"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#g13" />
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#Triangle)"
+       d="m 96.729276,32.3898 v -4.487222 h 0.04921"
+       id="path18"
+       inkscape:connector-type="orthogonal"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#g14" />
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+       d="m 96.540973,27.9013 h 34.107447 v 0.0247"
+       id="path19"
+       inkscape:connector-type="orthogonal"
+       inkscape:connector-curvature="0" />
+  </g>
+</svg>

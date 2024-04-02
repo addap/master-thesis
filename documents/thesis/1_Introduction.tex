@@ -28,7 +28,7 @@ By safety, we mean that when evaluating a given program according to the rules o
 it will never get into a state where there are no rules of how to evaluate it further.
 In some languages this is called \emph{undefined behavior}, but we often model it as crashing the program.
 Safety is the baseline for the type of program verification that we do and as a next step we can show that programs are functionally correct by proving that they obey a \textbf{specification}.
-Specifications further restrict the possible program executions to a defined set of "good behaviors", such as "this program will compute the n-th Fibonacci number for a given input n".
+Specifications further restrict the possible program executions to a defined set of "good behaviors", such as "for a given input \(n\), this program computes the \(n\)th Fibonacci number".
 
 \paragraph{Separation Logic}
 We express specifications as logical propositions and do all reasoning in a separation logic called \emph{Iris}~\cite{jung2018iris}.
@@ -50,7 +50,7 @@ Separation logics have been successfully applied in many program verification de
 Iris is not only a separation logic, but a whole separation logic framework implemented in Coq that can be instantiated with different programming languages.
 This allows us to layer different \emph{program logics} on top of the base separation logic, which contain additional reasoning rules about the evaluation of programs in a concrete language.
 Verifying a program in Iris follows the schema of first deciding which specifications are necessary for each of the program's components.
-These are expressed using predicates in the logic.
+These are expressed using predicates in the logic, which we will call the \emph{logical state definitions}.
 If necessary, one can also use so-called \emph{ghost state},
 which is a versatile feature of Iris that allows keeping track of program state and mutating it during a proof.
 For complicated programs we often define ghost state and derive additional rules that modify it, in order to model the complex state space and state transitions of the program execution.
@@ -58,19 +58,19 @@ Ghost state updates in Iris are restricted to happen under an \emph{update modal
 
 The last step in proving the program specification consists of deriving a (partial) \emph{weakest precondition} \(\wpre{e}{v.\, Q\, v}\) for the program expression \(e\).
 The weakest precondition is defined such that, if evaluation of \(e\) eventually terminates (i.e. divergence is permitted) in a final value \(v\), it must satisfy \(Q\; v\).
-The name comes from the fact that this proposition is by definition the weakest precondition \(P\) that makes the Hoare triple \(\{P\}\,e\,\{v.\,Q\,v\}\) true and Hoare triples are
-even defined this way in Iris:
+The name is derived from the fact that it is by definition the weakest precondition \(P\) that makes the Hoare triple \(\{P\}\,e\,\{v.\,Q\,v\}\) true.
+Hoare triples are even defined this way in Iris:
 \[
   \{P\}\,e\,\{v.\,Q\,v\} \coloneq \always (P \wand \wpre{e}{v.\, Q\, v})
 \]
 Since propositions are affine by default, the \emph{persistence modality} \(\always P\) is used to define Hoare triples as persistent.
-Therefore, deriving a weakest precondition for an expression \(e\) proves its specification in terms of the assumptions \(P\) and conclusion \(Q\).
-It will also establish the safety of the expression due to a soundness lemma of the logic.
+Therefore, deriving a weakest precondition for an expression \(e\) proves a specification for it in terms of the assumptions \(P\) and conclusion \(Q\).
+This also establishes the safety of the expression due to a soundness lemma of the logic.
 
-One other powerful feature of Iris are \emph{shared invariants} \(\knowInv{\mathcal{N}}{I}\), which represent knowledge that a resource will not change over time, so they are also persistent.
+One other powerful feature of Iris are \emph{shared invariants} \(\knowInv{\mathcal{N}}{I}\), which represent knowledge that a resource does not change over time, so they are also persistent.
 They are used to encapsulate a resource \(I\) in order to share it under the restriction that the invariant can only be opened for one atomic step of execution at a time.
 If the invariant is opened, the contained resource \(I\) can be accessed but must be restored at the end of the execution step.
-This ensures that even in the presence of multiple threads executing in parallel, the invariant will never be observably violated.
+This ensures that even in the presence of multiple threads executing in parallel, the invariant is never observably violated.
 
 The standard language for Iris is called heaplang and is an ML-type language with mutable state and multithreading.
 However, it does not support effect handlers as present in \ocf{}.
@@ -89,26 +89,31 @@ We use an overloading of the \ocamlin{match} expression, which includes cases fo
 
 \begin{figure}[ht]
   \begin{minted}[fontsize=\footnotesize,escapeinside=@@]{ocaml}
-    (* Declares a new constructor E : int -> bool Effect.t *)
+    (* Declares a new constructor for the effect type 
+     * E : int -> bool Effect.t *)
     effect E : int -> bool
 
-    (* Evaluating perform with a value of type 'a Effect.t will transfer 
-     * control to the enclosing handler and (possibly) return with a 
-     * value of type 'a. *)
+    (* Evaluating a perform expression with a value of type 'a Effect.t 
+     * transfers control to the enclosing handler and (possibly)
+     * terminates in a value of type 'a. *)
     let e () = 
       let (b : bool) = perform (E 1) in
       b
 
-    (* Evaluates the expression e () and if the effect E is performed 
+    (* Evaluates the expression e () and if the effect E is performed,
      * control is transferred to the second branch.
      * The match acts as a deep handler, i.e. even if during the 
      * evaluation of e the effect E is performed multiple times, the
-     * second branch will be evaluated every time.
+     * second branch is evaluated every time.
      * When e is reduced to a value, the non-effect branches are 
      * used for pattern matching as usual. *)
     match e () with
-    | v -> ...
-    | @\texttt{\textbf{effect}}@ (E v) k -> ...
+    | v -> v
+    (* This handler just checks if the passed value is 1.
+     * Applying k to a value adds the continuation to the stack,
+     * so control is transferred back to where the perform expression 
+     * was evaluated. *)
+    | @\texttt{\textbf{effect}}@ (E v) k -> k (v = 1)
 \end{minted}
   \caption{Example for the effect handler syntax.}
   \label{fig:effect-example}
@@ -123,12 +128,12 @@ Languages like Koka additionally track the possible effects of an expression in 
 This might be implemented for \ocf{} in the future, but for now effects are not tracked by the type system.
 It is the responsibility of the programmer to install effect handlers that handle all possible effects of their program.
 This raises the question of \textbf{effect safety} for OCaml programs using effect handlers, which means that a program does not perform any unhandled effects.
-The \ocf{} runtime will treat unhandled effects as an error and crash the program.
+The \ocf{} runtime treats unhandled effects as an error and crash the program.
 So to prove the safety of \ocf{} programs we must additionally establish their effect safety.
 
 \paragraph{\hazel{} \& Protocols}
 In our development we use the Iris language \hazel{} by de Vilhena~\cite{de2021separation,de2022proof} which formalizes an ML-like language with effect handlers.
-We will restate the most important concepts but for a deeper understanding we recommend reading~\cite{de2021separation}.
+We restate the most important concepts but for a deeper understanding we recommend reading~\cite{de2021separation}.
 
 \hazel{} defines an \emph{extended weakest precondition} \(\ewp{e}{\Psi}{v,\, Q\, v}\) which -- in addition to what is implied by a normal weakest precondition --
 shows we can observe that the expression \(e\) performs effects according to the protocol \(\Psi\).
@@ -141,8 +146,8 @@ The syntax is inspired by session types, which also define a type of communicati
 Intuitively, the part after the exclamation mark gets "sent" to the effect handler and the part after the question mark is "received" as an answer.
 \(\overrightarrow{x}\) and \(\overrightarrow{y}\) are binders whose scope extends from their position all the way to the right.
 The client who performs the effect transmits the value \(v\) to the effect handler and must prove the proposition \(P\).
-In return, the client will receive from the effect handler a value \(w\) and gets to assume \(Q\).
-In total, this can be thought of as an analogue to a Hoare triple like \(\{P\}\, handler\; v\, \{w,\; Q\; w\}\), where we explicitly name the handler that will handle the effect.
+In return, the client receives from the effect handler a value \(w\) and gets to assume \(Q\).
+In total, this can be thought of as an analogue to a Hoare triple like \(\{P\}\, handler\; v\, \{w,\; Q\; w\}\), where we explicitly name the handler that handles the effect.
 But the client only indirectly invokes the effect handler by evaluating a \(perform\) expression, so in practice we prove the following Hoare triple.
 \[
   \{P\}\, perform\; v\, \{w,\; Q\; w\}
@@ -191,7 +196,7 @@ But for this work we restrict ourselves to verifying the safety and effect safet
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.75\textwidth]{Eio_Module_Hierarchy.png}
-  \caption{Eio Module Hierarchy}
+  \caption{Eio module hierarchy.}
   \label{fig:eio-module-hierarchy}
 \end{figure}
 

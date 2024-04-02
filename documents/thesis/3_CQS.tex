@@ -38,10 +38,10 @@ Eio uses signalAll instead of a signal operation that only invokes one callback 
 When a promise is fulfilled, \textbf{all} fibers waiting on its value can continue execution, so the fine-grained control of a single signal operation is not needed.
 
 \paragraph*{tryCancel/tryUnregister}
-The semantics of the tryCancel operation do not markedly change.
-It can be used by an execution context to cancel the future returned by a suspend operation, so that it will not be completed by a call to resume.
-Analogously, tryUnregister tries to undo the registration of a callback, so that it will not be invoked in a call to signalAll.
-The operation will fail if a corresponding resume or signalAll happens first.
+The semantics of the tryUnregister operation do not markedly change from the original.
+A tryCancel operation can be used by an execution context to cancel the future returned by a suspend operation, so that the future is not completed by a call to resume.
+Analogously, tryUnregister tries to undo the registration of a callback, so that it is not invoked in a call to signalAll.
+The operation fails if a corresponding resume or signalAll happens first.
 
 % % <!-- How to understand the operations?  -->
 \paragraph*{}
@@ -55,7 +55,7 @@ If the promise is not fulfilled yet, \ocamlin{Promise.await} then performs a \es
 
 \begin{figure}[ht]
   \includegraphics[width=\textwidth]{CQS_Outer_Atomic.png}
-  \caption{Usage of Broadcast in the Context of a Promise}
+  \caption{Usage of broadcast in the context of a promise.}
   \label{fig:cqs-usage}
 \end{figure}
 
@@ -70,21 +70,21 @@ Possible interleavings and the necessity of the tryUnregister were explained in 
 Like the original CQS, broadcast is implemented as a linked list of arrays (called segments) that contain \emph{cells}\footnote{Using segments instead of single cells in the linked list is an optimization to amortize the linear runtime of linked list operations}.
 There are two pointers pointing to the beginning and end of the active cell range, the signal pointer and the register pointer, and cells not reachable from either pointer are garbage collected.
 There is a set of operations for manipulating the linked list and pointers to implement the higher-level functionality, but they are not part of the public API, so we do not focus on them.
-Each cell is a container for one callback and the logical state of the broadcast tracks the logical state of all existing cells.
-The possible logical states for a single cell are shown in figure~\ref{fig:cqs-cell-states}, where the arrows are annotated with the operation that causes a state transition.
+Each cell is a container for one callback and the logical state of the broadcast tracks the current state of all existing cells.
+The possible states for a single cell are shown in figure~\ref{fig:cqs-cell-states}, where the arrows are annotated with the operation that causes a state transition.
 
-The logical state of a cell is initialized to \textbf{EMPTY} when it is reached by the register pointer\footnote{As opposed to the original CQS, in broadcast the signal pointer will never overtake the register pointer.}.
+The state of a cell is initialized to \textbf{EMPTY} when it is reached by the register pointer\footnote{As opposed to the original CQS, in broadcast the signal pointer never overtakes the register pointer.}.
 When a register and signalAll operation happen concurrently, they race to set the value of the empty cell.
-If the signalAll operation wins, it writes a token value into the cell and the logical state becomes \textbf{SIGNALLED}.
+If the signalAll operation wins, it writes a token value into the cell and the state becomes \textbf{SIGNALLED}.
 The register operation can then read the token and invoke its callback directly.
-The logical state is thus \textbf{INVOKED}.
-If instead the register operation wins the race, it writes the callback into the cell, so the logical state takes the right path to \textbf{CALLBACK(waiting)}.
+The state is thus \textbf{INVOKED}.
+If instead the register operation wins the race, it writes the callback into the cell, so the state takes the right path to \(\textbf{CALLBACK}_\textbf{waiting}\).
 Then there can be another race between concurrent tryUnregister and signalAll operations.
-Both try to overwrite the callback with a token value, which changes the logical state to \textbf{CALLBACK(invoked)} or \textbf{CALLBACK(unregistered)}, respectively, depending on the winner.
+Both try to overwrite the callback with a token value, which changes the state to \(\textbf{CALLBACK}_\textbf{invoked}\) or \(\textbf{CALLBACK}_\textbf{unregistered}\), respectively, depending on the winner.
 
 \begin{figure}[ht]
-  \includegraphics[width=\textwidth]{Cell_States.png}
-  \caption{State Transition Diagram for a Single Cell.}
+  \includegraphics[width=\textwidth]{Cell_States.eps}
+  \caption{State transition diagram for a single cell.}
   \label{fig:cqs-cell-states}
 \end{figure}
 
@@ -127,14 +127,14 @@ We instantiate \(R\) with \gspdone{} so that the callback transports the knowled
 
 \begin{align*}
   \gsIsCb{}\; cb\; R                            & \triangleq R \wand \ewp{cb\; ()}{\bot}{\top}                                                           \\
-  \emph{isBroadcastRegisterResult}\; r\; cb\; R & \triangleq (\ulcorner r = Called \urcorner)                                                            \\
+  \emph{isBroadcastRegisterResult}\; r\; cb\; R & \triangleq (\ulcorner r = Invoked \urcorner)                                                           \\
                                                 & \quad \vee (\ulcorner r = Registered\; h \urcorner \ast \emph{isBroadcastRegisterHandle}\; h\; cb\; R) \\
   \emph{isBroadcastRegisterHandle}              & : Val \to Val \to iProp \to iProp
 \end{align*}
 
 The \ocamlin{Broadcast.register} function tries to insert a callback into the next cell designated by the register pointer.
 If it succeeds the function returns a \ocamlin{Registered handle} value that can be used by \ocamlin{Broadcast.try_unregister}.
-But if the cell is already in the \textbf{SIGNALLED} state, the function will immediately invoke the callback and return a \ocamlin{Called} value.
+But if the cell is already in the \textbf{SIGNALLED} state, the function immediately invokes the callback and returns a \ocamlin{Invoked} value.
 
 \[
   \inferrule[Spec-BroadcastRegister]
@@ -145,9 +145,9 @@ But if the cell is already in the \textbf{SIGNALLED} state, the function will im
 \subsubsection{\ocamlin{Broadcast.try_unregister}}
 \label{sec:broadcast-spec-cance}
 
-Given a handle and its \(\textit{isBroadcastRegisterHandle}\; h\; cb\; R\) resource, \ocamlin{Broadcast.try_unregister} will try to cancel the registration of the callback.
+Given a handle and its \(\textit{isBroadcastRegisterHandle}\; h\; cb\; R\) resource, \ocamlin{Broadcast.try_unregister} tries to cancel the registration of the callback.
 
-If the callback had already been invoked by a call to \ocamlin{Broadcast.signal_all} (i.e. the logical state is \textbf{CALLBACK(invoked)}) the function returns \ocamlin{false} and no resources are returned to the caller.
+If the callback had already been invoked by \ocamlin{Broadcast.signal_all} (i.e. the state is \(\textbf{CALLBACK}_\textbf{invoked}\)) the function returns \ocamlin{false} and no resources are returned to the caller.
 Otherwise, the permission to invoke the callback \(\gsIsCb{}\; cb\) is returned.
 
 \[
@@ -177,7 +177,7 @@ This reduced the state space of a cell shown in figure~\ref{fig:cqs-cell-states-
 
 \begin{figure}[ht]
   \includegraphics[width=\textwidth]{Cell_States_Original.png}
-  \caption{Cell States in the Original CQS from~\cite{koval2023cqs} (page 42).}
+  \caption{Cell states in the original CQS from~\cite{koval2023cqs} (page 42).}
   \label{fig:cqs-cell-states-original}
 \end{figure}
 
