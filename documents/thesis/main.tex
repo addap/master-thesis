@@ -139,25 +139,33 @@
 % https://tex.stackexchange.com/a/330591
 \newcommand{\myquad}[1][1]{\hspace*{#1em}\ignorespaces}
 
-\title{Verifying an Effect-Based Cooperative Concurrency Scheduler in Iris}
-\author{
-    Adrian Dapprich \\
-    Department of Computer Science\\
-    Saarland University \\\\
-    Advisors: Prof. Derek Dreyer \& Prof. François Pottier}
-% \institute{Foundations of Programming Group, MPI-SWS, Saarland University}
-\date{\today}
-
 \begin{document}
 
-% TODO better title page
-\maketitle
+\include{00_header}
+\setauthor{Adrian Dapprich}
+\settitle{Verifying an Effect-Based Cooperative Concurrency Scheduler in Iris}
+\advisorOne{Prof. Derek Dreyer}
+\advisorTwo{Prof. François Dottier}
+\university{Saarland University}
+\faculty{Department of Computer Science}
+\thesistype{Master's}
+\subdate{19}{April}{2024}
+\city{Saarbrücken}
 
+\pagenumbering{Roman}
+\maketitlepage
+\clearpage{\thispagestyle{empty}}
+~\clearpage{\thispagestyle{empty}}
+
+\statementpage
+\clearpage{\thispagestyle{empty}}
+~\clearpage{\thispagestyle{empty}}
+
+\include{0_Abstract}
 \clearpage{\thispagestyle{empty}}
 ~\clearpage
 
-\include{0_Abstract}
-
+\pagenumbering{arabic}
 \tableofcontents
 \newpage
 

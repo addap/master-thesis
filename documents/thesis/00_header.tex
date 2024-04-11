@@ -1,0 +1,124 @@
+\makeatletter
+
+\newcommand{\setauthor}[1]{\author{#1}\def\theauthor{#1}}
+\newcommand{\settitle}[1]{\title{#1}\def\thetitle{#1}}
+\newcommand{\advisorOne}[1]{\def\theadvisorOne{#1}}
+\newcommand{\advisorTwo}[1]{\def\theadvisorTwo{#1}}
+% \newcommand{\reviewerOne}[1]{\def\thereviewerOne{#1}}
+% \newcommand{\reviewerTwo}[1]{\def\thereviewerTwo{#1}}
+\newcommand{\university}[1]{\def\theuniversity{#1}}
+\newcommand{\faculty}[1]{\def\thefaculty{#1}}
+\newcommand{\thesistype}[1]{\def\thethesistype{#1}}
+\newcommand{\subdate}[3]{\def\thesubday{#1} \def\thesubmonth{#2} \def\thesubyear{#3} }
+\newcommand{\city}[1]{\def\thecity{#1}}
+
+\newcommand{\maketitlepage}{
+  \begin{titlepage}
+    \begin{center}
+      \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+      \begin{minipage}{0.2\textwidth}
+        \includegraphics[draft=false,width=0.9\textwidth]{logo.eps}
+      \end{minipage}
+      \begin{minipage}{0.7\textwidth}
+        \centering \textsc{{\Huge \theuniversity}}
+
+        \centering \textsc{\footnotesize \thefaculty}
+      \end{minipage}
+      %   \vspace{1cm}
+      \vfill
+
+      \textsc{\thethesistype Thesis}\\[0.3cm]
+      % Title
+      \HRule \\[0.4cm]
+      { \Huge \scshape \thetitle \\[0.4cm] }
+
+      \HRule \\[1.5cm]
+
+      % Author and supervisor
+      \noindent
+      \begin{minipage}[t]{0.4\textwidth}
+        \begin{flushleft} \Large
+          \emph{Author}\\
+          \theauthor
+        \end{flushleft}
+      \end{minipage}%
+      \begin{minipage}[t]{0.4\textwidth}
+        \begin{flushright} \Large
+          \emph{Advisors} \\
+          \theadvisorOne\\
+          \theadvisorTwo
+
+        \end{flushright}
+      \end{minipage}
+      \vfill
+
+      \noindent
+      %   \begin{minipage}{1\textwidth}
+      %     % \vspace{7cm}
+
+      %     \begin{center} \large
+      %       \emph{Reviewers} \\
+      %       \thereviewerOne\\
+      %       \thereviewerTwo
+      %     \end{center}
+      %   \end{minipage}
+
+      \vfill
+
+      {\large Submitted: \thesubday\textsuperscript{th} \thesubmonth~\thesubyear}
+    \end{center}
+  \end{titlepage}
+}
+
+\newcommand{\statementpage}{
+  ~ \vspace*{2cm} ~
+
+  \paragraph*{Eidesstattliche Erkl\"arung}\mbox{}\\
+  Ich erkl\"are hiermit an Eides statt, dass ich die vorliegende Arbeit
+  selbstst\"andig verfasst und keine anderen als die angegebenen Quellen und
+  Hilfsmittel verwendet habe.
+
+  ~ \vspace*{1cm} ~
+
+  \paragraph*{Statement in Lieu of an Oath}\mbox{}\\
+  I hereby confirm that I have written this thesis on my own and that I
+  have not used any other media or materials than the ones referred to in
+  this thesis.
+
+
+  ~ \vspace{3cm} ~
+
+  \paragraph*{Einverst\"andniserkl\"arung}\mbox{}\\
+  Ich bin damit einverstanden, dass meine (bestandene) Arbeit in beiden
+  Versionen in die Bibliothek der Informatik aufgenommen und damit
+  ver\"offentlicht wird.
+  % \begin{center}
+  % \Large
+
+  ~ \vspace*{1cm} ~
+
+  \paragraph*{Declaration of Consent}\mbox{}\\
+  I agree to make both versions of my thesis (with a passing grade)
+  accessible to the public by having them added to the library of the
+  Computer Science Department.
+
+  \vspace*{3cm}
+
+  %   \vspace*{\baselineskip}
+  \noindent \begin{minipage}{\textwidth}
+    \noindent \begin{minipage}[b]{0.49\textwidth}
+      \begin{flushleft}
+        \thecity, \rule{4cm}{0.5pt}
+      \end{flushleft}
+    \end{minipage} \hfill
+    \begin{minipage}[b]{0.49\textwidth}
+      \begin{flushright}
+        \rule{6cm}{0.5pt}
+      \end{flushright}
+    \end{minipage}
+  \end{minipage}
+
+}
+
+
+\makeatother
