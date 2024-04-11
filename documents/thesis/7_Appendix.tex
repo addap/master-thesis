@@ -10,15 +10,15 @@
 \label{sec:apdx-translation}
 
 \begin{table}[ht]
-  \begin{tabular}{l|l|l}
-    Eio                          & Thesis                       & Mechanization          \\
-    \hline
-    \ocamlin{enqueue}            & \ocamlin{waker} function     & \ocamlin{waker}        \\
-    \ocamlin{f}                  & \ocamlin{register} function  & \ocamlin{register}     \\
-    \ocamlin{Fiber.fork_promise} & \ocamlin{Fiber.fork_promise} & \ocamlin{fork_promise} \\
-    \ocamlin{Promise.await}      & \ocamlin{Promise.await}      & \ocamlin{await}        \\
-    \ocamlin{Sched.run}          & \ocamlin{Scheduler.run}      & \ocamlin{run}          \\
-  \end{tabular}
+    \begin{tabular}{l|l|l}
+        Eio                          & Thesis                       & Mechanization          \\
+        \hline
+        \ocamlin{enqueue}            & \ocamlin{waker} function     & \ocamlin{waker}        \\
+        \ocamlin{f}                  & \ocamlin{register} function  & \ocamlin{register}     \\
+        \ocamlin{Fiber.fork_promise} & \ocamlin{Fiber.fork_promise} & \ocamlin{fork_promise} \\
+        \ocamlin{Promise.await}      & \ocamlin{Promise.await}      & \ocamlin{await}        \\
+        \ocamlin{Sched.run}          & \ocamlin{Scheduler.run}      & \ocamlin{run}          \\
+    \end{tabular}
 \end{table}
 
 \subsection{Towards A multithreaded Scheduler}
@@ -77,7 +77,7 @@ To allow reasoning in \hazel{} about multithreaded programs we need a multithrea
 The language interface of Iris provides a multithreaded operational semantics that is based on a thread-pool.
 The thread-pool is a list of expressions that represents threads running in parallel.
 At each step, one expressions is picked out of the pool at random and executed for one thread-local step.
-Each thread-local step additionally returns a list of forked-off threads, which are then added to the pool.
+Each thread-local step additionally returns a list of forked off threads, which are then added to the pool.
 This is only relevant for the \efork{} operation as all other operations naturally don't fork off threads.
 
 % (e, \sigma) ->_t (e', \sigma', es')
@@ -85,7 +85,7 @@ This is only relevant for the \efork{} operation as all other operations natural
 % (es_1 ++ e ++ es_2, \sigma) ->_mt (es_1 ++ e' ++ es_2 + es', \sigma')
 
 Heaplang implements multi-threading like this and for \hazel{} we do the same thing.
-We adapt \hazel{}'s thread-local operational semantics to include \efork{}, \ocamlin{Cmpxchg} and \ocamlin{FAA} operations and to track forked-off threads and get a multithreaded operational semantics "for free" from Iris' language interface.
+We adapt \hazel{}'s thread-local operational semantics to include \efork{}, \ocamlin{Cmpxchg} and \ocamlin{FAA} operations and to track forked off threads and get a multithreaded operational semantics "for free" from Iris' language interface.
 
 Additionally, we need to prove specifications for these three operations.
 \ocamlin{Cmpxchg} and \ocamlin{FAA} are standard so we will not discuss them here.
@@ -114,7 +114,7 @@ For \ocamlin{Spawn} \& \ocamlin{Join} we already need invariants as the point-to
 % Definition join_handle (l : loc) (Q : val → iProp Σ) : iProp Σ :=
 % ∃ γ, own γ (Excl ()) ∗ inv N (spawn_inv γ l Q).
 
-Note that for \ocamlin{Spawn} we must also impose the empty protocol on \ocamlin{f} as this expression will be forked-off.
+Note that for \ocamlin{Spawn} we must also impose the empty protocol on \ocamlin{f} as this expression will be forked off.
 
 This allows us to implement standard multithreaded programs which also use effect handlers.
 For example, we can prove the specification of the function below that is based on an analogous function in Eio which forks a thread and runs a new scheduler inside it.
@@ -137,7 +137,7 @@ What is more interesting is that they encapsulate the possible effects the given
 \label{sec:apdx-cancellation}
 
 \begin{itemize}
-  \item That we tried to model cancellation but the feature is too permissive to give it a specification.
-  \item There is still an interesting question of safety (fibers cannot be added to a cancelled Switch).
-  \item But including switches \& cancellation in our model would entail too much work so we leave it for future work.
+    \item That we tried to model cancellation but the feature is too permissive to give it a specification.
+    \item There is still an interesting question of safety (fibers cannot be added to a cancelled Switch).
+    \item But including switches \& cancellation in our model would entail too much work so we leave it for future work.
 \end{itemize}

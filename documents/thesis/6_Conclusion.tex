@@ -1,10 +1,62 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
+\subsection{Related Work}
+\paragraph*{Concurrency With Effects}
+There are other approaches to implementing cooperative concurrency with effects even within \ocf{}.
+One example is the Picos framework~\cite{Picos}, an interoperability framework that defines a small set of data types and effects that can be reused by other cooperative concurrency libraries (such as Eio)
+in order to speak a common protocol and be mutually interoperable.
+Picos defines \emph{computations} and \emph{fibers}, which are mostly equivalent, respectively, to Eio's promises and fibers.
+The main difference is the \emph{trigger} concept, which in Eio's terms can be thought of as a mutable reference to an optional \ocamlin{waker} function.
+% The workflow to await a result in Eio is to, first define a \ocamlin{register} function and perform a \esuspend{} effect with it. 
+% The scheduler will call the \ocamlin{register}
+The workflow to await a future result (i.e. a Picos computation) is to first attach an empty trigger to the computation and then perform an \emph{Await} effect.
+The effect handler (implemented by a library such as Eio) must then create a \ocamlin{waker} function and assign it to the trigger.\todo{mention resemblance to Landin's Knot?}
+When the computation finishes it will signal the trigger, which calls the \ocamlin{waker} function and consequently places the original fiber in the scheduler's run queue.
+
+While the \emph{Await} effect carrying a trigger is technically first-order -- as opposed to Eio's higher-order \esuspend{} effect carrying a \ocamlin{register} function --
+a trigger still contains higher-order state.
+So it is unclear to us whether a specification for the Picos primitives would be any simpler to prove or easier to use than the specification for Eio primitives we have presented so far.
+
+\paragraph*{Session Types as Effect Specifications}
+Protocols in \hazel{} take some inspiration from session types but with the restriction that a protocol is always an infinite repetition of a single step, whereas session types usually allow defining a sequence of different steps.
+Current work by Tang~\cite{tangeff} explores the connection between session types and effect protocols further and defines a lambda calculus \(\lambda^{\mbox{{\footnotesize \Letter}}}_{\mathrm{eff}}\) that uses a standard session type formalization
+for its effect system.
+This allows a programmer to define multistep protocols and even bidirectional effects where the handler and client swap roles.
+However, for our purposes \hazel{} is completely sufficient since multistep protocols can be simulated by \hazel{}'s protocols and bidirectional effects are not possible in \ocf{} to begin with.
+
+% \paragraph*{}
+% Current work by van Rooij~\cite{?} extends the type and effects system Tes of de Vilhena~\cite{de2022proof} to track in the type system whether a continuation is one- or multi-shot.
+
+% \paragraph*{Other Verifications of Eio Primitives}
+% \todo{There seems to be something called zebre that is referenced by Eio and implements at least the Lf\_queue of Eio \url{https://github.com/clef-men/zebre/} but otherwise appears to model a different kind of scheduler.}
+
 \subsection{Future Work}
-\begin{itemize}
-    \item Transport lemma from heap lang to extended languages to avoid adding many heap lang features to these languages.
-    \item Extending the case study with more operating system primitives.
-    \item There are other approaches to concurrency in OCaml using effect handlers without the higher-order suspend effect. It would be interesting to also study them and see if the formalization
-          turns out to be easier.
-\end{itemize}
+The work we presented so far suffices to prove the safety of programs that use a small subset of the full functionality provided by Eio.
+To improve the usefulness of our model and be applicable to more programs it would be desirable to incorporate more features into our model of Eio in future work, such as switches and support for cancelling fibers.
+While switches are mainly used for a hierarchical organization of fibers and to efficiently clean up fiber resources, cancellation poses some interesting safety questions because there are situations that must be avoided, such as being able to cancel a fiber twice.
+
+Instead of growing the model of Eio it would also be interesting to extend the existing specifications.
+Mainly, we would be interested in proving that a scheduler will never "forget fibers".
+Since weakest preconditions in Iris do not prove termination our specifications have the unfortunate drawback of being fulfilled by functions that diverge.
+Because a scheduler explicitly handles fiber continuations it would be possible to accidentally drop a continuation which has the effect of making the fiber diverge, as well as any other fiber that awaits its result.
+
+While we cannot solve the whole termination problem (since deadlocks are possible), intuitively we should be able to track the state of each fiber to ensure that when a fiber is captured in a continuation,
+the continuation is used linearly, which means that it is explicitly invoked or discarded at some point.
+This also extends to data structures that contain continuations like the scheduler's run queue and a broadcast, as they must never drop the contained continuations.
+To track the linear usage of continuations it could be helpful to draw inspiration from Iron~\cite{bizjak2019iron}, a separation logic built on Iris to enable reasoning about linear resources.
+
+% Finally, to make the statement "the program can diverge but not due to mishandled continuations" formal, it might be possible to use Transfinite Iris~\cite{spies2021transfinite} and prove a \emph{termination-preserving refinement} 
+% of the scheduler to a simpler scheduler where the linear handling of fiber continuations is more easily provable.
+% However, it is non-obvious how such a simpler scheduler would look like since termination of the whole program 
+
+\subsection{Results}
+
+In this thesis we have proven specifications for a subset of the Eio library, including a common denominator scheduler that controls fibers which can await the completion of promises in a multithreaded setting.
+We have also defined and verified general and reusable protocols for the main three effects of Eio: \efork{}, \esuspend{}, and \egetctx{}.
+We showed that the function specifications and the effect protocols are enough to verify the safety (including effect safety) of an example program that uses all of our modelled features.
+Additionally, we have verified specifications for two nontrivial data structures used by Eio.
+For the broadcast data structure we adapted the existing proof of CQS by Koval et al.~\cite{koval2023cqs}
+and for the scheduler's run queue we proved a -- to our knowledge novel -- specification for a multi-producer single-consumer queue with a temporarily suspendable invariant.
+Finally, we have extended the original \hazel{} language with multithreading primitives and amended the adequacy result which shows that we can use this language to reason about programs that use both multithreading and effect handlers.
+

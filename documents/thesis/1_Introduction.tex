@@ -61,7 +61,7 @@ The weakest precondition is defined such that, if evaluation of \(e\) eventually
 The name is derived from the fact that it is by definition the weakest precondition \(P\) that makes the Hoare triple \(\{P\}\,e\,\{v.\,Q\,v\}\) true.
 Hoare triples are even defined this way in Iris:
 \[
-  \{P\}\,e\,\{v.\,Q\,v\} \coloneq \always (P \wand \wpre{e}{v.\, Q\, v})
+    \{P\}\,e\,\{v.\,Q\,v\} \coloneq \always (P \wand \wpre{e}{v.\, Q\, v})
 \]
 Since propositions are affine by default, the \emph{persistence modality} \(\always P\) is used to define Hoare triples as persistent.
 Therefore, deriving a weakest precondition for an expression \(e\) proves a specification for it in terms of the assumptions \(P\) and conclusion \(Q\).
@@ -88,7 +88,7 @@ as shown in figure~\ref{fig:effect-example}, because the concrete syntax of effe
 We use an overloading of the \ocamlin{match} expression, which includes cases for handled effects, that is common in the literature.
 
 \begin{figure}[ht]
-  \begin{minted}[fontsize=\footnotesize,escapeinside=@@]{ocaml}
+    \begin{minted}[fontsize=\footnotesize,escapeinside=@@]{ocaml}
     (* Declares a new constructor for the effect type 
      * E : int -> bool Effect.t *)
     effect E : int -> bool
@@ -115,8 +115,8 @@ We use an overloading of the \ocamlin{match} expression, which includes cases fo
      * was evaluated. *)
     | @\texttt{\textbf{effect}}@ (E v) k -> k (v = 1)
 \end{minted}
-  \caption{Example for the effect handler syntax.}
-  \label{fig:effect-example}
+    \caption{Example for the effect handler syntax.}
+    \label{fig:effect-example}
 \end{figure}
 
 The biggest advantage of effect handlers for treating effects in a language over using monads is that they are more composable.
@@ -140,9 +140,9 @@ shows we can observe that the expression \(e\) performs effects according to the
 A protocol \(\Psi\) acts as a specification for effects in terms of their "input" and "output", casting them in a similar light to function calls.
 The main way to specify a protocol is by the following constructor.
 \[
-  !\, \overrightarrow{x}\, (v)\, \{P\}.\; ?\, \overrightarrow{y}\, (w)\, \{Q\}
+    !\, \overrightarrow{x}\, (v)\, \{P\}.\; ?\, \overrightarrow{y}\, (w)\, \{Q\}
 \]
-The syntax is inspired by session types, which also define a type of communication protocol.
+The input (!) and output (?) syntax is inspired by session types~\cite{sestypes} which are used to describe the behavior of communicating parties.
 Intuitively, the part after the exclamation mark gets "sent" to the effect handler and the part after the question mark is "received" as an answer.
 \(\overrightarrow{x}\) and \(\overrightarrow{y}\) are binders whose scope extends from their position all the way to the right.
 The client who performs the effect transmits the value \(v\) to the effect handler and must prove the proposition \(P\).
@@ -150,7 +150,7 @@ In return, the client receives from the effect handler a value \(w\) and gets to
 In total, this can be thought of as an analogue to a Hoare triple like \(\{P\}\, handler\; v\, \{w,\; Q\; w\}\), where we explicitly name the handler that handles the effect.
 But the client only indirectly invokes the effect handler by evaluating a \(perform\) expression, so in practice we prove the following Hoare triple.
 \[
-  \{P\}\, perform\; v\, \{w,\; Q\; w\}
+    \{P\}\, perform\; v\, \{w,\; Q\; w\}
 \]
 
 Apart from the above there are three additional ways to define protocols.
@@ -159,7 +159,7 @@ which allows no effects.
 Finally, there is a tag constructor \(\mathcal{f} \mathop{\#} \Psi\) to give a name to protocols.
 Our example effect \ocamlin{E} from figure~\ref{fig:effect-example} could therefore be formalized using the following protocol \(\Psi_\mathtt{E}\).\todo{maybe more expressive example}
 \[
-  \Psi_\mathtt{E} \coloneq \mathtt{E} \mathop{\#}\; !\, i\, (i)\, \{ i \in \mathtt{int} \}.\; ?\, b\, (b)\, \{ b \in \mathtt{bool} \}
+    \Psi_\mathtt{E} \coloneq \mathtt{E} \mathop{\#}\; !\, i\, (i)\, \{ i \in \mathtt{int} \}.\; ?\, b\, (b)\, \{ b \in \mathtt{bool} \}
 \]
 
 Using the extended weakest precondition with the \(\bot\) protocol then enables us to prove that a program is \textbf{effect safe}, as it shows that we cannot observe any effects from the top level.
@@ -188,16 +188,16 @@ support for cancelling fibers, abstractions for operating system resources,
 a different scheduler implementation per platform, and synchronization constructs like promises and mutexes.
 But for this work we restrict ourselves to verifying the safety and effect safety of Eio's core functionalities:
 \begin{enumerate}
-  \item Running fibers in a "common denominator" scheduler that does not interact with any operating system resources but just schedules fibers.
-  \item Awaiting the result of other fibers using the \emph{promise} synchronization construct.
-  \item And spawning new schedulers to run fibers in another thread.
+    \item Running fibers in a "common denominator" scheduler that does not interact with any operating system resources but just schedules fibers.
+    \item Awaiting the result of other fibers using the \emph{promise} synchronization construct.
+    \item And spawning new schedulers to run fibers in another thread.
 \end{enumerate}
 
 \begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.75\textwidth]{Eio_Module_Hierarchy.png}
-  \caption{Eio module hierarchy.}
-  \label{fig:eio-module-hierarchy}
+    \centering
+    \includegraphics[width=0.75\textwidth]{Eio_Module_Hierarchy.png}
+    \caption{Eio module hierarchy.}
+    \label{fig:eio-module-hierarchy}
 \end{figure}
 
 Figure~\ref{fig:eio-module-hierarchy} shows the simplified module hierarchy of the concepts we focus on.
@@ -213,7 +213,7 @@ Broadcast is based on the \emph{CQS} data structure, whose specification is alre
 We discuss this process in section~\ref{sec:broadcast}.
 Fibers in Eio also have access to \emph{thread-local variables} by performing a \egetctx{} effect, which is discussed in section~\ref{sec:thread-local-vars}.
 They are thread-local in the sense that they are shared between all fibers of one scheduler.
-Finally, we discuss our addition of multi-threading to the \hazel{} operational semantics in order to model running schedulers in different threads.
+Finally, we discuss our addition of multithreading to the \hazel{} operational semantics in order to model running schedulers in different threads.
 This turned out to be technically trivial, so we only discuss it in appendix~\ref{sec:apdx-mt} and take a multithreaded semantics and support for Iris \emph{shared invariants} as a given in the reminder of the main text.
 
 \subsection{Contributions}
@@ -223,8 +223,8 @@ To summarize our contributions, in this thesis we verify the \textbf{safety} and
 This includes:
 
 \begin{itemize}
-  \item The verification of the basic Eio \textbf{fiber abstraction} running on a common denominator scheduler.
-  \item Proving reusable specifications for the main three effects of Eio: \efork{}, \esuspend{}, and \egetctx{}.
-  \item An adaptation of the existing verification of CQS to the customized version used by Eio.
-  \item Adding multi-threading to \hazel{}'s operational semantics, which shows we can reason about programs that use both \textbf{multi-threading} and \textbf{effect handlers}.
+    \item The verification of the basic Eio \textbf{fiber abstraction} running on a common denominator scheduler.
+    \item Proving reusable specifications for the main three effects of Eio: \efork{}, \esuspend{}, and \egetctx{}.
+    \item An adaptation of the existing verification of CQS to the customized version used by Eio.
+    \item Adding multithreading to \hazel{}'s operational semantics, which shows we can reason about programs that use both \textbf{multithreading} and \textbf{effect handlers}.
 \end{itemize}

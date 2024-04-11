@@ -1,0 +1,2116 @@
+DIGEST 0f73ece7252678c560e2ab217fc1f5a2
+Ftheories.deferred_stack
+R33:41 iris.algebra.lib.excl_auth <> <> lib
+R43:46 iris.algebra.gset <> <> lib
+R48:51 iris.algebra.gmap <> <> lib
+R53:57 iris.algebra.agree <> <> lib
+R59:62 iris.algebra.csum <> <> lib
+R64:67 iris.algebra.frac <> <> lib
+R110:119 iris.base_logic.lib.invariants <> <> lib
+R121:125 iris.base_logic.lib.iprop <> <> lib
+R127:130 iris.base_logic.lib.wsat <> <> lib
+R132:141 iris.base_logic.lib.saved_prop <> <> lib
+R183:192 iris.program_logic.weakestpre <> <> lib
+R230:237 iris.heap_lang.notation <> <> lib
+R239:247 iris.heap_lang.proofmode <> <> lib
+R283:289 iris.prelude.options <> <> lib
+def 343:351 <> new_stack
+R355:357 iris.heap_lang.lang heap_lang val ind
+R362:365 iris.heap_lang.notation <> ::val_scope:'λ:'_x_','_x not
+R369:370 iris.heap_lang.notation <> ::val_scope:'λ:'_x_','_x not
+R371:374 iris.heap_lang.notation <> ::expr_scope:'ref'_x not
+R375:379 iris.heap_lang.notation <> NONEV abbrev
+def 393:396 <> push
+R400:402 iris.heap_lang.lang heap_lang val ind
+R409:413 iris.heap_lang.notation <> ::val_scope:'rec:'_x_x_x_'..'_x_':='_x not
+R420:420 iris.heap_lang.notation <> ::val_scope:'rec:'_x_x_x_'..'_x_':='_x not
+R424:424 iris.heap_lang.notation <> ::val_scope:'rec:'_x_x_x_'..'_x_':='_x not
+R428:435 iris.heap_lang.notation <> ::val_scope:'rec:'_x_x_x_'..'_x_':='_x not
+R436:440 iris.heap_lang.notation <> ::expr_scope:'let:'_x_':='_x_'in'_x not
+R447:450 iris.heap_lang.notation <> ::expr_scope:'let:'_x_':='_x_'in'_x not
+R456:463 iris.heap_lang.notation <> ::expr_scope:'let:'_x_':='_x_'in'_x not
+R464:468 iris.heap_lang.notation <> ::expr_scope:'let:'_x_':='_x_'in'_x not
+R474:477 iris.heap_lang.notation <> ::expr_scope:'let:'_x_':='_x_'in'_x not
+R502:509 iris.heap_lang.notation <> ::expr_scope:'let:'_x_':='_x_'in'_x not
+R510:513 iris.heap_lang.notation <> ::expr_scope:'if:'_x_'then'_x_'else'_x not
+R534:539 iris.heap_lang.notation <> ::expr_scope:'if:'_x_'then'_x_'else'_x not
+R543:548 iris.heap_lang.notation <> ::expr_scope:'if:'_x_'then'_x_'else'_x not
+R514:516 iris.heap_lang.notation <> CAS abbrev
+R540:540 iris.heap_lang.notation <> :::'#'_x not
+R541:542 iris.heap_lang.notation <> ::val_scope:'()' not
+R478:481 iris.heap_lang.notation <> SOME abbrev
+R484:487 iris.heap_lang.notation <> ::expr_scope:'ref'_x not
+R488:488 iris.heap_lang.notation <> ::expr_scope:'('_x_','_x_','_'..'_','_x_')' not
+R492:493 iris.heap_lang.notation <> ::expr_scope:'('_x_','_x_','_'..'_','_x_')' not
+R500:500 iris.heap_lang.notation <> ::expr_scope:'('_x_','_x_','_'..'_','_x_')' not
+R451:452 iris.heap_lang.notation <> ::expr_scope:'!'_x not
+def 576:578 <> pop
+R582:584 iris.heap_lang.lang heap_lang val ind
+R591:595 iris.heap_lang.notation <> ::val_scope:'rec:'_x_x_':='_x not
+R601:601 iris.heap_lang.notation <> ::val_scope:'rec:'_x_x_':='_x not
+R605:612 iris.heap_lang.notation <> ::val_scope:'rec:'_x_x_':='_x not
+R613:619 iris.heap_lang.notation <> ::expr_scope:'match:'_x_'with'_'NONE'_'=>'_x_'|'_'SOME'_x_'=>'_x_'end' not
+R624:643 iris.heap_lang.notation <> ::expr_scope:'match:'_x_'with'_'NONE'_'=>'_x_'|'_'SOME'_x_'=>'_x_'end' not
+R649:660 iris.heap_lang.notation <> ::expr_scope:'match:'_x_'with'_'NONE'_'=>'_x_'|'_'SOME'_x_'=>'_x_'end' not
+R664:673 iris.heap_lang.notation <> ::expr_scope:'match:'_x_'with'_'NONE'_'=>'_x_'|'_'SOME'_x_'=>'_x_'end' not
+R788:795 iris.heap_lang.notation <> ::expr_scope:'match:'_x_'with'_'NONE'_'=>'_x_'|'_'SOME'_x_'=>'_x_'end' not
+R620:620 iris.heap_lang.notation <> ::expr_scope:'!'_x not
+R644:648 iris.heap_lang.notation <> NONEV abbrev
+R674:678 iris.heap_lang.notation <> ::expr_scope:'let:'_x_':='_x_'in'_x not
+R685:688 iris.heap_lang.notation <> ::expr_scope:'let:'_x_':='_x_'in'_x not
+R693:702 iris.heap_lang.notation <> ::expr_scope:'let:'_x_':='_x_'in'_x not
+R703:706 iris.heap_lang.notation <> ::expr_scope:'if:'_x_'then'_x_'else'_x not
+R738:749 iris.heap_lang.notation <> ::expr_scope:'if:'_x_'then'_x_'else'_x not
+R767:778 iris.heap_lang.notation <> ::expr_scope:'if:'_x_'then'_x_'else'_x not
+R707:709 iris.heap_lang.notation <> CAS abbrev
+R716:719 iris.heap_lang.notation <> SOME abbrev
+R727:729 iris.heap_lang.lang heap_lang Snd constr
+R750:753 iris.heap_lang.notation <> SOME abbrev
+R756:758 iris.heap_lang.lang heap_lang Fst constr
+R689:689 iris.heap_lang.notation <> ::expr_scope:'!'_x not
+rec 805:817 <> deferredGpreS
+proj 829:839 <> assums_mapG
+proj 949:957 <> exclusive
+proj 986:995 <> leftrightG
+proj 1141:1146 <> torchG
+binder 819:820 <> Σ:1
+R844:846 iris.base_logic.lib.own <> inG class
+R848:849 theories.deferred_stack <> Σ:1 var
+R852:856 iris.algebra.auth <> authR def
+R859:864 iris.algebra.gmap <> gmapUR canonstruc
+R882:886 iris.algebra.cmra <> unitR canonstruc
+R872:874 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R867:871 iris.base_logic.lib.iprop <> gname def
+R875:879 iris.base_logic.lib.iprop <> gname def
+R962:964 iris.base_logic.lib.own <> inG class
+R966:967 theories.deferred_stack <> Σ:1 var
+R970:974 iris.algebra.excl <> exclR canonstruc
+R976:980 iris.algebra.cmra <> unitR canonstruc
+R1000:1002 iris.base_logic.lib.own <> inG class
+R1004:1005 theories.deferred_stack <> Σ:1 var
+R1008:1013 iris.algebra.cmra <> prodUR canonstruc
+R1090:1097 iris.algebra.cmra <> optionUR canonstruc
+R1100:1104 iris.algebra.excl <> exclR canonstruc
+R1106:1110 iris.algebra.cmra <> unitR canonstruc
+R1041:1048 iris.algebra.cmra <> optionUR canonstruc
+R1051:1055 iris.algebra.excl <> exclR canonstruc
+R1057:1061 iris.algebra.cmra <> unitR canonstruc
+R1151:1153 iris.base_logic.lib.own <> inG class
+R1155:1156 theories.deferred_stack <> Σ:1 var
+R1159:1163 iris.algebra.csum <> csumR canonstruc
+R1172:1177 iris.algebra.agree <> agreeR canonstruc
+R1179:1183 iris.algebra.ofe <> unitO canonstruc
+R1165:1169 iris.algebra.frac <> fracR canonstruc
+def 1203:1212 <> deferredΣ
+R1217:1222 iris.base_logic.lib.iprop <> :::'#['_x_';'_'..'_';'_x_']' not
+R1270:1273 iris.base_logic.lib.iprop <> :::'#['_x_';'_'..'_';'_x_']' not
+R1296:1299 iris.base_logic.lib.iprop <> :::'#['_x_';'_'..'_';'_x_']' not
+R1409:1412 iris.base_logic.lib.iprop <> :::'#['_x_';'_'..'_';'_x_']' not
+R1450:1451 iris.base_logic.lib.iprop <> :::'#['_x_';'_'..'_';'_x_']' not
+R1223:1230 iris.base_logic.lib.iprop <> GFunctor constr
+R1233:1237 iris.algebra.auth <> authR def
+R1240:1245 iris.algebra.gmap <> gmapUR canonstruc
+R1263:1267 iris.algebra.cmra <> unitR canonstruc
+R1253:1255 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R1248:1252 iris.base_logic.lib.iprop <> gname def
+R1256:1260 iris.base_logic.lib.iprop <> gname def
+R1274:1281 iris.base_logic.lib.iprop <> GFunctor constr
+R1284:1288 iris.algebra.excl <> exclR canonstruc
+R1290:1294 iris.algebra.cmra <> unitR canonstruc
+R1300:1307 iris.base_logic.lib.iprop <> GFunctor constr
+R1310:1315 iris.algebra.cmra <> prodUR canonstruc
+R1372:1379 iris.algebra.cmra <> optionUR canonstruc
+R1382:1386 iris.algebra.excl <> exclR canonstruc
+R1388:1392 iris.algebra.cmra <> unitR canonstruc
+R1333:1340 iris.algebra.cmra <> optionUR canonstruc
+R1343:1347 iris.algebra.excl <> exclR canonstruc
+R1349:1353 iris.algebra.cmra <> unitR canonstruc
+R1413:1420 iris.base_logic.lib.iprop <> GFunctor constr
+R1423:1427 iris.algebra.csum <> csumR canonstruc
+R1436:1441 iris.algebra.agree <> agreeR canonstruc
+R1443:1447 iris.algebra.ofe <> unitO canonstruc
+R1429:1433 iris.algebra.frac <> fracR canonstruc
+inst 1471:1485 <> subG_deferredΣ
+binder 1488:1489 <> Σ:7
+R1512:1516 Coq.Unicode.Utf8_core <> ::type_scope:x_'→'_x not
+R1494:1497 iris.base_logic.lib.iprop <> subG class
+R1510:1511 theories.deferred_stack <> Σ:7 var
+R1499:1508 theories.deferred_stack <> deferredΣ def
+R1517:1529 theories.deferred_stack <> deferredGpreS class
+R1531:1532 theories.deferred_stack <> Σ:7 var
+rec 1565:1574 <> deferredGS
+proj 1586:1597 <> deferred_inG
+proj 1623:1630 <> map_name
+proj 1643:1651 <> mode_name
+proj 1664:1681 <> deferred_prop_name
+binder 1576:1577 <> Σ:8
+R1602:1614 theories.deferred_stack <> deferredGpreS class
+R1616:1617 theories.deferred_stack <> Σ:8 var
+R1634:1638 iris.base_logic.lib.iprop <> gname def
+R1655:1659 iris.base_logic.lib.iprop <> gname def
+R1685:1689 iris.base_logic.lib.iprop <> gname def
+sec 1704:1709 <> stacks
+R1725:1730 iris.heap_lang.primitive_laws <> heapGS abbrev
+binder 1732:1733 <> Σ:14
+binder 1724:1733 <> heapGS0:15
+R1737:1746 theories.deferred_stack <> deferredGS class
+R1748:1749 theories.deferred_stack <> Σ:14 var
+binder 1736:1749 <> deferredGS0:16
+R1753:1762 iris.base_logic.lib.saved_prop <> savedPropG abbrev
+R1764:1765 theories.deferred_stack <> Σ:14 var
+binder 1752:1765 <> savedPropG0:17
+R1773:1781 stdpp.namespaces <> namespace def
+binder 1769:1769 <> N:18
+R1806:1808 iris.heap_lang.locations <> loc rec
+def 1825:1835 <> oloc_to_val
+R1842:1847 Coq.Init.Datatypes <> option ind
+R1849:1851 iris.heap_lang.locations <> loc rec
+binder 1838:1839 <> ol:19
+R1856:1858 iris.heap_lang.lang heap_lang val ind
+R1873:1874 theories.deferred_stack <> ol:19 var
+R1887:1890 Coq.Init.Datatypes <> None constr
+R1895:1899 iris.heap_lang.notation <> NONEV abbrev
+R1907:1910 Coq.Init.Datatypes <> Some constr
+R1912:1914 iris.heap_lang.locations <> loc rec
+R1919:1923 iris.heap_lang.notation <> SOMEV abbrev
+R1926:1926 iris.heap_lang.notation <> :::'#'_x not
+inst 1958:1972 <> oloc_to_val_inj
+R1976:1978 stdpp.base <> Inj class
+R1988:1998 theories.deferred_stack <> oloc_to_val def
+R1984:1986 stdpp.base <> ::stdpp_scope:'(=)' not
+R1980:1982 stdpp.base <> ::stdpp_scope:'(=)' not
+def 2063:2073 <> is_list_pre
+R2083:2087 Coq.Unicode.Utf8_core <> ::type_scope:x_'→'_x not
+R2080:2082 iris.heap_lang.lang heap_lang val ind
+R2088:2092 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R2094:2095 theories.deferred_stack <> stacks.Σ var
+binder 2076:2076 <> P:21
+R2113:2117 iris.algebra.ofe <> :::x_'-d>'_x not
+R2103:2108 Coq.Init.Datatypes <> option ind
+R2110:2112 iris.heap_lang.locations <> loc rec
+R2118:2123 iris.base_logic.lib.iprop iProp_solution iPropO abbrev
+R2125:2126 theories.deferred_stack <> stacks.Σ var
+binder 2099:2099 <> F:22
+R2146:2150 iris.algebra.ofe <> :::x_'-d>'_x not
+R2136:2141 Coq.Init.Datatypes <> option ind
+R2143:2145 iris.heap_lang.locations <> loc rec
+R2151:2156 iris.base_logic.lib.iprop iProp_solution iPropO abbrev
+R2158:2159 theories.deferred_stack <> stacks.Σ var
+R2164:2166 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+R2168:2169 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+binder 2167:2167 <> v:23
+R2176:2176 theories.deferred_stack <> v:23 var
+R2190:2193 Coq.Init.Datatypes <> None constr
+R2198:2201 iris.bi.interface <> ::bi_scope:'True' not
+R2210:2213 Coq.Init.Datatypes <> Some constr
+R2220:2224 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R2249:2251 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R2229:2231 iris.heap_lang.lang heap_lang val ind
+binder 2225:2225 <> h:25
+R2239:2244 Coq.Init.Datatypes <> option ind
+R2246:2248 iris.heap_lang.locations <> loc rec
+binder 2235:2235 <> t:26
+R2281:2285 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R2253:2260 iris.heap_lang.primitive_laws <> ::bi_scope:x_'↦□'_x not
+R2261:2261 iris.heap_lang.notation <> ::val_scope:'('_x_','_x_','_'..'_','_x_')' not
+R2263:2264 iris.heap_lang.notation <> ::val_scope:'('_x_','_x_','_'..'_','_x_')' not
+R2278:2278 iris.heap_lang.notation <> ::val_scope:'('_x_','_x_','_'..'_','_x_')' not
+R2262:2262 theories.deferred_stack <> h:25 var
+R2265:2275 theories.deferred_stack <> oloc_to_val def
+R2277:2277 theories.deferred_stack <> t:26 var
+R2289:2293 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R2286:2286 theories.deferred_stack <> P:21 var
+R2288:2288 theories.deferred_stack <> h:25 var
+R2294:2297 iris.bi.interface <> ::bi_scope:'▷'_x not
+R2298:2298 theories.deferred_stack <> F:22 var
+R2300:2300 theories.deferred_stack <> t:26 var
+inst 2332:2344 <> is_list_contr
+R2354:2358 Coq.Unicode.Utf8_core <> ::type_scope:x_'→'_x not
+R2351:2353 iris.heap_lang.lang heap_lang val ind
+R2359:2363 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R2365:2366 theories.deferred_stack <> stacks.Σ var
+binder 2347:2347 <> P:27
+R2371:2381 iris.algebra.ofe <> Contractive abbrev
+R2384:2394 theories.deferred_stack <> is_list_pre def
+R2396:2396 theories.deferred_stack <> P:27 var
+def 2447:2457 <> is_list_def
+R2467:2470 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2464:2466 iris.heap_lang.lang heap_lang val ind
+R2471:2475 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R2477:2478 theories.deferred_stack <> stacks.Σ var
+binder 2460:2460 <> P:28
+R2484:2491 iris.algebra.ofe <> fixpoint def
+R2494:2504 theories.deferred_stack <> is_list_pre def
+R2506:2506 theories.deferred_stack <> P:28 var
+def 2523:2533 <> is_list_aux
+binder 2535:2535 <> P:29
+R2539:2542 stdpp.base <> seal rec
+R2546:2556 theories.deferred_stack <> is_list_def def
+R2558:2558 theories.deferred_stack <> P:29 var
+def 2599:2605 <> is_list
+binder 2607:2607 <> P:30
+R2612:2617 stdpp.base <> unseal proj
+R2620:2630 theories.deferred_stack <> is_list_aux def
+R2632:2632 theories.deferred_stack <> P:30 var
+def 2649:2658 <> is_list_eq
+binder 2660:2660 <> P:31
+R2674:2676 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2665:2671 theories.deferred_stack <> is_list def
+R2673:2673 theories.deferred_stack <> P:31 var
+R2678:2688 theories.deferred_stack <> is_list_def def
+R2690:2690 theories.deferred_stack <> P:31 var
+R2695:2701 stdpp.base <> seal_eq proj
+R2704:2714 theories.deferred_stack <> is_list_aux def
+R2716:2716 theories.deferred_stack <> P:31 var
+prf 2729:2742 <> is_list_unfold
+R2752:2756 Coq.Unicode.Utf8_core <> ::type_scope:x_'→'_x not
+R2749:2751 iris.heap_lang.lang heap_lang val ind
+R2757:2761 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R2763:2764 theories.deferred_stack <> stacks.Σ var
+binder 2745:2745 <> P:32
+binder 2767:2767 <> v:33
+R2786:2793 iris.bi.interface <> ::stdpp_scope:x_'⊣⊢'_x not
+R2775:2781 theories.deferred_stack <> is_list def
+R2783:2783 theories.deferred_stack <> P:32 var
+R2785:2785 theories.deferred_stack <> v:33 var
+R2794:2804 theories.deferred_stack <> is_list_pre def
+R2806:2806 theories.deferred_stack <> P:32 var
+R2809:2815 theories.deferred_stack <> is_list def
+R2817:2817 theories.deferred_stack <> P:32 var
+R2820:2820 theories.deferred_stack <> v:33 var
+R2844:2853 theories.deferred_stack <> is_list_eq def
+R2844:2853 theories.deferred_stack <> is_list_eq def
+R2844:2853 theories.deferred_stack <> is_list_eq def
+R2863:2877 iris.algebra.ofe <> fixpoint_unfold thm
+R2880:2890 theories.deferred_stack <> is_list_pre def
+R2863:2877 iris.algebra.ofe <> fixpoint_unfold thm
+R2880:2890 theories.deferred_stack <> is_list_pre def
+prf 2913:2927 <> is_list_unfold2
+R2937:2941 Coq.Unicode.Utf8_core <> ::type_scope:x_'→'_x not
+R2934:2936 iris.heap_lang.lang heap_lang val ind
+R2942:2946 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R2948:2949 theories.deferred_stack <> stacks.Σ var
+binder 2930:2930 <> P:34
+binder 2952:2952 <> v:35
+R2971:2975 stdpp.base <> ::stdpp_scope:x_'≡'_x not
+R2960:2966 theories.deferred_stack <> is_list def
+R2968:2968 theories.deferred_stack <> P:34 var
+R2970:2970 theories.deferred_stack <> v:35 var
+R2976:2986 theories.deferred_stack <> is_list_pre def
+R2988:2988 theories.deferred_stack <> P:34 var
+R2991:2997 theories.deferred_stack <> is_list def
+R2999:2999 theories.deferred_stack <> P:34 var
+R3002:3002 theories.deferred_stack <> v:35 var
+R3026:3035 theories.deferred_stack <> is_list_eq def
+R3026:3035 theories.deferred_stack <> is_list_eq def
+R3026:3035 theories.deferred_stack <> is_list_eq def
+R3045:3059 iris.algebra.ofe <> fixpoint_unfold thm
+R3062:3072 theories.deferred_stack <> is_list_pre def
+R3045:3059 iris.algebra.ofe <> fixpoint_unfold thm
+R3062:3072 theories.deferred_stack <> is_list_pre def
+prf 3095:3105 <> is_list_dup
+R3115:3119 Coq.Unicode.Utf8_core <> ::type_scope:x_'→'_x not
+R3112:3114 iris.heap_lang.lang heap_lang val ind
+R3120:3124 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R3126:3127 theories.deferred_stack <> stacks.Σ var
+binder 3108:3108 <> P:36
+binder 3130:3130 <> v:37
+R3149:3154 iris.bi.interface <> ::stdpp_scope:x_'-∗'_x not
+R3138:3144 theories.deferred_stack <> is_list def
+R3146:3146 theories.deferred_stack <> P:36 var
+R3148:3148 theories.deferred_stack <> v:37 var
+R3166:3170 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R3155:3161 theories.deferred_stack <> is_list def
+R3163:3163 theories.deferred_stack <> P:36 var
+R3165:3165 theories.deferred_stack <> v:37 var
+R3177:3177 theories.deferred_stack <> v:37 var
+R3192:3195 Coq.Init.Datatypes <> None constr
+R3200:3203 iris.bi.interface <> ::bi_scope:'True' not
+R3213:3216 Coq.Init.Datatypes <> Some constr
+R3223:3226 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R3230:3231 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 3227:3227 <> h:39
+binder 3229:3229 <> t:40
+R3233:3240 iris.heap_lang.primitive_laws <> ::bi_scope:x_'↦□'_x not
+R3241:3241 iris.heap_lang.notation <> ::val_scope:'('_x_','_x_','_'..'_','_x_')' not
+R3243:3244 iris.heap_lang.notation <> ::val_scope:'('_x_','_x_','_'..'_','_x_')' not
+R3258:3258 iris.heap_lang.notation <> ::val_scope:'('_x_','_x_','_'..'_','_x_')' not
+R3242:3242 theories.deferred_stack <> h:39 var
+R3245:3255 theories.deferred_stack <> oloc_to_val def
+R3257:3257 theories.deferred_stack <> t:40 var
+R3314:3314 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R3329:3334 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R3343:3343 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R3315:3328 theories.deferred_stack <> is_list_unfold thm
+R3314:3314 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R3329:3334 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R3343:3343 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R3315:3328 theories.deferred_stack <> is_list_unfold thm
+R3448:3461 theories.deferred_stack <> is_list_unfold thm
+R3466:3469 Coq.Init.Datatypes <> Some constr
+R3448:3461 theories.deferred_stack <> is_list_unfold thm
+R3466:3469 Coq.Init.Datatypes <> Some constr
+R3448:3461 theories.deferred_stack <> is_list_unfold thm
+R3466:3469 Coq.Init.Datatypes <> Some constr
+R3524:3537 theories.deferred_stack <> is_list_unfold thm
+R3524:3537 theories.deferred_stack <> is_list_unfold thm
+R3524:3537 theories.deferred_stack <> is_list_unfold thm
+prf 3572:3586 <> is_list_defer_Q
+R3593:3597 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R3599:3600 theories.deferred_stack <> stacks.Σ var
+binder 3589:3589 <> Q:41
+R3611:3615 Coq.Unicode.Utf8_core <> ::type_scope:x_'→'_x not
+R3608:3610 iris.heap_lang.lang heap_lang val ind
+R3616:3620 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R3622:3623 theories.deferred_stack <> stacks.Σ var
+binder 3604:3604 <> P:42
+binder 3626:3626 <> v:43
+R3634:3637 iris.bi.interface <> ::stdpp_scope:'⊢'_x not
+R3665:3670 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R3638:3644 theories.deferred_stack <> is_list def
+R3647:3649 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+R3651:3652 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+binder 3650:3650 <> x:44
+R3653:3657 iris.bi.interface <> ::bi_scope:'▷'_x not
+R3661:3661 iris.bi.interface <> ::bi_scope:'▷'_x not
+R3658:3658 theories.deferred_stack <> P:42 var
+R3660:3660 theories.deferred_stack <> x:44 var
+R3664:3664 theories.deferred_stack <> v:43 var
+R3671:3677 theories.deferred_stack <> is_list def
+R3680:3682 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+R3684:3685 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+binder 3683:3683 <> x:45
+R3686:3690 iris.bi.interface <> ::bi_scope:'▷'_x not
+R3701:3701 iris.bi.interface <> ::bi_scope:'▷'_x not
+R3692:3697 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R3691:3691 theories.deferred_stack <> Q:41 var
+R3698:3698 theories.deferred_stack <> P:42 var
+R3700:3700 theories.deferred_stack <> x:45 var
+R3704:3704 theories.deferred_stack <> v:43 var
+R3780:3794 theories.deferred_stack <> is_list_unfold2 thm
+R3797:3807 theories.deferred_stack <> is_list_pre def
+R3780:3794 theories.deferred_stack <> is_list_unfold2 thm
+R3780:3794 theories.deferred_stack <> is_list_unfold2 thm
+R3797:3807 theories.deferred_stack <> is_list_pre def
+R3797:3807 theories.deferred_stack <> is_list_pre def
+R3822:3836 theories.deferred_stack <> is_list_unfold2 thm
+R3839:3849 theories.deferred_stack <> is_list_pre def
+R3822:3836 theories.deferred_stack <> is_list_unfold2 thm
+R3822:3836 theories.deferred_stack <> is_list_unfold2 thm
+R3839:3849 theories.deferred_stack <> is_list_pre def
+R3839:3849 theories.deferred_stack <> is_list_pre def
+prf 4086:4102 <> is_list_resolve_Q
+R4109:4113 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R4115:4116 theories.deferred_stack <> stacks.Σ var
+binder 4105:4105 <> Q:46
+R4127:4131 Coq.Unicode.Utf8_core <> ::type_scope:x_'→'_x not
+R4124:4126 iris.heap_lang.lang heap_lang val ind
+R4132:4136 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R4138:4139 theories.deferred_stack <> stacks.Σ var
+binder 4120:4120 <> P:47
+binder 4142:4142 <> v:48
+R4150:4153 iris.bi.interface <> ::stdpp_scope:'⊢'_x not
+R4163:4168 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R4154:4157 iris.bi.interface <> ::bi_scope:'▷'_x not
+R4158:4161 iris.bi.derived_connectives <> ::bi_scope:'□'_x not
+R4162:4162 theories.deferred_stack <> Q:46 var
+R4203:4208 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R4169:4175 theories.deferred_stack <> is_list def
+R4178:4180 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+R4182:4183 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+binder 4181:4181 <> x:49
+R4184:4188 iris.bi.interface <> ::bi_scope:'▷'_x not
+R4199:4199 iris.bi.interface <> ::bi_scope:'▷'_x not
+R4190:4195 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R4189:4189 theories.deferred_stack <> Q:46 var
+R4196:4196 theories.deferred_stack <> P:47 var
+R4198:4198 theories.deferred_stack <> x:49 var
+R4202:4202 theories.deferred_stack <> v:48 var
+R4209:4215 theories.deferred_stack <> is_list def
+R4218:4220 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+R4222:4223 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+binder 4221:4221 <> x:50
+R4224:4228 iris.bi.interface <> ::bi_scope:'▷'_x not
+R4232:4232 iris.bi.interface <> ::bi_scope:'▷'_x not
+R4229:4229 theories.deferred_stack <> P:47 var
+R4231:4231 theories.deferred_stack <> x:50 var
+R4235:4235 theories.deferred_stack <> v:48 var
+R4315:4329 theories.deferred_stack <> is_list_unfold2 thm
+R4332:4342 theories.deferred_stack <> is_list_pre def
+R4315:4329 theories.deferred_stack <> is_list_unfold2 thm
+R4315:4329 theories.deferred_stack <> is_list_unfold2 thm
+R4332:4342 theories.deferred_stack <> is_list_pre def
+R4332:4342 theories.deferred_stack <> is_list_pre def
+R4357:4371 theories.deferred_stack <> is_list_unfold2 thm
+R4374:4384 theories.deferred_stack <> is_list_pre def
+R4357:4371 theories.deferred_stack <> is_list_unfold2 thm
+R4357:4371 theories.deferred_stack <> is_list_unfold2 thm
+R4374:4384 theories.deferred_stack <> is_list_pre def
+R4374:4384 theories.deferred_stack <> is_list_pre def
+def 4726:4738 <> element_token
+binder 4740:4741 <> δ:51
+R4746:4748 iris.base_logic.lib.own <> own def
+R4754:4757 iris.algebra.excl <> Excl constr
+R4759:4760 Coq.Init.Datatypes <> tt constr
+R4750:4751 theories.deferred_stack <> δ:51 var
+def 4777:4786 <> full_token
+binder 4788:4789 <> γ:52
+R4794:4796 iris.base_logic.lib.own <> own def
+R4801:4801 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R4810:4811 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R4820:4820 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R4802:4806 iris.algebra.excl <> Excl' abbrev
+R4808:4809 Coq.Init.Datatypes <> tt constr
+R4812:4816 iris.algebra.excl <> Excl' abbrev
+R4818:4819 Coq.Init.Datatypes <> tt constr
+R4798:4799 theories.deferred_stack <> γ:52 var
+def 4836:4845 <> left_token
+binder 4847:4848 <> γ:53
+R4853:4855 iris.base_logic.lib.own <> own def
+R4860:4860 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R4869:4870 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R4875:4875 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R4861:4865 iris.algebra.excl <> Excl' abbrev
+R4867:4868 Coq.Init.Datatypes <> tt constr
+R4871:4874 Coq.Init.Datatypes <> None constr
+R4857:4858 theories.deferred_stack <> γ:53 var
+def 4891:4901 <> right_token
+binder 4903:4904 <> γ:54
+R4909:4911 iris.base_logic.lib.own <> own def
+R4916:4916 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R4921:4922 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R4931:4931 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R4917:4920 Coq.Init.Datatypes <> None constr
+R4923:4927 iris.algebra.excl <> Excl' abbrev
+R4929:4930 Coq.Init.Datatypes <> tt constr
+R4913:4914 theories.deferred_stack <> γ:54 var
+abbrev 4945:4961 <> normal_mode_token
+R4966:4975 theories.deferred_stack <> left_token def
+abbrev 5004:5022 <> deferred_mode_token
+R5027:5037 theories.deferred_stack <> right_token def
+def 5427:5436 <> is_element
+binder 5438:5440 <> γs:55
+R5445:5447 iris.base_logic.lib.own <> own def
+R5459:5462 iris.algebra.auth <> :::'◯'_x not
+R5463:5464 stdpp.base <> ::stdpp_scope:'{['_x_':='_x_']}' not
+R5468:5471 stdpp.base <> ::stdpp_scope:'{['_x_':='_x_']}' not
+R5474:5475 stdpp.base <> ::stdpp_scope:'{['_x_':='_x_']}' not
+R5465:5467 theories.deferred_stack <> γs:55 var
+R5472:5473 Coq.Init.Datatypes <> tt constr
+R5449:5456 theories.deferred_stack <> map_name meth
+def 5492:5505 <> is_element_map
+R5512:5515 stdpp.gmap <> gmap rec
+R5533:5536 Coq.Init.Datatypes <> unit ind
+R5523:5525 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R5518:5522 iris.base_logic.lib.iprop <> gname def
+R5526:5530 iris.base_logic.lib.iprop <> gname def
+binder 5508:5508 <> M:56
+R5542:5544 iris.base_logic.lib.own <> own def
+R5556:5559 iris.algebra.auth <> :::'●'_x not
+R5560:5560 theories.deferred_stack <> M:56 var
+R5546:5553 theories.deferred_stack <> map_name meth
+def 5578:5590 <> element_state
+binder 5592:5593 <> γ:57
+binder 5595:5596 <> δ:58
+R5607:5610 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R5612:5613 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 5611:5611 <> Q:59
+R5648:5652 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R5614:5627 iris.base_logic.lib.saved_prop <> saved_prop_own def
+R5629:5630 theories.deferred_stack <> γ:57 var
+R5632:5645 iris.algebra.dfrac <> DfracDiscarded constr
+R5647:5647 theories.deferred_stack <> Q:59 var
+R5662:5666 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R5653:5656 iris.bi.interface <> ::bi_scope:'▷'_x not
+R5657:5660 iris.bi.derived_connectives <> ::bi_scope:'□'_x not
+R5661:5661 theories.deferred_stack <> Q:59 var
+R5667:5679 theories.deferred_stack <> element_token def
+R5681:5682 theories.deferred_stack <> δ:58 var
+def 5707:5716 <> deferred_Q
+binder 5718:5718 <> Q:60
+R5723:5736 iris.base_logic.lib.saved_prop <> saved_prop_own def
+R5738:5755 theories.deferred_stack <> deferred_prop_name meth
+R5758:5765 iris.algebra.dfrac <> DfracOwn constr
+R5769:5769 stdpp.numbers Qp.notations ::Qp_scope:x_'/'_x not
+R5774:5774 theories.deferred_stack <> Q:60 var
+def 5791:5812 <> deferred_element_state
+binder 5814:5814 <> Q:61
+binder 5816:5817 <> γ:62
+binder 5819:5820 <> δ:63
+R5843:5852 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R5831:5840 theories.deferred_stack <> deferred_Q def
+R5842:5842 theories.deferred_stack <> Q:61 var
+R5887:5895 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R5853:5866 iris.base_logic.lib.saved_prop <> saved_prop_own def
+R5868:5869 theories.deferred_stack <> γ:62 var
+R5871:5884 iris.algebra.dfrac <> DfracDiscarded constr
+R5886:5886 theories.deferred_stack <> Q:61 var
+R5896:5908 theories.deferred_stack <> element_token def
+R5910:5911 theories.deferred_stack <> δ:63 var
+def 5934:5948 <> normal_mode_map
+R5959:5962 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R5964:5965 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 5963:5963 <> M:64
+R5982:5992 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R5966:5979 theories.deferred_stack <> is_element_map def
+R5981:5981 theories.deferred_stack <> M:64 var
+R5993:6002 iris.bi.big_op <> ::bi_scope:'[∗'_'map]'_x_'↦'_x_'∈'_x_','_x not
+R6006:6010 iris.bi.big_op <> ::bi_scope:'[∗'_'map]'_x_'↦'_x_'∈'_x_','_x not
+R6013:6017 iris.bi.big_op <> ::bi_scope:'[∗'_'map]'_x_'↦'_x_'∈'_x_','_x not
+R6019:6020 iris.bi.big_op <> ::bi_scope:'[∗'_'map]'_x_'↦'_x_'∈'_x_','_x not
+binder 6003:6005 <> γs:65
+binder 6011:6012 <> tt:66
+R6038:6040 theories.deferred_stack <> γs:65 var
+R6026:6026 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6029:6030 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6033:6033 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6053:6065 theories.deferred_stack <> element_state def
+R6018:6018 theories.deferred_stack <> M:64 var
+def 6094:6110 <> deferred_mode_map
+binder 6112:6112 <> Q:68
+R6123:6127 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R6146:6147 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R6138:6142 iris.base_logic.lib.iprop <> gname def
+binder 6128:6130 <> γd:69
+R6138:6142 iris.base_logic.lib.iprop <> gname def
+binder 6132:6134 <> δd:70
+binder 6145:6145 <> M:71
+R6187:6197 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R6148:6161 theories.deferred_stack <> is_element_map def
+R6164:6165 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R6176:6179 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R6182:6185 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R6166:6166 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6170:6171 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6175:6175 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6167:6169 theories.deferred_stack <> γd:69 var
+R6172:6174 theories.deferred_stack <> δd:70 var
+R6180:6181 Coq.Init.Datatypes <> tt constr
+R6185:6185 theories.deferred_stack <> M:71 var
+R6198:6198 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R6273:6284 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R6227:6240 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R6199:6201 iris.bi.interface <> ::bi_scope:'⌜'_x_'⌝' not
+R6224:6226 iris.bi.interface <> ::bi_scope:'⌜'_x_'⌝' not
+R6217:6219 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R6203:6206 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R6207:6207 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6211:6212 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6216:6216 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6208:6210 theories.deferred_stack <> γd:69 var
+R6213:6215 theories.deferred_stack <> δd:70 var
+R6202:6202 theories.deferred_stack <> M:71 var
+R6220:6223 Coq.Init.Datatypes <> None constr
+R6241:6262 theories.deferred_stack <> deferred_element_state def
+R6264:6264 theories.deferred_stack <> Q:68 var
+R6266:6268 theories.deferred_stack <> γd:69 var
+R6270:6272 theories.deferred_stack <> δd:70 var
+R6285:6294 iris.bi.big_op <> ::bi_scope:'[∗'_'map]'_x_'↦'_x_'∈'_x_','_x not
+R6298:6302 iris.bi.big_op <> ::bi_scope:'[∗'_'map]'_x_'↦'_x_'∈'_x_','_x not
+R6305:6309 iris.bi.big_op <> ::bi_scope:'[∗'_'map]'_x_'↦'_x_'∈'_x_','_x not
+R6311:6312 iris.bi.big_op <> ::bi_scope:'[∗'_'map]'_x_'↦'_x_'∈'_x_','_x not
+binder 6295:6297 <> γs:72
+binder 6303:6304 <> tt:73
+R6330:6332 theories.deferred_stack <> γs:72 var
+R6318:6318 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6321:6322 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6325:6325 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6345:6357 theories.deferred_stack <> element_state def
+R6310:6310 theories.deferred_stack <> M:71 var
+def 6386:6396 <> normal_mode
+binder 6398:6398 <> P:75
+binder 6400:6402 <> ol':76
+R6440:6448 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R6413:6419 theories.deferred_stack <> is_list def
+R6422:6424 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+R6426:6427 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+binder 6425:6425 <> x:77
+R6428:6431 iris.bi.interface <> ::bi_scope:'▷'_x not
+R6432:6432 theories.deferred_stack <> P:75 var
+R6434:6434 theories.deferred_stack <> x:77 var
+R6437:6439 theories.deferred_stack <> ol':76 var
+R6476:6485 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R6449:6465 theories.deferred_stack <> normal_mode_token abbrev
+R6467:6475 theories.deferred_stack <> mode_name meth
+R6537:6546 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R6486:6499 iris.base_logic.lib.saved_prop <> saved_prop_own def
+R6501:6518 theories.deferred_stack <> deferred_prop_name meth
+R6521:6528 iris.algebra.dfrac <> DfracOwn constr
+R6533:6536 iris.bi.interface <> ::bi_scope:'True' not
+R6547:6561 theories.deferred_stack <> normal_mode_map def
+def 6584:6596 <> deferred_mode
+binder 6598:6598 <> Q:78
+binder 6600:6600 <> P:79
+binder 6602:6604 <> ol':80
+R6651:6659 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R6615:6621 theories.deferred_stack <> is_list def
+R6624:6626 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+R6628:6629 Coq.Unicode.Utf8_core <> :::'λ'_x_'..'_x_','_x not
+binder 6627:6627 <> x:81
+R6630:6634 iris.bi.interface <> ::bi_scope:'▷'_x not
+R6645:6645 iris.bi.interface <> ::bi_scope:'▷'_x not
+R6636:6641 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R6635:6635 theories.deferred_stack <> Q:78 var
+R6642:6642 theories.deferred_stack <> P:79 var
+R6644:6644 theories.deferred_stack <> x:81 var
+R6648:6650 theories.deferred_stack <> ol':80 var
+R6689:6697 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R6660:6678 theories.deferred_stack <> deferred_mode_token abbrev
+R6680:6688 theories.deferred_stack <> mode_name meth
+R6698:6714 theories.deferred_stack <> deferred_mode_map def
+R6716:6716 theories.deferred_stack <> Q:78 var
+prf 6734:6749 <> mode_is_list_dup
+R6759:6763 Coq.Unicode.Utf8_core <> ::type_scope:x_'→'_x not
+R6756:6758 iris.heap_lang.lang heap_lang val ind
+R6764:6768 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R6770:6771 theories.deferred_stack <> stacks.Σ var
+binder 6752:6752 <> P:82
+binder 6774:6774 <> v:83
+R6782:6782 iris.bi.interface <> ::stdpp_scope:x_'-∗'_x not
+R6829:6842 iris.bi.interface <> ::stdpp_scope:x_'-∗'_x not
+R6798:6802 iris.bi.interface <> ::bi_scope:x_'∨'_x not
+R6783:6793 theories.deferred_stack <> normal_mode def
+R6795:6795 theories.deferred_stack <> P:82 var
+R6797:6797 theories.deferred_stack <> v:83 var
+R6803:6806 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R6808:6809 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 6807:6807 <> Q:84
+R6810:6822 theories.deferred_stack <> deferred_mode def
+R6824:6824 theories.deferred_stack <> Q:84 var
+R6826:6826 theories.deferred_stack <> P:82 var
+R6828:6828 theories.deferred_stack <> v:83 var
+R6843:6843 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R6890:6902 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R6859:6863 iris.bi.interface <> ::bi_scope:x_'∨'_x not
+R6844:6854 theories.deferred_stack <> normal_mode def
+R6856:6856 theories.deferred_stack <> P:82 var
+R6858:6858 theories.deferred_stack <> v:83 var
+R6864:6867 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R6869:6870 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 6868:6868 <> Q:85
+R6871:6883 theories.deferred_stack <> deferred_mode def
+R6885:6885 theories.deferred_stack <> Q:85 var
+R6887:6887 theories.deferred_stack <> P:82 var
+R6889:6889 theories.deferred_stack <> v:83 var
+R6909:6909 theories.deferred_stack <> v:83 var
+R6924:6927 Coq.Init.Datatypes <> None constr
+R6932:6935 iris.bi.interface <> ::bi_scope:'True' not
+R6945:6948 Coq.Init.Datatypes <> Some constr
+R6955:6958 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R6962:6963 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 6959:6959 <> h:87
+binder 6961:6961 <> t:88
+R6965:6972 iris.heap_lang.primitive_laws <> ::bi_scope:x_'↦□'_x not
+R6973:6973 iris.heap_lang.notation <> ::val_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6975:6976 iris.heap_lang.notation <> ::val_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6990:6990 iris.heap_lang.notation <> ::val_scope:'('_x_','_x_','_'..'_','_x_')' not
+R6974:6974 theories.deferred_stack <> h:87 var
+R6977:6987 theories.deferred_stack <> oloc_to_val def
+R6989:6989 theories.deferred_stack <> t:88 var
+R7084:7084 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7096:7101 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7109:7109 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7085:7095 theories.deferred_stack <> is_list_dup thm
+R7084:7084 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7096:7101 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7109:7109 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7085:7095 theories.deferred_stack <> is_list_dup thm
+R7173:7173 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7185:7190 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7198:7198 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7174:7184 theories.deferred_stack <> is_list_dup thm
+R7173:7173 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7185:7190 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7198:7198 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7174:7184 theories.deferred_stack <> is_list_dup thm
+def 7279:7287 <> stack_inv
+binder 7289:7289 <> P:89
+binder 7291:7291 <> v:90
+R7302:7305 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R7311:7312 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 7306:7306 <> l:91
+binder 7308:7310 <> ol':92
+R7325:7329 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R7313:7315 iris.bi.interface <> ::bi_scope:'⌜'_x_'⌝' not
+R7322:7324 iris.bi.interface <> ::bi_scope:'⌜'_x_'⌝' not
+R7317:7319 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7316:7316 theories.deferred_stack <> v:90 var
+R7320:7320 iris.heap_lang.notation <> :::'#'_x not
+R7321:7321 theories.deferred_stack <> l:91 var
+R7351:7363 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R7427:7431 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R7331:7335 iris.heap_lang.primitive_laws <> ::bi_scope:x_'↦'_x not
+R7330:7330 theories.deferred_stack <> l:91 var
+R7336:7346 theories.deferred_stack <> oloc_to_val def
+R7348:7350 theories.deferred_stack <> ol':92 var
+R7381:7385 iris.bi.interface <> ::bi_scope:x_'∨'_x not
+R7364:7374 theories.deferred_stack <> normal_mode def
+R7376:7376 theories.deferred_stack <> P:89 var
+R7378:7380 theories.deferred_stack <> ol':92 var
+R7386:7390 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R7403:7405 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R7395:7399 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R7401:7402 theories.deferred_stack <> stacks.Σ var
+binder 7391:7391 <> Q:93
+R7406:7418 theories.deferred_stack <> deferred_mode def
+R7420:7420 theories.deferred_stack <> Q:93 var
+R7422:7422 theories.deferred_stack <> P:89 var
+R7424:7426 theories.deferred_stack <> ol':92 var
+def 7451:7458 <> is_stack
+R7468:7472 Coq.Unicode.Utf8_core <> ::type_scope:x_'→'_x not
+R7465:7467 iris.heap_lang.lang heap_lang val ind
+R7473:7477 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R7479:7480 theories.deferred_stack <> stacks.Σ var
+binder 7461:7461 <> P:94
+binder 7483:7483 <> v:95
+R7492:7494 iris.base_logic.lib.invariants <> inv def
+R7499:7507 theories.deferred_stack <> stack_inv def
+R7509:7509 theories.deferred_stack <> P:94 var
+R7511:7511 theories.deferred_stack <> v:95 var
+R7496:7496 theories.deferred_stack <> stacks.N var
+sec 7526:7538 stacks element_token
+prf 7551:7570 <> element_token_create
+R7581:7584 iris.bi.interface <> ::stdpp_scope:'⊢'_x not
+R7585:7589 iris.bi.updates <> ::bi_scope:'|==>'_x not
+R7590:7593 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R7596:7597 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 7594:7595 <> δ:96
+R7598:7610 theories.deferred_stack <> element_token def
+R7612:7613 theories.deferred_stack <> δ:96 var
+R7639:7647 iris.base_logic.lib.own <> own_alloc thm
+R7650:7653 iris.algebra.excl <> Excl constr
+R7655:7656 Coq.Init.Datatypes <> tt constr
+R7639:7647 iris.base_logic.lib.own <> own_alloc thm
+R7650:7653 iris.algebra.excl <> Excl constr
+R7655:7656 Coq.Init.Datatypes <> tt constr
+prf 7737:7759 <> element_token_exclusive
+binder 7761:7762 <> δ:97
+R7788:7793 iris.bi.interface <> ::stdpp_scope:x_'-∗'_x not
+R7772:7784 theories.deferred_stack <> element_token def
+R7786:7787 theories.deferred_stack <> δ:97 var
+R7810:7815 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R7794:7806 theories.deferred_stack <> element_token def
+R7808:7809 theories.deferred_stack <> δ:97 var
+R7816:7820 iris.bi.interface <> ::bi_scope:'False' not
+R7873:7873 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7885:7890 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7898:7898 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7874:7884 iris.base_logic.lib.own <> own_valid_2 thm
+R7873:7873 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7885:7890 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7898:7898 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R7874:7884 iris.base_logic.lib.own <> own_valid_2 thm
+R7957:7969 theories.deferred_stack stacks.element_token <> sec
+sec 7983:7998 stacks leftright_tokens
+prf 8012:8031 <> left_token_exclusive
+binder 8033:8034 <> γ:98
+R8045:8048 iris.bi.interface <> ::stdpp_scope:'⊢'_x not
+R8062:8067 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R8049:8058 theories.deferred_stack <> left_token def
+R8060:8061 theories.deferred_stack <> γ:98 var
+R8081:8086 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R8068:8077 theories.deferred_stack <> left_token def
+R8079:8080 theories.deferred_stack <> γ:98 var
+R8087:8091 iris.bi.interface <> ::bi_scope:'False' not
+R8144:8144 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R8156:8161 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R8169:8169 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R8145:8155 iris.base_logic.lib.own <> own_valid_2 thm
+R8144:8144 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R8156:8161 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R8169:8169 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R8145:8155 iris.base_logic.lib.own <> own_valid_2 thm
+R8225:8231 iris.algebra.cmra <> pair_op thm
+R8233:8242 iris.algebra.cmra <> pair_valid thm
+R8225:8231 iris.algebra.cmra <> pair_op thm
+R8225:8231 iris.algebra.cmra <> pair_op thm
+R8233:8242 iris.algebra.cmra <> pair_valid thm
+R8233:8242 iris.algebra.cmra <> pair_valid thm
+prf 8363:8383 <> right_token_exclusive
+binder 8385:8386 <> γ:99
+R8397:8400 iris.bi.interface <> ::stdpp_scope:'⊢'_x not
+R8415:8420 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R8401:8411 theories.deferred_stack <> right_token def
+R8413:8414 theories.deferred_stack <> γ:99 var
+R8435:8440 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R8421:8431 theories.deferred_stack <> right_token def
+R8433:8434 theories.deferred_stack <> γ:99 var
+R8441:8445 iris.bi.interface <> ::bi_scope:'False' not
+R8498:8498 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R8510:8515 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R8523:8523 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R8499:8509 iris.base_logic.lib.own <> own_valid_2 thm
+R8498:8498 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R8510:8515 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R8523:8523 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R8499:8509 iris.base_logic.lib.own <> own_valid_2 thm
+R8579:8585 iris.algebra.cmra <> pair_op thm
+R8587:8596 iris.algebra.cmra <> pair_valid thm
+R8579:8585 iris.algebra.cmra <> pair_op thm
+R8579:8585 iris.algebra.cmra <> pair_op thm
+R8587:8596 iris.algebra.cmra <> pair_valid thm
+R8587:8596 iris.algebra.cmra <> pair_valid thm
+R8649:8664 theories.deferred_stack stacks.leftright_tokens <> sec
+sec 10141:10151 stacks element_map
+inst 10314:10334 <> is_element_Persistent
+binder 10336:10338 <> γs:100
+R10342:10351 iris.bi.derived_connectives <> Persistent class
+R10354:10363 theories.deferred_stack <> is_element def
+R10365:10367 theories.deferred_stack <> γs:100 var
+prf 10411:10428 <> update_element_map
+binder 10430:10430 <> M:101
+binder 10432:10434 <> γs:102
+R10459:10472 Coq.Unicode.Utf8_core <> ::type_scope:x_'→'_x not
+R10452:10454 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R10445:10448 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R10449:10451 theories.deferred_stack <> γs:102 var
+R10444:10444 theories.deferred_stack <> M:101 var
+R10455:10458 Coq.Init.Datatypes <> None constr
+R10489:10505 iris.bi.updates <> ::stdpp_scope:x_'==∗'_x not
+R10473:10486 theories.deferred_stack <> is_element_map def
+R10488:10488 theories.deferred_stack <> M:101 var
+R10540:10544 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R10506:10519 theories.deferred_stack <> is_element_map def
+R10522:10524 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R10528:10532 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R10535:10538 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R10525:10527 theories.deferred_stack <> γs:102 var
+R10533:10534 Coq.Init.Datatypes <> tt constr
+R10538:10538 theories.deferred_stack <> M:101 var
+R10545:10554 theories.deferred_stack <> is_element def
+R10556:10558 theories.deferred_stack <> γs:102 var
+R10616:10616 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R10627:10632 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R10637:10637 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R10617:10626 iris.base_logic.lib.own <> own_update thm
+R10616:10616 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R10627:10632 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R10637:10637 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R10617:10626 iris.base_logic.lib.own <> own_update thm
+R10670:10686 iris.algebra.auth <> auth_update_alloc thm
+R10689:10694 iris.algebra.gmap <> gmapUR canonstruc
+R10670:10686 iris.algebra.auth <> auth_update_alloc thm
+R10689:10694 iris.algebra.gmap <> gmapUR canonstruc
+R10720:10747 iris.algebra.gmap <> alloc_singleton_local_update thm
+R10757:10758 Coq.Init.Datatypes <> tt constr
+R10720:10747 iris.algebra.gmap <> alloc_singleton_local_update thm
+R10757:10758 Coq.Init.Datatypes <> tt constr
+prf 10829:10844 <> claim_membership
+binder 10846:10846 <> M:103
+binder 10848:10850 <> γs:104
+R10895:10908 iris.bi.interface <> ::stdpp_scope:x_'-∗'_x not
+R10876:10880 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R10860:10873 theories.deferred_stack <> is_element_map def
+R10875:10875 theories.deferred_stack <> M:103 var
+R10881:10890 theories.deferred_stack <> is_element def
+R10892:10894 theories.deferred_stack <> γs:104 var
+R10909:10912 iris.bi.interface <> ::bi_scope:'⌜'_x_'⌝' not
+R10931:10934 iris.bi.interface <> ::bi_scope:'⌜'_x_'⌝' not
+R10921:10923 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R10914:10917 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R10918:10920 theories.deferred_stack <> γs:104 var
+R10913:10913 theories.deferred_stack <> M:103 var
+R10924:10927 Coq.Init.Datatypes <> Some constr
+R10929:10930 Coq.Init.Datatypes <> tt constr
+R10963:10976 theories.deferred_stack <> is_element_map def
+R10979:10988 theories.deferred_stack <> is_element def
+R10963:10976 theories.deferred_stack <> is_element_map def
+R10963:10976 theories.deferred_stack <> is_element_map def
+R10979:10988 theories.deferred_stack <> is_element def
+R10979:10988 theories.deferred_stack <> is_element def
+R11006:11011 iris.base_logic.lib.own <> own_op thm
+R11013:11021 iris.base_logic.lib.own <> own_valid thm
+R11023:11038 iris.base_logic.algebra <> auth_both_validI thm
+R11006:11011 iris.base_logic.lib.own <> own_op thm
+R11006:11011 iris.base_logic.lib.own <> own_op thm
+R11013:11021 iris.base_logic.lib.own <> own_valid thm
+R11013:11021 iris.base_logic.lib.own <> own_valid thm
+R11023:11038 iris.base_logic.algebra <> auth_both_validI thm
+R11023:11038 iris.base_logic.algebra <> auth_both_validI thm
+R11117:11127 iris.base_logic.algebra <> gmap_equivI thm
+R11129:11139 iris.base_logic.algebra <> gmap_validI thm
+R11117:11127 iris.base_logic.algebra <> gmap_equivI thm
+R11117:11127 iris.base_logic.algebra <> gmap_equivI thm
+R11129:11139 iris.base_logic.algebra <> gmap_validI thm
+R11129:11139 iris.base_logic.algebra <> gmap_validI thm
+R11160:11160 iris.proofmode.ltac_tactics <> :::'('_x_'$!'_x_'..'_x_')' not
+R11165:11169 iris.proofmode.ltac_tactics <> :::'('_x_'$!'_x_'..'_x_')' not
+R11173:11174 iris.proofmode.ltac_tactics <> :::'('_x_'$!'_x_'..'_x_')' not
+R11160:11160 iris.proofmode.ltac_tactics <> :::'('_x_'$!'_x_'..'_x_')' not
+R11165:11169 iris.proofmode.ltac_tactics <> :::'('_x_'$!'_x_'..'_x_')' not
+R11173:11174 iris.proofmode.ltac_tactics <> :::'('_x_'$!'_x_'..'_x_')' not
+R11189:11189 iris.proofmode.ltac_tactics <> :::'('_x_'$!'_x_'..'_x_')' not
+R11195:11199 iris.proofmode.ltac_tactics <> :::'('_x_'$!'_x_'..'_x_')' not
+R11203:11204 iris.proofmode.ltac_tactics <> :::'('_x_'$!'_x_'..'_x_')' not
+R11189:11189 iris.proofmode.ltac_tactics <> :::'('_x_'$!'_x_'..'_x_')' not
+R11195:11199 iris.proofmode.ltac_tactics <> :::'('_x_'$!'_x_'..'_x_')' not
+R11203:11204 iris.proofmode.ltac_tactics <> :::'('_x_'$!'_x_'..'_x_')' not
+R11221:11229 iris.algebra.gmap <> lookup_op thm
+R11231:11246 stdpp.fin_maps <> lookup_singleton thm
+R11221:11229 iris.algebra.gmap <> lookup_op thm
+R11221:11229 iris.algebra.gmap <> lookup_op thm
+R11231:11246 stdpp.fin_maps <> lookup_singleton thm
+R11231:11246 stdpp.fin_maps <> lookup_singleton thm
+R11263:11275 iris.bi.internal_eq <> option_equivI thm
+R11263:11275 iris.bi.internal_eq <> option_equivI thm
+R11263:11275 iris.bi.internal_eq <> option_equivI thm
+R11292:11297 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R11301:11301 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R11334:11338 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R11342:11342 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R11292:11297 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R11301:11301 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R11292:11297 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R11301:11301 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R11334:11338 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R11342:11342 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R11334:11338 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R11342:11342 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+prf 11403:11439 <> deferred_element_state_non_duplicable
+binder 11441:11441 <> Q:105
+binder 11443:11444 <> γ:106
+binder 11446:11448 <> γ':107
+binder 11450:11451 <> δ:108
+R11491:11496 iris.bi.interface <> ::stdpp_scope:x_'-∗'_x not
+R11461:11482 theories.deferred_stack <> deferred_element_state def
+R11484:11484 theories.deferred_stack <> Q:105 var
+R11486:11487 theories.deferred_stack <> γ:106 var
+R11489:11490 theories.deferred_stack <> δ:108 var
+R11517:11522 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R11497:11509 theories.deferred_stack <> element_state def
+R11511:11513 theories.deferred_stack <> γ':107 var
+R11515:11516 theories.deferred_stack <> δ:108 var
+R11523:11527 iris.bi.interface <> ::bi_scope:'False' not
+R11556:11577 theories.deferred_stack <> deferred_element_state def
+R11580:11592 theories.deferred_stack <> element_state def
+R11556:11577 theories.deferred_stack <> deferred_element_state def
+R11556:11577 theories.deferred_stack <> deferred_element_state def
+R11580:11592 theories.deferred_stack <> element_state def
+R11580:11592 theories.deferred_stack <> element_state def
+R11664:11664 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R11688:11693 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R11704:11704 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R11665:11687 theories.deferred_stack <> element_token_exclusive thm
+R11664:11664 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R11688:11693 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R11704:11704 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R11665:11687 theories.deferred_stack <> element_token_exclusive thm
+prf 11740:11767 <> element_state_non_duplicable
+binder 11769:11770 <> γ:109
+binder 11772:11774 <> γ':110
+binder 11776:11777 <> δ:111
+R11806:11811 iris.bi.interface <> ::stdpp_scope:x_'-∗'_x not
+R11787:11799 theories.deferred_stack <> element_state def
+R11801:11802 theories.deferred_stack <> γ:109 var
+R11804:11805 theories.deferred_stack <> δ:111 var
+R11832:11837 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R11812:11824 theories.deferred_stack <> element_state def
+R11826:11828 theories.deferred_stack <> γ':110 var
+R11830:11831 theories.deferred_stack <> δ:111 var
+R11838:11842 iris.bi.interface <> ::bi_scope:'False' not
+R11871:11883 theories.deferred_stack <> element_state def
+R11871:11883 theories.deferred_stack <> element_state def
+R11871:11883 theories.deferred_stack <> element_state def
+R11959:11959 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R11983:11988 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R11999:11999 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R11960:11982 theories.deferred_stack <> element_token_exclusive thm
+R11959:11959 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R11983:11988 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R11999:11999 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R11960:11982 theories.deferred_stack <> element_token_exclusive thm
+prf 12035:12057 <> deferred_element_create
+binder 12059:12059 <> Q:112
+R12069:12072 iris.bi.interface <> ::stdpp_scope:'⊢'_x not
+R12124:12140 iris.bi.updates <> ::bi_scope:x_'==∗'_x not
+R12073:12086 iris.base_logic.lib.saved_prop <> saved_prop_own def
+R12088:12105 theories.deferred_stack <> deferred_prop_name meth
+R12108:12115 iris.algebra.dfrac <> DfracOwn constr
+R12120:12123 iris.bi.interface <> ::bi_scope:'True' not
+R12153:12157 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R12141:12150 theories.deferred_stack <> deferred_Q def
+R12152:12152 theories.deferred_stack <> Q:112 var
+R12158:12161 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R12167:12168 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 12162:12163 <> γ:113
+binder 12165:12166 <> δ:114
+R12169:12190 theories.deferred_stack <> deferred_element_state def
+R12192:12192 theories.deferred_stack <> Q:112 var
+R12194:12195 theories.deferred_stack <> γ:113 var
+R12197:12198 theories.deferred_stack <> δ:114 var
+R12248:12267 theories.deferred_stack <> element_token_create thm
+R12248:12267 theories.deferred_stack <> element_token_create thm
+R12297:12312 iris.base_logic.lib.saved_prop <> saved_prop_alloc thm
+R12316:12329 iris.algebra.dfrac <> DfracDiscarded constr
+R12297:12312 iris.base_logic.lib.saved_prop <> saved_prop_alloc thm
+R12316:12329 iris.algebra.dfrac <> DfracDiscarded constr
+R12369:12369 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12389:12394 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12403:12403 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12370:12386 iris.base_logic.lib.saved_prop <> saved_prop_update thm
+R12369:12369 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12389:12394 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12403:12403 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12370:12386 iris.base_logic.lib.saved_prop <> saved_prop_update thm
+R12434:12434 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12463:12468 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12477:12477 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12435:12462 iris.bi.lib.fractional <> fractional_half_1 thm
+R12434:12434 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12463:12468 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12477:12477 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12435:12462 iris.bi.lib.fractional <> fractional_half_1 thm
+prf 12585:12606 <> update_normal_mode_map
+binder 12608:12608 <> Q:115
+binder 12610:12611 <> γ:116
+binder 12613:12614 <> δ:117
+R12624:12627 iris.bi.interface <> ::stdpp_scope:'⊢'_x not
+R12643:12657 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R12628:12642 theories.deferred_stack <> normal_mode_map def
+R12688:12704 iris.bi.updates <> ::bi_scope:x_'==∗'_x not
+R12658:12679 theories.deferred_stack <> deferred_element_state def
+R12681:12681 theories.deferred_stack <> Q:115 var
+R12683:12684 theories.deferred_stack <> γ:116 var
+R12686:12687 theories.deferred_stack <> δ:117 var
+R12724:12728 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R12705:12721 theories.deferred_stack <> deferred_mode_map def
+R12723:12723 theories.deferred_stack <> Q:115 var
+R12729:12738 theories.deferred_stack <> is_element def
+R12740:12740 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12743:12744 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12747:12747 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12741:12742 theories.deferred_stack <> γ:116 var
+R12745:12746 theories.deferred_stack <> δ:117 var
+R12818:12821 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R12822:12822 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12825:12826 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12829:12829 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12818:12821 stdpp.base <> ::stdpp_scope:x_'!!'_x not
+R12822:12822 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12825:12826 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12829:12829 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R12868:12881 iris.algebra.big_op <> big_opM_delete thm
+R12868:12881 iris.algebra.big_op <> big_opM_delete thm
+R12868:12881 iris.algebra.big_op <> big_opM_delete thm
+R12966:12966 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13004:13009 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13022:13022 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12967:13003 theories.deferred_stack <> deferred_element_state_non_duplicable thm
+R12966:12966 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13004:13009 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13022:13022 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R12967:13003 theories.deferred_stack <> deferred_element_state_non_duplicable thm
+R13054:13070 theories.deferred_stack <> deferred_mode_map def
+R13054:13070 theories.deferred_stack <> deferred_mode_map def
+R13054:13070 theories.deferred_stack <> deferred_mode_map def
+R13086:13086 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13121:13126 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13131:13131 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13087:13104 theories.deferred_stack <> update_element_map thm
+R13108:13108 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13111:13112 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13115:13115 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13086:13086 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13121:13126 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13131:13131 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13087:13104 theories.deferred_stack <> update_element_map thm
+R13108:13108 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13111:13112 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13115:13115 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+def 13254:13268 <> push_permission
+binder 13270:13271 <> γ:118
+binder 13273:13274 <> δ:119
+R13281:13285 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R13287:13288 theories.deferred_stack <> stacks.Σ var
+binder 13277:13277 <> Q:120
+R13336:13346 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R13302:13315 iris.base_logic.lib.saved_prop <> saved_prop_own def
+R13317:13318 theories.deferred_stack <> γ:118 var
+R13320:13333 iris.algebra.dfrac <> DfracDiscarded constr
+R13335:13335 theories.deferred_stack <> Q:120 var
+R13347:13356 theories.deferred_stack <> is_element def
+R13358:13358 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13361:13362 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13365:13365 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R13359:13360 theories.deferred_stack <> γ:118 var
+R13363:13364 theories.deferred_stack <> δ:119 var
+inst 13401:13426 <> push_permission_Persistent
+binder 13428:13429 <> γ:121
+binder 13431:13432 <> δ:122
+binder 13434:13434 <> Q:123
+R13438:13447 iris.bi.derived_connectives <> Persistent class
+R13450:13464 theories.deferred_stack <> push_permission def
+R13466:13467 theories.deferred_stack <> γ:121 var
+R13469:13470 theories.deferred_stack <> δ:122 var
+R13472:13472 theories.deferred_stack <> Q:123 var
+prf 13515:13542 <> normal_mode_to_deferred_mode
+binder 13544:13544 <> P:124
+binder 13546:13548 <> ol':125
+binder 13550:13550 <> Q:126
+R13560:13563 iris.bi.interface <> ::stdpp_scope:'⊢'_x not
+R13581:13595 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R13564:13574 theories.deferred_stack <> normal_mode def
+R13576:13576 theories.deferred_stack <> P:124 var
+R13578:13580 theories.deferred_stack <> ol':125 var
+R13625:13642 iris.bi.updates <> ::bi_scope:x_'==∗'_x not
+R13775:13775 iris.bi.updates <> ::bi_scope:x_'==∗'_x not
+R13596:13614 theories.deferred_stack <> deferred_mode_token abbrev
+R13616:13624 theories.deferred_stack <> mode_name meth
+R13664:13668 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R13643:13655 theories.deferred_stack <> deferred_mode def
+R13657:13657 theories.deferred_stack <> Q:126 var
+R13659:13659 theories.deferred_stack <> P:124 var
+R13661:13663 theories.deferred_stack <> ol':125 var
+R13696:13712 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R13669:13685 theories.deferred_stack <> normal_mode_token abbrev
+R13687:13695 theories.deferred_stack <> mode_name meth
+R13725:13740 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R13713:13722 theories.deferred_stack <> deferred_Q def
+R13724:13724 theories.deferred_stack <> Q:126 var
+R13741:13744 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R13750:13751 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 13745:13746 <> γ:127
+binder 13748:13749 <> δ:128
+R13752:13766 theories.deferred_stack <> push_permission def
+R13768:13769 theories.deferred_stack <> γ:127 var
+R13771:13772 theories.deferred_stack <> δ:128 var
+R13774:13774 theories.deferred_stack <> Q:126 var
+R13854:13854 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13880:13885 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13894:13894 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13855:13877 theories.deferred_stack <> deferred_element_create thm
+R13854:13854 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13880:13885 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13894:13894 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R13855:13877 theories.deferred_stack <> deferred_element_create thm
+R13943:13964 theories.deferred_stack <> deferred_element_state def
+R13943:13964 theories.deferred_stack <> deferred_element_state def
+R13943:13964 theories.deferred_stack <> deferred_element_state def
+R14056:14068 theories.deferred_stack <> deferred_mode def
+R14056:14068 theories.deferred_stack <> deferred_mode def
+R14056:14068 theories.deferred_stack <> deferred_mode def
+R14082:14082 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14113:14118 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14127:14127 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14083:14104 theories.deferred_stack <> update_normal_mode_map thm
+R14082:14082 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14113:14118 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14127:14127 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14083:14104 theories.deferred_stack <> update_normal_mode_map thm
+R14214:14214 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14230:14235 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14243:14243 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14215:14229 theories.deferred_stack <> is_list_defer_Q thm
+R14214:14214 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14230:14235 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14243:14243 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14215:14229 theories.deferred_stack <> is_list_defer_Q thm
+prf 14299:14322 <> deferred_element_resolve
+binder 14324:14325 <> γ:129
+binder 14327:14328 <> δ:130
+binder 14330:14330 <> Q:131
+binder 14332:14333 <> Q':132
+R14343:14346 iris.bi.interface <> ::stdpp_scope:'⊢'_x not
+R14377:14391 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R14347:14368 theories.deferred_stack <> deferred_element_state def
+R14370:14370 theories.deferred_stack <> Q:131 var
+R14372:14373 theories.deferred_stack <> γ:129 var
+R14375:14376 theories.deferred_stack <> δ:130 var
+R14401:14415 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R14392:14395 iris.bi.interface <> ::bi_scope:'▷'_x not
+R14396:14399 iris.bi.derived_connectives <> ::bi_scope:'□'_x not
+R14400:14400 theories.deferred_stack <> Q:131 var
+R14429:14446 iris.bi.updates <> ::bi_scope:x_'==∗'_x not
+R14416:14425 theories.deferred_stack <> deferred_Q def
+R14427:14428 theories.deferred_stack <> Q':132 var
+R14466:14481 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R14447:14459 theories.deferred_stack <> element_state def
+R14461:14462 theories.deferred_stack <> γ:129 var
+R14464:14465 theories.deferred_stack <> δ:130 var
+R14482:14495 iris.base_logic.lib.saved_prop <> saved_prop_own def
+R14497:14514 theories.deferred_stack <> deferred_prop_name meth
+R14517:14524 iris.algebra.dfrac <> DfracOwn constr
+R14529:14532 iris.bi.interface <> ::bi_scope:'True' not
+R14609:14613 iris.bi.updates <> ::bi_scope:'|==>'_x not
+R14614:14627 iris.base_logic.lib.saved_prop <> saved_prop_own def
+R14629:14646 theories.deferred_stack <> deferred_prop_name meth
+R14649:14656 iris.algebra.dfrac <> DfracOwn constr
+R14609:14613 iris.bi.updates <> ::bi_scope:'|==>'_x not
+R14614:14627 iris.base_logic.lib.saved_prop <> saved_prop_own def
+R14629:14646 theories.deferred_stack <> deferred_prop_name meth
+R14649:14656 iris.algebra.dfrac <> DfracOwn constr
+R14716:14716 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14738:14743 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14760:14760 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14717:14735 iris.base_logic.lib.saved_prop <> saved_prop_update_2 thm
+R14716:14716 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14738:14743 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14760:14760 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14717:14735 iris.base_logic.lib.saved_prop <> saved_prop_update_2 thm
+R14802:14813 stdpp.numbers Qp half_half thm
+R14802:14813 stdpp.numbers Qp half_half thm
+R14853:14853 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14882:14887 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14904:14904 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14854:14881 iris.bi.lib.fractional <> fractional_half_2 thm
+R14853:14853 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14882:14887 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14904:14904 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R14854:14881 iris.bi.lib.fractional <> fractional_half_2 thm
+R14945:14957 theories.deferred_stack <> element_state def
+R14945:14957 theories.deferred_stack <> element_state def
+R14945:14957 theories.deferred_stack <> element_state def
+R15029:15029 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15047:15052 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15061:15061 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15030:15046 iris.base_logic.lib.saved_prop <> saved_prop_update thm
+R15029:15029 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15047:15052 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15061:15061 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15030:15046 iris.base_logic.lib.saved_prop <> saved_prop_update thm
+prf 15084:15111 <> deferred_mode_to_normal_mode
+binder 15113:15113 <> P:133
+binder 15115:15117 <> ol':134
+binder 15119:15119 <> Q:135
+binder 15121:15122 <> Q':136
+R15132:15135 iris.bi.interface <> ::stdpp_scope:'⊢'_x not
+R15157:15171 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R15136:15148 theories.deferred_stack <> deferred_mode def
+R15150:15150 theories.deferred_stack <> Q:135 var
+R15152:15152 theories.deferred_stack <> P:133 var
+R15154:15156 theories.deferred_stack <> ol':134 var
+R15181:15194 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R15172:15175 iris.bi.interface <> ::bi_scope:'▷'_x not
+R15176:15179 iris.bi.derived_connectives <> ::bi_scope:'□'_x not
+R15180:15180 theories.deferred_stack <> Q:135 var
+R15222:15236 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R15195:15211 theories.deferred_stack <> normal_mode_token abbrev
+R15213:15221 theories.deferred_stack <> mode_name meth
+R15250:15266 iris.bi.updates <> ::bi_scope:x_'==∗'_x not
+R15237:15246 theories.deferred_stack <> deferred_Q def
+R15248:15249 theories.deferred_stack <> Q':136 var
+R15284:15288 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R15267:15277 theories.deferred_stack <> normal_mode def
+R15279:15279 theories.deferred_stack <> P:133 var
+R15281:15283 theories.deferred_stack <> ol':134 var
+R15289:15307 theories.deferred_stack <> deferred_mode_token abbrev
+R15309:15317 theories.deferred_stack <> mode_name meth
+R15439:15439 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15464:15469 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15487:15487 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15440:15463 theories.deferred_stack <> deferred_element_resolve thm
+R15439:15439 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15464:15469 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15487:15487 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15440:15463 theories.deferred_stack <> deferred_element_resolve thm
+R15547:15557 theories.deferred_stack <> normal_mode def
+R15547:15557 theories.deferred_stack <> normal_mode def
+R15547:15557 theories.deferred_stack <> normal_mode def
+R15627:15627 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15645:15650 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15661:15661 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15628:15644 theories.deferred_stack <> is_list_resolve_Q thm
+R15627:15627 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15645:15650 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15661:15661 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R15628:15644 theories.deferred_stack <> is_list_resolve_Q thm
+R15681:15695 theories.deferred_stack <> normal_mode_map def
+R15681:15695 theories.deferred_stack <> normal_mode_map def
+R15681:15695 theories.deferred_stack <> normal_mode_map def
+R15715:15716 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R15727:15728 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R15731:15734 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R15717:15717 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15721:15722 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15726:15726 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15729:15730 Coq.Init.Datatypes <> tt constr
+R15715:15716 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R15727:15728 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R15731:15734 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R15717:15717 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15721:15722 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15726:15726 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15729:15730 Coq.Init.Datatypes <> tt constr
+R15794:15807 iris.algebra.big_op <> big_opM_insert thm
+R15794:15807 iris.algebra.big_op <> big_opM_insert thm
+prf 15859:15872 <> lookup_element
+binder 15874:15875 <> γ:137
+binder 15877:15878 <> δ:138
+R15903:15908 iris.bi.interface <> ::stdpp_scope:x_'-∗'_x not
+R15888:15902 theories.deferred_stack <> normal_mode_map def
+R15928:15942 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R16009:16009 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R15909:15918 theories.deferred_stack <> is_element def
+R15920:15920 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15923:15924 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15927:15927 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R15921:15922 theories.deferred_stack <> γ:137 var
+R15925:15926 theories.deferred_stack <> δ:138 var
+R15943:15943 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R15984:15989 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R15963:15968 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R15944:15956 theories.deferred_stack <> element_state def
+R15958:15959 theories.deferred_stack <> γ:137 var
+R15961:15962 theories.deferred_stack <> δ:138 var
+R15969:15983 theories.deferred_stack <> normal_mode_map def
+R15990:16002 theories.deferred_stack <> element_state def
+R16004:16005 theories.deferred_stack <> γ:137 var
+R16007:16008 theories.deferred_stack <> δ:138 var
+R16060:16074 theories.deferred_stack <> normal_mode_map def
+R16060:16074 theories.deferred_stack <> normal_mode_map def
+R16060:16074 theories.deferred_stack <> normal_mode_map def
+R16138:16138 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16166:16171 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16177:16177 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16139:16154 theories.deferred_stack <> claim_membership thm
+R16158:16158 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16161:16162 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16165:16165 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16138:16138 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16166:16171 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16177:16177 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16139:16154 theories.deferred_stack <> claim_membership thm
+R16158:16158 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16161:16162 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16165:16165 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16207:16207 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16236:16241 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16249:16249 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16208:16222 iris.bi.big_op <> big_sepM_delete thm
+R16228:16228 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16231:16232 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16235:16235 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16207:16207 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16236:16241 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16249:16249 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16208:16222 iris.bi.big_op <> big_sepM_delete thm
+R16228:16228 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16231:16232 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16235:16235 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16374:16387 iris.algebra.big_op <> big_opM_delete thm
+R16374:16387 iris.algebra.big_op <> big_opM_delete thm
+R16374:16387 iris.algebra.big_op <> big_opM_delete thm
+prf 16446:16468 <> lookup_deferred_element
+binder 16470:16471 <> γ:139
+binder 16473:16474 <> δ:140
+binder 16476:16476 <> Q:141
+R16505:16510 iris.bi.interface <> ::stdpp_scope:x_'-∗'_x not
+R16486:16502 theories.deferred_stack <> deferred_mode_map def
+R16504:16504 theories.deferred_stack <> Q:141 var
+R16530:16547 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R16727:16734 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R16511:16520 theories.deferred_stack <> is_element def
+R16522:16522 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16525:16526 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16529:16529 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16523:16524 theories.deferred_stack <> γ:139 var
+R16527:16528 theories.deferred_stack <> δ:140 var
+R16548:16548 iris.bi.interface <> ::bi_scope:x_'∨'_x not
+R16619:16633 iris.bi.interface <> ::bi_scope:x_'∨'_x not
+R16726:16726 iris.bi.interface <> ::bi_scope:x_'∨'_x not
+R16549:16549 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R16594:16599 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R16569:16574 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R16550:16562 theories.deferred_stack <> element_state def
+R16564:16565 theories.deferred_stack <> γ:139 var
+R16567:16568 theories.deferred_stack <> δ:140 var
+R16575:16591 theories.deferred_stack <> deferred_mode_map def
+R16593:16593 theories.deferred_stack <> Q:141 var
+R16600:16612 theories.deferred_stack <> element_state def
+R16614:16615 theories.deferred_stack <> γ:139 var
+R16617:16618 theories.deferred_stack <> δ:140 var
+R16634:16634 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R16690:16695 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R16665:16670 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R16635:16656 theories.deferred_stack <> deferred_element_state def
+R16658:16658 theories.deferred_stack <> Q:141 var
+R16660:16661 theories.deferred_stack <> γ:139 var
+R16663:16664 theories.deferred_stack <> δ:140 var
+R16671:16687 theories.deferred_stack <> deferred_mode_map def
+R16689:16689 theories.deferred_stack <> Q:141 var
+R16696:16717 theories.deferred_stack <> deferred_element_state def
+R16719:16719 theories.deferred_stack <> Q:141 var
+R16721:16722 theories.deferred_stack <> γ:139 var
+R16724:16725 theories.deferred_stack <> δ:140 var
+R16785:16801 theories.deferred_stack <> deferred_mode_map def
+R16785:16801 theories.deferred_stack <> deferred_mode_map def
+R16785:16801 theories.deferred_stack <> deferred_mode_map def
+R16893:16893 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16942:16947 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16953:16953 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16894:16909 theories.deferred_stack <> claim_membership thm
+R16912:16913 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R16924:16925 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R16928:16931 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R16914:16914 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16918:16919 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16923:16923 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16926:16927 Coq.Init.Datatypes <> tt constr
+R16934:16934 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16937:16938 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16941:16941 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16893:16893 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16942:16947 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16953:16953 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R16894:16909 theories.deferred_stack <> claim_membership thm
+R16912:16913 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R16924:16925 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R16928:16931 stdpp.base <> ::stdpp_scope:'<['_x_':='_x_']>' not
+R16914:16914 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16918:16919 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16923:16923 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16926:16927 Coq.Init.Datatypes <> tt constr
+R16934:16934 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16937:16938 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R16941:16941 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17158:17163 stdpp.base <> decide def
+R17174:17176 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R17166:17166 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17169:17170 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17173:17173 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17177:17177 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17181:17182 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17186:17186 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17158:17163 stdpp.base <> decide def
+R17174:17176 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R17166:17166 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17169:17170 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17173:17173 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17177:17177 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17181:17182 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17186:17186 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17375:17390 stdpp.fin_maps <> lookup_insert_ne thm
+R17375:17390 stdpp.fin_maps <> lookup_insert_ne thm
+R17375:17390 stdpp.fin_maps <> lookup_insert_ne thm
+R17430:17430 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R17459:17464 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R17472:17472 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R17431:17445 iris.bi.big_op <> big_sepM_delete thm
+R17451:17451 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17454:17455 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17458:17458 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17430:17430 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R17459:17464 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R17472:17472 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R17431:17445 iris.bi.big_op <> big_sepM_delete thm
+R17451:17451 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17454:17455 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17458:17458 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R17618:17631 iris.algebra.big_op <> big_opM_delete thm
+R17618:17631 iris.algebra.big_op <> big_opM_delete thm
+R17618:17631 iris.algebra.big_op <> big_opM_delete thm
+R18794:18804 theories.deferred_stack stacks.element_map <> sec
+R18812:18817 theories.deferred_stack stacks <> sec
+sec 18829:18834 <> proofs
+R18850:18855 iris.heap_lang.primitive_laws <> heapGS abbrev
+binder 18857:18858 <> Σ:142
+binder 18849:18858 <> heapGS0:143
+R18864:18873 theories.deferred_stack <> deferredGS class
+R18875:18876 theories.deferred_stack <> Σ:142 var
+binder 18863:18876 <> deferredGS0:144
+R18882:18891 iris.base_logic.lib.saved_prop <> savedPropG abbrev
+R18893:18894 theories.deferred_stack <> Σ:142 var
+binder 18881:18894 <> savedPropG0:145
+R18902:18910 stdpp.namespaces <> namespace def
+binder 18898:18898 <> N:146
+abbrev 18926:18942 <> normal_mode_token
+R18947:18956 theories.deferred_stack <> left_token def
+abbrev 18970:18988 <> deferred_mode_token
+R18993:19003 theories.deferred_stack <> right_token def
+prf 19202:19215 <> new_stack_spec
+binder 19217:19217 <> P:147
+R19225:19228 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_x_'..'_x_','_'RET'_x_';'_x_'}'_'}'_'}' not
+R19247:19258 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_x_'..'_x_','_'RET'_x_';'_x_'}'_'}'_'}' not
+R19272:19281 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_x_'..'_x_','_'RET'_x_';'_x_'}'_'}'_'}' not
+R19283:19288 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_x_'..'_x_','_'RET'_x_';'_x_'}'_'}'_'}' not
+R19290:19291 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_x_'..'_x_','_'RET'_x_';'_x_'}'_'}'_'}' not
+R19306:19309 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_x_'..'_x_','_'RET'_x_';'_x_'}'_'}'_'}' not
+R19229:19239 theories.deferred_stack <> normal_mode def
+R19241:19241 theories.deferred_stack <> P:147 var
+R19243:19246 Coq.Init.Datatypes <> None constr
+binder 19282:19282 <> s:148
+R19292:19299 theories.deferred_stack <> is_stack def
+R19303:19303 theories.deferred_stack <> P:147 var
+R19305:19305 theories.deferred_stack <> s:148 var
+R19301:19301 theories.deferred_stack <> proofs.N var
+R19289:19289 theories.deferred_stack <> s:148 var
+R19259:19267 theories.deferred_stack <> new_stack def
+R19269:19269 iris.heap_lang.notation <> :::'#'_x not
+R19270:19271 iris.heap_lang.notation <> ::val_scope:'()' not
+R19400:19400 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R19435:19440 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R19453:19453 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R19401:19409 iris.base_logic.lib.invariants <> inv_alloc thm
+R19411:19411 theories.deferred_stack <> proofs.N var
+R19413:19415 stdpp.base <> ::stdpp_scope:'⊤' not
+R19418:19426 theories.deferred_stack <> stack_inv def
+R19430:19430 iris.heap_lang.notation <> :::'#'_x not
+R19400:19400 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R19435:19440 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R19453:19453 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R19401:19409 iris.base_logic.lib.invariants <> inv_alloc thm
+R19411:19411 theories.deferred_stack <> proofs.N var
+R19413:19415 stdpp.base <> ::stdpp_scope:'⊤' not
+R19418:19426 theories.deferred_stack <> stack_inv def
+R19430:19430 iris.heap_lang.notation <> :::'#'_x not
+R19492:19495 Coq.Init.Datatypes <> None constr
+R19492:19495 Coq.Init.Datatypes <> None constr
+prf 19569:19581 <> register_push
+R19588:19592 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R19594:19595 theories.deferred_stack <> proofs.Σ var
+binder 19584:19584 <> Q:149
+binder 19598:19598 <> P:150
+binder 19600:19600 <> s:151
+R19621:19630 iris.bi.interface <> ::stdpp_scope:x_'-∗'_x not
+R19608:19616 theories.deferred_stack <> stack_inv def
+R19618:19618 theories.deferred_stack <> P:150 var
+R19620:19620 theories.deferred_stack <> s:151 var
+R19660:19672 iris.bi.updates <> ::bi_scope:x_'==∗'_x not
+R19631:19649 theories.deferred_stack <> deferred_mode_token abbrev
+R19651:19659 theories.deferred_stack <> mode_name meth
+R19686:19697 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R19673:19681 theories.deferred_stack <> stack_inv def
+R19683:19683 theories.deferred_stack <> P:150 var
+R19685:19685 theories.deferred_stack <> s:151 var
+R19725:19735 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R19698:19714 theories.deferred_stack <> normal_mode_token abbrev
+R19716:19724 theories.deferred_stack <> mode_name meth
+R19748:19758 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R19736:19745 theories.deferred_stack <> deferred_Q def
+R19747:19747 theories.deferred_stack <> Q:149 var
+R19759:19762 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R19768:19769 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 19763:19764 <> γ:152
+binder 19766:19767 <> δ:153
+R19770:19784 theories.deferred_stack <> push_permission def
+R19786:19787 theories.deferred_stack <> γ:152 var
+R19789:19790 theories.deferred_stack <> δ:153 var
+R19792:19792 theories.deferred_stack <> Q:149 var
+R19936:19936 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R19958:19963 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R19978:19978 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R19937:19957 theories.deferred_stack <> right_token_exclusive thm
+R19936:19936 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R19958:19963 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R19978:19978 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R19937:19957 theories.deferred_stack <> right_token_exclusive thm
+R20004:20004 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20039:20044 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20058:20058 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20005:20032 theories.deferred_stack <> normal_mode_to_deferred_mode thm
+R20004:20004 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20039:20044 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20058:20058 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20005:20032 theories.deferred_stack <> normal_mode_to_deferred_mode thm
+R20160:20168 theories.deferred_stack <> stack_inv def
+R20160:20168 theories.deferred_stack <> stack_inv def
+R20160:20168 theories.deferred_stack <> stack_inv def
+prf 20265:20273 <> push_spec
+binder 20275:20276 <> γ:154
+binder 20278:20279 <> δ:155
+R20286:20290 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R20292:20293 theories.deferred_stack <> proofs.Σ var
+binder 20282:20282 <> Q:156
+binder 20296:20296 <> P:157
+binder 20298:20298 <> s:158
+binder 20300:20300 <> v:159
+R20308:20311 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_'RET'_x_';'_x_'}'_'}'_'}' not
+R20375:20386 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_'RET'_x_';'_x_'}'_'}'_'}' not
+R20395:20408 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_'RET'_x_';'_x_'}'_'}'_'}' not
+R20412:20413 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_'RET'_x_';'_x_'}'_'}'_'}' not
+R20418:20421 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_'RET'_x_';'_x_'}'_'}'_'}' not
+R20326:20330 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R20312:20319 theories.deferred_stack <> is_stack def
+R20323:20323 theories.deferred_stack <> P:157 var
+R20325:20325 theories.deferred_stack <> s:158 var
+R20321:20321 theories.deferred_stack <> proofs.N var
+R20354:20358 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R20331:20345 theories.deferred_stack <> push_permission def
+R20347:20348 theories.deferred_stack <> γ:154 var
+R20350:20351 theories.deferred_stack <> δ:155 var
+R20353:20353 theories.deferred_stack <> Q:156 var
+R20359:20363 iris.bi.interface <> ::bi_scope:'▷'_x not
+R20374:20374 iris.bi.interface <> ::bi_scope:'▷'_x not
+R20365:20370 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R20364:20364 theories.deferred_stack <> Q:156 var
+R20371:20371 theories.deferred_stack <> P:157 var
+R20373:20373 theories.deferred_stack <> v:159 var
+R20414:20417 iris.bi.interface <> ::bi_scope:'True' not
+R20409:20409 iris.heap_lang.notation <> :::'#'_x not
+R20410:20411 iris.heap_lang.notation <> ::val_scope:'()' not
+R20387:20390 theories.deferred_stack <> push def
+R20392:20392 theories.deferred_stack <> s:158 var
+R20394:20394 theories.deferred_stack <> v:159 var
+R20536:20539 iris.heap_lang.lang heap_lang Load constr
+R20536:20539 iris.heap_lang.lang heap_lang Load constr
+R20554:20554 theories.deferred_stack <> proofs.N var
+R20554:20554 theories.deferred_stack <> proofs.N var
+R20627:20627 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20636:20641 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20654:20654 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20627:20627 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20636:20641 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20654:20654 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20770:20776 iris.heap_lang.lang heap_lang CmpXchg constr
+R20770:20776 iris.heap_lang.lang heap_lang CmpXchg constr
+R20795:20795 theories.deferred_stack <> proofs.N var
+R20795:20795 theories.deferred_stack <> proofs.N var
+R20870:20875 stdpp.base <> decide def
+R20880:20882 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R20870:20875 stdpp.base <> decide def
+R20880:20882 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R20965:20965 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20980:20985 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20991:20991 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20966:20979 iris.heap_lang.primitive_laws <> mapsto_persist thm
+R20965:20965 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20980:20985 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20991:20991 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R20966:20979 iris.heap_lang.primitive_laws <> mapsto_persist thm
+R21014:21014 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21023:21028 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21049:21049 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21014:21014 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21023:21028 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21049:21049 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21086:21089 Coq.Init.Datatypes <> Some constr
+R21086:21089 Coq.Init.Datatypes <> Some constr
+R21304:21314 theories.deferred_stack <> normal_mode def
+R21304:21314 theories.deferred_stack <> normal_mode def
+R21304:21314 theories.deferred_stack <> normal_mode def
+R21369:21383 theories.deferred_stack <> is_list_unfold2 thm
+R21388:21391 Coq.Init.Datatypes <> Some constr
+R21369:21383 theories.deferred_stack <> is_list_unfold2 thm
+R21388:21391 Coq.Init.Datatypes <> Some constr
+R21369:21383 theories.deferred_stack <> is_list_unfold2 thm
+R21388:21391 Coq.Init.Datatypes <> Some constr
+R21422:21422 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21437:21442 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21451:21451 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21423:21436 theories.deferred_stack <> lookup_element thm
+R21422:21422 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21437:21442 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21451:21451 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21423:21436 theories.deferred_stack <> lookup_element thm
+R21514:21514 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21531:21536 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21545:21545 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21515:21530 iris.base_logic.lib.saved_prop <> saved_prop_agree thm
+R21514:21514 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21531:21536 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21545:21545 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21515:21530 iris.base_logic.lib.saved_prop <> saved_prop_agree thm
+R21772:21784 theories.deferred_stack <> deferred_mode def
+R21772:21784 theories.deferred_stack <> deferred_mode def
+R21772:21784 theories.deferred_stack <> deferred_mode def
+R21910:21924 theories.deferred_stack <> is_list_unfold2 thm
+R21929:21932 Coq.Init.Datatypes <> Some constr
+R21910:21924 theories.deferred_stack <> is_list_unfold2 thm
+R21929:21932 Coq.Init.Datatypes <> Some constr
+R21910:21924 theories.deferred_stack <> is_list_unfold2 thm
+R21929:21932 Coq.Init.Datatypes <> Some constr
+R21963:21963 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21987:21992 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22001:22001 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21964:21986 theories.deferred_stack <> lookup_deferred_element thm
+R21963:21963 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21987:21992 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22001:22001 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R21964:21986 theories.deferred_stack <> lookup_deferred_element thm
+R22165:22165 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22182:22187 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22196:22196 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22166:22181 iris.base_logic.lib.saved_prop <> saved_prop_agree thm
+R22165:22165 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22182:22187 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22196:22196 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22166:22181 iris.base_logic.lib.saved_prop <> saved_prop_agree thm
+R22432:22432 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22449:22454 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22463:22463 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22433:22448 iris.base_logic.lib.saved_prop <> saved_prop_agree thm
+R22432:22432 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22449:22454 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22463:22463 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22433:22448 iris.base_logic.lib.saved_prop <> saved_prop_agree thm
+R22853:22853 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22862:22867 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22880:22880 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22853:22853 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22862:22867 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22880:22880 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22978:22978 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22983:22988 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22998:22998 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22978:22978 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22983:22988 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R22998:22998 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+prf 23019:23027 <> resolve_Q
+R23034:23038 iris.base_logic.lib.iprop iProp_solution iProp abbrev
+R23040:23041 theories.deferred_stack <> proofs.Σ var
+binder 23030:23030 <> Q:160
+binder 23044:23044 <> P:161
+binder 23046:23046 <> s:162
+R23067:23076 iris.bi.interface <> ::stdpp_scope:x_'-∗'_x not
+R23054:23062 theories.deferred_stack <> stack_inv def
+R23064:23064 theories.deferred_stack <> P:161 var
+R23066:23066 theories.deferred_stack <> s:162 var
+R23082:23091 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R23077:23080 iris.bi.derived_connectives <> ::bi_scope:'□'_x not
+R23081:23081 theories.deferred_stack <> Q:160 var
+R23119:23128 iris.bi.interface <> ::bi_scope:x_'-∗'_x not
+R23092:23108 theories.deferred_stack <> normal_mode_token abbrev
+R23110:23118 theories.deferred_stack <> mode_name meth
+R23141:23153 iris.bi.updates <> ::bi_scope:x_'==∗'_x not
+R23129:23138 theories.deferred_stack <> deferred_Q def
+R23140:23140 theories.deferred_stack <> Q:160 var
+R23167:23171 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R23154:23162 theories.deferred_stack <> stack_inv def
+R23164:23164 theories.deferred_stack <> P:161 var
+R23166:23166 theories.deferred_stack <> s:162 var
+R23172:23190 theories.deferred_stack <> deferred_mode_token abbrev
+R23192:23200 theories.deferred_stack <> mode_name meth
+R23355:23355 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23376:23381 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23396:23396 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23356:23375 theories.deferred_stack <> left_token_exclusive thm
+R23355:23355 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23376:23381 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23396:23396 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23356:23375 theories.deferred_stack <> left_token_exclusive thm
+R23519:23522 iris.bi.interface <> ::bi_scope:'▷'_x not
+R23523:23526 iris.bi.derived_connectives <> ::bi_scope:'□'_x not
+R23519:23522 iris.bi.interface <> ::bi_scope:'▷'_x not
+R23523:23526 iris.bi.derived_connectives <> ::bi_scope:'□'_x not
+R23585:23585 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23602:23607 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23624:23624 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23586:23601 iris.base_logic.lib.saved_prop <> saved_prop_agree thm
+R23585:23585 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23602:23607 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23624:23624 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23586:23601 iris.base_logic.lib.saved_prop <> saved_prop_agree thm
+R23680:23680 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23716:23721 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23777:23777 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23681:23708 theories.deferred_stack <> deferred_mode_to_normal_mode thm
+R23680:23680 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23716:23721 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23777:23777 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R23681:23708 theories.deferred_stack <> deferred_mode_to_normal_mode thm
+prf 23955:23962 <> pop_spec
+binder 23964:23964 <> P:163
+binder 23966:23966 <> s:164
+R23974:23977 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_x_'..'_x_','_'RET'_x_';'_x_'}'_'}'_'}' not
+R24026:24037 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_x_'..'_x_','_'RET'_x_';'_x_'}'_'}'_'}' not
+R24043:24052 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_x_'..'_x_','_'RET'_x_';'_x_'}'_'}'_'}' not
+R24055:24060 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_x_'..'_x_','_'RET'_x_';'_x_'}'_'}'_'}' not
+R24063:24064 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_x_'..'_x_','_'RET'_x_';'_x_'}'_'}'_'}' not
+R24153:24156 iris.bi.weakestpre <> ::stdpp_scope:'{{{'_x_'}'_'}'_'}'_x_'{{{'_x_'..'_x_','_'RET'_x_';'_x_'}'_'}'_'}' not
+R23992:23996 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R23978:23985 theories.deferred_stack <> is_stack def
+R23989:23989 theories.deferred_stack <> P:163 var
+R23991:23991 theories.deferred_stack <> s:164 var
+R23987:23987 theories.deferred_stack <> proofs.N var
+R23997:24015 theories.deferred_stack <> deferred_mode_token abbrev
+R24017:24025 theories.deferred_stack <> mode_name meth
+binder 24053:24054 <> ov:165
+R24081:24085 iris.bi.interface <> ::bi_scope:x_'∨'_x not
+R24065:24067 iris.bi.interface <> ::bi_scope:'⌜'_x_'⌝' not
+R24078:24080 iris.bi.interface <> ::bi_scope:'⌜'_x_'⌝' not
+R24070:24072 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R24068:24069 theories.deferred_stack <> ov:165 var
+R24073:24077 iris.heap_lang.notation <> NONEV abbrev
+R24086:24089 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R24091:24092 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 24090:24090 <> v:166
+R24111:24115 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R24093:24095 iris.bi.interface <> ::bi_scope:'⌜'_x_'⌝' not
+R24108:24110 iris.bi.interface <> ::bi_scope:'⌜'_x_'⌝' not
+R24098:24100 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R24096:24097 theories.deferred_stack <> ov:165 var
+R24101:24105 iris.heap_lang.notation <> SOMEV abbrev
+R24107:24107 theories.deferred_stack <> v:166 var
+R24119:24123 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R24116:24116 theories.deferred_stack <> P:163 var
+R24118:24118 theories.deferred_stack <> v:166 var
+R24124:24142 theories.deferred_stack <> deferred_mode_token abbrev
+R24144:24152 theories.deferred_stack <> mode_name meth
+R24061:24062 theories.deferred_stack <> ov:165 var
+R24038:24040 theories.deferred_stack <> pop def
+R24042:24042 theories.deferred_stack <> s:164 var
+R24250:24253 iris.heap_lang.lang heap_lang Load constr
+R24250:24253 iris.heap_lang.lang heap_lang Load constr
+R24268:24268 theories.deferred_stack <> proofs.N var
+R24268:24268 theories.deferred_stack <> proofs.N var
+R24333:24333 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24350:24355 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24363:24363 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24334:24349 theories.deferred_stack <> mode_is_list_dup thm
+R24333:24333 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24350:24355 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24363:24363 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24334:24349 theories.deferred_stack <> mode_is_list_dup thm
+R24408:24408 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24417:24422 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24435:24435 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24408:24408 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24417:24422 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24435:24435 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24608:24611 iris.heap_lang.lang heap_lang Load constr
+R24608:24611 iris.heap_lang.lang heap_lang Load constr
+R24628:24628 theories.deferred_stack <> proofs.N var
+R24628:24628 theories.deferred_stack <> proofs.N var
+R24778:24778 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24800:24805 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24820:24820 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24779:24799 theories.deferred_stack <> right_token_exclusive thm
+R24778:24778 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24800:24805 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24820:24820 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24779:24799 theories.deferred_stack <> right_token_exclusive thm
+R24904:24904 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24913:24918 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24932:24932 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24904:24904 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24913:24918 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R24932:24932 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25026:25032 iris.heap_lang.lang heap_lang CmpXchg constr
+R25026:25032 iris.heap_lang.lang heap_lang CmpXchg constr
+R25053:25053 theories.deferred_stack <> proofs.N var
+R25053:25053 theories.deferred_stack <> proofs.N var
+R25205:25205 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25227:25232 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25247:25247 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25206:25226 theories.deferred_stack <> right_token_exclusive thm
+R25205:25205 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25227:25232 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25247:25247 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25206:25226 theories.deferred_stack <> right_token_exclusive thm
+R25282:25287 stdpp.base <> decide def
+R25293:25296 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R25303:25303 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R25297:25300 Coq.Init.Datatypes <> Some constr
+R25282:25287 stdpp.base <> decide def
+R25293:25296 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R25303:25303 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R25297:25300 Coq.Init.Datatypes <> Some constr
+R25382:25395 theories.deferred_stack <> is_list_unfold thm
+R25382:25395 theories.deferred_stack <> is_list_unfold thm
+R25382:25395 theories.deferred_stack <> is_list_unfold thm
+R25503:25503 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25516:25521 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25531:25531 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25504:25515 iris.heap_lang.primitive_laws <> mapsto_agree thm
+R25546:25560 theories.deferred_stack <> oloc_to_val_inj inst
+R25503:25503 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25516:25521 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25531:25531 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25504:25515 iris.heap_lang.primitive_laws <> mapsto_agree thm
+R25546:25560 theories.deferred_stack <> oloc_to_val_inj inst
+R25577:25577 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25586:25591 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25611:25611 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25577:25577 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25586:25591 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25611:25611 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25946:25946 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25955:25960 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25974:25974 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25946:25946 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25955:25960 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R25974:25974 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R26084:26084 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R26089:26094 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R26106:26106 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R26084:26084 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R26089:26094 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R26106:26106 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R26120:26125 theories.deferred_stack proofs <> sec
+sec 26137:26142 <> closed
+R26158:26163 iris.heap_lang.primitive_laws <> heapGS abbrev
+binder 26165:26166 <> Σ:167
+binder 26157:26166 <> heapGS0:168
+R26172:26184 theories.deferred_stack <> deferredGpreS class
+R26186:26187 theories.deferred_stack <> Σ:167 var
+binder 26171:26187 <> deferredGpreS0:169
+R26193:26202 iris.base_logic.lib.saved_prop <> savedPropG abbrev
+R26204:26205 theories.deferred_stack <> Σ:167 var
+binder 26192:26205 <> savedPropG0:170
+R26213:26221 stdpp.namespaces <> namespace def
+binder 26209:26209 <> N:171
+abbrev 26237:26253 <> normal_mode_token
+R26258:26267 theories.deferred_stack <> left_token def
+abbrev 26281:26299 <> deferred_mode_token
+R26304:26314 theories.deferred_stack <> right_token def
+prf 26377:26392 <> full_token_split
+binder 26394:26395 <> γ:172
+R26430:26436 iris.bi.updates <> ::stdpp_scope:x_'==∗'_x not
+R26403:26405 iris.base_logic.lib.own <> own def
+R26410:26410 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26419:26420 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26429:26429 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26411:26415 iris.algebra.excl <> Excl' abbrev
+R26417:26418 Coq.Init.Datatypes <> tt constr
+R26421:26425 iris.algebra.excl <> Excl' abbrev
+R26427:26428 Coq.Init.Datatypes <> tt constr
+R26407:26408 theories.deferred_stack <> γ:172 var
+R26460:26464 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R26437:26439 iris.base_logic.lib.own <> own def
+R26444:26444 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26453:26454 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26459:26459 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26445:26449 iris.algebra.excl <> Excl' abbrev
+R26451:26452 Coq.Init.Datatypes <> tt constr
+R26455:26458 Coq.Init.Datatypes <> None constr
+R26441:26442 theories.deferred_stack <> γ:172 var
+R26465:26467 iris.base_logic.lib.own <> own def
+R26472:26472 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26477:26478 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26487:26487 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26473:26476 Coq.Init.Datatypes <> None constr
+R26479:26483 iris.algebra.excl <> Excl' abbrev
+R26485:26486 Coq.Init.Datatypes <> tt constr
+R26469:26470 theories.deferred_stack <> γ:172 var
+R26512:26521 theories.deferred_stack <> left_token def
+R26524:26534 theories.deferred_stack <> right_token def
+R26512:26521 theories.deferred_stack <> left_token def
+R26512:26521 theories.deferred_stack <> left_token def
+R26524:26534 theories.deferred_stack <> right_token def
+R26524:26534 theories.deferred_stack <> right_token def
+R26550:26555 iris.base_logic.lib.own <> own_op thm
+R26550:26555 iris.base_logic.lib.own <> own_op thm
+R26550:26555 iris.base_logic.lib.own <> own_op thm
+R26571:26577 iris.algebra.cmra <> pair_op thm
+R26571:26577 iris.algebra.cmra <> pair_op thm
+R26571:26577 iris.algebra.cmra <> pair_op thm
+R26591:26600 iris.base_logic.lib.own <> own_update thm
+R26591:26600 iris.base_logic.lib.own <> own_update thm
+R26615:26621 iris.algebra.cmra <> pair_op thm
+R26615:26621 iris.algebra.cmra <> pair_op thm
+R26615:26621 iris.algebra.cmra <> pair_op thm
+R26636:26654 iris.algebra.updates <> cmra_update_updateP thm
+R26636:26654 iris.algebra.updates <> cmra_update_updateP thm
+R26636:26654 iris.algebra.updates <> cmra_update_updateP thm
+R26667:26681 iris.algebra.updates <> cmra_updateP_id thm
+R26667:26681 iris.algebra.updates <> cmra_updateP_id thm
+prf 26711:26726 <> normal_mode_init
+binder 26728:26728 <> P:173
+R26736:26739 iris.bi.interface <> ::stdpp_scope:'⊢'_x not
+R26740:26744 iris.bi.updates <> ::bi_scope:'|==>'_x not
+R26745:26748 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R26766:26767 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R26753:26762 theories.deferred_stack <> deferredGS class
+R26764:26765 theories.deferred_stack <> closed.Σ var
+R26786:26790 iris.bi.interface <> ::bi_scope:x_'∗'_x not
+R26768:26778 theories.deferred_stack <> normal_mode def
+R26780:26780 theories.deferred_stack <> P:173 var
+R26782:26785 Coq.Init.Datatypes <> None constr
+R26791:26809 theories.deferred_stack <> deferred_mode_token abbrev
+R26811:26819 theories.deferred_stack <> mode_name meth
+R26888:26898 theories.deferred_stack <> normal_mode def
+R26888:26898 theories.deferred_stack <> normal_mode def
+R26888:26898 theories.deferred_stack <> normal_mode def
+R26914:26918 iris.bi.updates <> ::bi_scope:'|==>'_x not
+R26919:26922 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R26925:26926 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 26923:26924 <> γ:174
+R26927:26929 iris.base_logic.lib.own <> own def
+R26934:26934 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26943:26944 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26953:26953 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26935:26939 iris.algebra.excl <> Excl' abbrev
+R26941:26942 Coq.Init.Datatypes <> tt constr
+R26945:26949 iris.algebra.excl <> Excl' abbrev
+R26951:26952 Coq.Init.Datatypes <> tt constr
+R26931:26932 theories.deferred_stack <> γ:174 var
+R26914:26918 iris.bi.updates <> ::bi_scope:'|==>'_x not
+R26919:26922 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+R26925:26926 iris.bi.interface <> ::bi_scope:'∃'_x_'..'_x_','_x not
+binder 26923:26924 <> γ:175
+R26927:26929 iris.base_logic.lib.own <> own def
+R26934:26934 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26943:26944 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26953:26953 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R26935:26939 iris.algebra.excl <> Excl' abbrev
+R26941:26942 Coq.Init.Datatypes <> tt constr
+R26945:26949 iris.algebra.excl <> Excl' abbrev
+R26951:26952 Coq.Init.Datatypes <> tt constr
+R26931:26932 theories.deferred_stack <> γ:175 var
+R26999:27007 iris.base_logic.lib.own <> own_alloc thm
+R27009:27009 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R27018:27019 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R27028:27028 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R27010:27014 iris.algebra.excl <> Excl' abbrev
+R27016:27017 Coq.Init.Datatypes <> tt constr
+R27020:27024 iris.algebra.excl <> Excl' abbrev
+R27026:27027 Coq.Init.Datatypes <> tt constr
+R26999:27007 iris.base_logic.lib.own <> own_alloc thm
+R27009:27009 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R27018:27019 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R27028:27028 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R27010:27014 iris.algebra.excl <> Excl' abbrev
+R27016:27017 Coq.Init.Datatypes <> tt constr
+R27020:27024 iris.algebra.excl <> Excl' abbrev
+R27026:27027 Coq.Init.Datatypes <> tt constr
+R27105:27105 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R27126:27131 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R27139:27139 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R27106:27121 theories.deferred_stack <> full_token_split thm
+R27105:27105 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R27126:27131 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R27139:27139 iris.proofmode.ltac_tactics <> :::'('_x_'with'_x_')' not
+R27106:27121 theories.deferred_stack <> full_token_split thm
+R27173:27188 iris.base_logic.lib.saved_prop <> saved_prop_alloc thm
+R27190:27193 iris.bi.interface <> ::bi_scope:'True' not
+R27196:27203 iris.algebra.dfrac <> DfracOwn constr
+R27173:27188 iris.base_logic.lib.saved_prop <> saved_prop_alloc thm
+R27190:27193 iris.bi.interface <> ::bi_scope:'True' not
+R27196:27203 iris.algebra.dfrac <> DfracOwn constr
+R27250:27258 iris.base_logic.lib.own <> own_alloc thm
+R27261:27265 iris.algebra.auth <> :::'●'_x not
+R27294:27294 iris.algebra.auth <> :::'●'_x not
+R27269:27271 Coq.ssr.ssreflect <> ::core_scope:x_':'_x not
+R27272:27275 stdpp.gmap <> gmap rec
+R27283:27285 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R27278:27282 iris.base_logic.lib.iprop <> gname def
+R27286:27290 iris.base_logic.lib.iprop <> gname def
+R27266:27268 stdpp.base <> ::stdpp_scope:'∅' not
+R27336:27350 iris.algebra.auth <> auth_auth_valid thm
+R27250:27258 iris.base_logic.lib.own <> own_alloc thm
+R27261:27265 iris.algebra.auth <> :::'●'_x not
+R27294:27294 iris.algebra.auth <> :::'●'_x not
+R27269:27271 Coq.ssr.ssreflect <> ::core_scope:x_':'_x not
+R27272:27275 stdpp.gmap <> gmap rec
+R27283:27285 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R27278:27282 iris.base_logic.lib.iprop <> gname def
+R27286:27290 iris.base_logic.lib.iprop <> gname def
+R27266:27268 stdpp.base <> ::stdpp_scope:'∅' not
+R27336:27350 iris.algebra.auth <> auth_auth_valid thm
+R27336:27350 iris.algebra.auth <> auth_auth_valid thm
+R27383:27394 theories.deferred_stack <> deferred_inG meth
+R27383:27394 theories.deferred_stack <> deferred_inG meth
+R27383:27394 theories.deferred_stack <> deferred_inG meth
+R27402:27409 theories.deferred_stack <> map_name meth
+R27402:27409 theories.deferred_stack <> map_name meth
+R27419:27427 theories.deferred_stack <> mode_name meth
+R27419:27427 theories.deferred_stack <> mode_name meth
+R27437:27454 theories.deferred_stack <> deferred_prop_name meth
+R27437:27454 theories.deferred_stack <> deferred_prop_name meth
+R27383:27394 theories.deferred_stack <> deferred_inG meth
+R27383:27394 theories.deferred_stack <> deferred_inG meth
+R27383:27394 theories.deferred_stack <> deferred_inG meth
+R27402:27409 theories.deferred_stack <> map_name meth
+R27402:27409 theories.deferred_stack <> map_name meth
+R27419:27427 theories.deferred_stack <> mode_name meth
+R27419:27427 theories.deferred_stack <> mode_name meth
+R27437:27454 theories.deferred_stack <> deferred_prop_name meth
+R27437:27454 theories.deferred_stack <> deferred_prop_name meth
+R27514:27528 theories.deferred_stack <> is_list_unfold2 thm
+R27514:27528 theories.deferred_stack <> is_list_unfold2 thm
+R27547:27561 theories.deferred_stack <> normal_mode_map def
+R27547:27561 theories.deferred_stack <> normal_mode_map def
+R27547:27561 theories.deferred_stack <> normal_mode_map def
+R27578:27580 stdpp.base <> ::stdpp_scope:'∅' not
+R27578:27580 stdpp.base <> ::stdpp_scope:'∅' not
+R27608:27613 theories.deferred_stack closed <> sec

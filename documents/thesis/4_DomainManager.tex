@@ -1,0 +1,177 @@
+\section{Adding Support for Multiple Schedulers}
+\label{sec:domain-manager}
+
+So far we have always considered the possibility of schedulers running in multiple threads when explaining design choices of Eio.
+These additional schedulers are created using Eio's \emph{domain manager} and in this section we discuss how we integrate the domain manager into our model.
+It exposes a function \ocamlin{Domain_manager.new_scheduler} (shown in figure~\ref{fig:dm-impl}) which, given some function \ocamlin{f}, forks a new thread, runs a scheduler with \ocamlin{f} as its main fiber and returns the final result of \ocamlin{f}.
+
+\subsection{Implementation}
+To interact with threads\footnote{\ocf{} uses the term \emph{domain} but we use the standard thread terminology for shared-memory execution contexts running in parallel.},
+the function uses the standard \ocamlin{thread_fork} and \ocamlin{thread_join} functions exposed by many thread implementations, which fulfill the specifications below.
+\begin{mathpar}
+  \inferrule[Thread-Fork]
+  {\ewp{f\; ()}{\bot}{v,\; Q\, v}}
+  {\ewp{thread\_fork\; f}{\bot}{j,\; joinHandle\; j\; Q}}
+  %
+  \and
+  %
+  \inferrule[Thread-Join]
+  {joinHandle\; j\; Q}
+  {\ewp{thread\_join\; j}{\bot}{v,\; Q\, v}}
+\end{mathpar}
+%
+We implemented threads for the operational semantics of \hazel{} and proved the specifications for these functions as described in appendix~\ref{sec:apdx-mt}.
+This pair of functions is analogous to \ocamlin{Fiber.fork_promise} and \ocamlin{Promise.await} but on the level of threads.
+The difference is that \ocamlin{thread_join} is considered \emph{blocking} in the sense that the calling thread will not continue execution until the thread associated with the \(joinHandle\) has terminated.
+
+\begin{figure}[ht]
+  \begin{minted}[escapeinside=@@]{ocaml}
+let new_scheduler f = 
+  let handle = ref None in @\label{ln:new_sched_ref}@
+  let register = (fun waker -> @\label{ln:new_sched_register}@ 
+    let thread_fun = (fun () ->
+      let result = run f in @\label{ln:new_sched_run}@
+      waker (); @\label{ln:new_sched_waker}@
+      result
+    ) in
+    let join_handle = thread_fork thread_fun in @\label{ln:new_sched_fork}@
+    handle := Some join_handle @\label{ln:new_sched_set}@
+  ) in
+  suspend register; @\label{ln:new_sched_suspend}@
+  match !handle with  @\label{ln:new_sched_match}@
+  | None -> error "impossible" @\label{ln:new_sched_error}@
+  | Some join_handle -> thread_join join_handle @\label{ln:new_sched_join}@
+\end{minted}
+  \caption{Implementation of \ocamlin{Domain_manager.new_scheduler}.}
+  \label{fig:dm-impl}
+\end{figure}
+
+%must avoid blocking
+The main complexity of the implementation of \ocamlin{Domain_manager.new_scheduler} comes from avoiding this blocking behavior.
+As this function is called by fibers, blocking the current thread would prevent the scheduler of the current thread from switching to another fiber.
+This situation must be avoided and is a great source of complexity when calling blocking operations in a user-level concurrency context.
+
+% how the function works
+\ocamlin{Domain_manager.new_scheduler} solves this by suspending the calling fiber (line~\ref{ln:new_sched_suspend}) until the new thread is terminating.
+This is done by calling the \ocamlin{waker} function at the end of \ocamlin{thread_fun} (line~\ref{ln:new_sched_waker}) which is forked inside the \ocamlin{register} function (line~\ref{ln:new_sched_fork}) of the \esuspend{} effect.
+The resulting join handle is saved in a reference (line~\ref{ln:new_sched_set}) to be accessed later.
+By the time the original fiber continues execution, the new thread will have terminated, so it extracts the join handle from the reference and retrieves the thread's final value (line~\ref{ln:new_sched_join}) without blocking.
+
+\subsection{Specification and Changes to Logical State}
+% type + spec
+Because the function essentially delegates to \ocamlin{Scheduler.run}, it has the same type\footnote{\ocamlin{(unit -> 'a) -> 'a option}} and we were able to prove an analogous spec as shown below.
+\[
+  \inferrule[Spec-NewScheduler]
+  {\gsIsPr{} \ast \ewp{f\; ()}{\proto{2}}{v.\; \always \Phi\, v}}
+  {\ewp{new\_scheduler\; f}{\proto{2}}{v.\; \always \Phi\, v}}
+\]
+%
+% What we need to change
+However, we need to update several definitions to make this proof possible.
+One of them is the specification of the \esuspend{} effect, which is why we now say \(\proto{2}\).
+The match in line~\ref{ln:new_sched_match} is only safe because the reference is assigned a join handle in the register function which runs to completion before the effect returns.
+We track the status of the reference by reusing the \gsOneShotAssign{} ghost-state from figure~\ref{fig:promise-state-rules}.
+By performing the \esuspend{} effect we want to receive \gspdone{\gamma_{{\scriptscriptstyle \mathtt{handle}}}}, where \(\gamma_{{\scriptscriptstyle \mathtt{handle}}}\) is specific to the reference.
+Consequently, we update the protocol and its related definitions (shown in figure~\ref{fig:coop-protocol-2}) so that \esuspend{} additionally returns a persistent resource\footnote{We think it is possible to formulate the protocol with an arbitrary resource, but it would complicate the construction of the deferred queue that follows. For our purpose of proving \textsc{Spec-NewScheduler} the persistent \(S\) is enough.}
+\(\S\) that results from calling the \ocamlin{register} function.
+
+\begin{figure}[ht]
+  \begin{align*}
+    \gsIsWaker{}\; wkr\; W    & \triangleq \forall v.   \;  W\; v \wand{} \ewp{wkr\; v}{\bot}{\top}\label{spec:is_waker-2}                                                              \\
+    \gsIsReg{2}\; reg\; W\; S & \triangleq \forall wkr. \; \gsIsWaker{}\; wkr\; W \wand{} \ewp{reg\; wkr}{\bot}{\always S}                                                              \\
+    \proto{2}                 & \triangleq \begin{aligned}[t]
+                                             Fork\;    & \# \; !\; e\; (e)\; \left\{\later \ewp{e\;()}{\proto{1}}{\top}\right\}. ?\; ()\; \{ \top \}                          \\
+                                             Suspend\; & \# \; !\; reg\; W\; S\; (reg)\; \left\{\gsIsReg{2}\; reg\; W\; S\right\}.?\; y\; (y)\; \left\{ W\; y \ast S \right\}
+                                           \end{aligned}
+  \end{align*}
+  \caption{Definition of \proto{2} protocol with \efork{} \& \esuspend{} effects.}
+  \label{fig:coop-protocol-2}\label{spec:suspend-2}
+\end{figure}
+%
+As a result of changing the effect postcondition, the continuation \ocamlin{k} of \esuspend{} that the effect handler receives now also has \(S\) as a precondition.
+\[
+  \forall v.\; W\; v \wand{} S \wand \ewp{k\; ()}{\bot}{\top}
+\]
+Recall that the \ocamlin{waker} function receives \(W\; v\) and pushes \ocamlin{k} into the scheduler's run queue, where the queue invariant says that \ocamlin{k} must be callable as-is.
+Since \ocamlin{waker} is called from a different thread -- and might even be called before the \ocamlin{register} function finishes -- it cannot supply the \(S\).
+Therefore, when \ocamlin{k} is pushed into the queue it is still missing the \(S\) to satisfy the queue invariant, so we must change the specification of the run queue to allow pushing elements that temporarily do not satisfy the queue invariant.
+
+\subsection{Specification for a Deferred Queue}
+We call such a queue a \emph{deferred queue}, because the queue invariant can temporarily be violated but must be repaired eventually.
+We proved a suitable specification for a standard implementation of a multi-producer, single-consumer (or \emph{mpsc}) queue.
+An mpsc queue has different resources for pushing and popping, the push resource is persistent and can be shared with multiple threads, while the pop resource is unique.
+The specification of our deferred queue is shown in figure~\ref{fig:dm-deferred-spec}.
+
+\begin{figure}[ht]
+  \begin{mathpar}
+    \inferrule[Spec-DQueueCreate]
+    { }
+    {\ewp{queue\_create\; ()}{\bot}{q.\; \forall I.\; \upd{} isQueueReader\; q\; I}}
+    % 
+    \inferrule[Spec-DQueueRegister]
+    {isQueueReader\; q\; I}
+    {\upd{} isQueue\; q\; I \ast fulfillPermission\; S \ast \exists \gamma.\; pushPermission\; \gamma\; S}
+    % 
+    \and
+    % 
+    \inferrule[Spec-DQueueFulfill]
+    {isQueue\; q\; I \ast fulfillPermission\; S \ast \always S}
+    {\upd{} isQueueReader\; q\; I}
+    % 
+    \and
+    % 
+    \and
+    % 
+    \inferrule[Spec-DQueuePush]
+    {isQueue\; q\; I \ast pushPermission\; \gamma\; S \ast \later (S \wand I\; v)}
+    {\ewp{queue\_push\; q\; v}{\bot}{\top}}
+    % 
+    \and
+    %
+    \inferrule[Spec-DQueuePop]
+    {isQueueReader\; q\; I}
+    {\ewp{queue\_pop\; q}{\bot}{v'.\; isQueueReader\; q\; I \ast (\ulcorner v' = None \urcorner \vee \exists v.\; \ulcorner v' = Some\; v \urcorner \ast I\; v)}}
+  \end{mathpar}
+  \caption{Specification of a deferred queue.}
+  \label{fig:dm-deferred-spec}
+\end{figure}
+
+% Explanation what the operations do
+\(isQueue\) is the invariant containing the state of the queue and is therefore persistent.
+\(isQueueReader\) is the same as \(isQueue\) with an additional token to make it unique and represents the pop permission.
+Using \textsc{Spec-DQueueRegister} for some \(S\), the \(isQueueReader\) can be exchanged for an affine \(fulfillPermission\; S\) and a persistent \(pushPermission\; \gamma\; S\).
+The latter allows pushing elements that are missing an \(S\) to fulfill the queue invariant \(I\; v\) according to \textsc{Spec-DQueuePush}.
+We do this by internally converting the whole queue invariant to the predicate \(I' v \triangleq S \wand I\; v\).
+Elements already in the queue, satisfying \(I\; v\), can be trivially converted to this form by ignoring the \(S\) and new elements inserted by \textsc{Spec-DQueuePush} satisfy \(I'\) by definition.
+Since every element is now missing an \(S\) we can use \textsc{Spec-DQueueFulfill} with \(\always S\) to restore the original invariant and get back the \(isQueueReader\) by supplying each element with one copy of \(S\).
+As a result, the pop operation has a standard specification \textsc{Spec-DQueuePop}, if it returns an element \(v\) it will always satisfy \(I\; v\).
+
+% Shortly explain the logical state of the queue with that illustration.
+
+\subsection{Integrating the Deferred Queue into the Scheduler}
+Since our deferred queue reuses the code from the \ocamlin{Queue} module, we do not need to update the source code of \ocamlin{Scheduler.run}.
+But we must amend the proof of \textsc{Spec-Run}, namely the case for handling the \esuspend{} effect, shown below because the queue specifications changed.
+\begin{minted}[escapeinside=@@]{ocaml}
+match fiber () with
+...
+| @\texttt{\textbf{effect}}@ (Suspend register) k =>
+    let waker = fun v -> Queue.push run_queue (fun () -> invoke k v) in
+    register waker;
+    next ()
+\end{minted}
+First, do to a pop operation, the \ocamlin{execute} function now needs the unique \(isQueueReader\) resource.
+Since we call \ocamlin{execute} recursively for each fiber, we must pass this resource to each fiber continuation when running it.
+The queue invariant therefore becomes recursive, where \(isQueueReader\) is passed into and out of every continuation in the queue.
+\[
+  \gsReady{2}\; q\; f \triangleq\; \later isQueueReader\; q\; (\gsReady{2}\; q) \wand \ewp{f\; ()}{\bot}{\later isQueueReader\; q\; (\gsReady{2}\; q)}
+\]
+Before constructing the \ocamlin{waker} function we must now use \textsc{Spec-DQueueRegister} to temporarily change the queue invariant to \(\lambda k.\; S \wand \gsReady{2}\; q\; k\) and obtain a \(pushPermission\; \gamma\; S\).
+Using this resource we can then prove that \ocamlin{waker} still satisfies \(\gsIsWaker{}\).
+After calling the \ocamlin{register} function we obtain the resource \(S\) and can use \textsc{Spec-DQueueFulfill} to restore the queue invariant and receive the \(isQueueReader\) resource.
+This resource is then passed to \ocamlin{next} to pop a \(\gsReady{2}\) continuation from the queue and is then passed to the continuation itself.
+
+\paragraph*{}
+To summarize, using a non-standard \emph{deferred} queue specification we were able to strengthen the specification of the \esuspend{} protocol.
+This was needed to prove the specification of Eio's domain manager because it relies on pushing unsafe functions to the scheduler's run queue that become safe to execute by the time the scheduler attempts to pop the next element from the queue.
+Our deferred queue specification works generically for an mpsc queue without changing its code, and we conjecture that a stronger specification with a non-persistent \(S\) is provable, but unnecessary in our case.
+

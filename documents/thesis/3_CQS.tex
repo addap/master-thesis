@@ -127,8 +127,10 @@ We instantiate \(R\) with \gspdone{} so that the callback transports the knowled
 
 \begin{align*}
   \gsIsCb{}\; cb\; R                            & \triangleq R \wand \ewp{cb\; ()}{\bot}{\top}                                                           \\
-  \emph{isBroadcastRegisterResult}\; r\; cb\; R & \triangleq (\ulcorner r = Invoked \urcorner)                                                           \\
-                                                & \quad \vee (\ulcorner r = Registered\; h \urcorner \ast \emph{isBroadcastRegisterHandle}\; h\; cb\; R) \\
+  \emph{isBroadcastRegisterResult}\; r\; cb\; R & \triangleq \begin{aligned}[t]
+                                                  & (\ulcorner r = Invoked \urcorner)                                                           \\
+                                                \vee\; & (\ulcorner r = Registered\; h \urcorner \ast \emph{isBroadcastRegisterHandle}\; h\; cb\; R) 
+                                                \end{aligned}\\
   \emph{isBroadcastRegisterHandle}              & : Val \to Val \to iProp \to iProp
 \end{align*}
 

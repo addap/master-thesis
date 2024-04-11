@@ -1,2 +1,155 @@
 \section{Evaluation}
 \label{sec:evaluation}
+We evaluate our model of Eio on a simple example program that uses all features supported by our implementation.
+The example program (shown in figure~\ref{fig:eval_code}) may look contrived since it does not do any "useful" computation, but the value of Eio as a library comes from composing computations -- not in what is computed concretely.
+
+The program's \ocamlin{main_fiber} function forks off a new fiber \ocamlin{dispatch} (line~\ref{ln:eval_dispatch}) and communicates with it over a one-element channel represented by the thread-local variable.
+The channel is initially empty (first argument to \ocamlin{Scheduler.run} in line~\ref{ln:eval_none}) and \ocamlin{dispatch} polls for data (line~\ref{ln:eval_wait}).
+\ocamlin{main_fiber} sends one integer \ocamlin{data} (lines~\ref{ln:eval_receive},\ref{ln:eval_send}) to \ocamlin{dispatch} which will then run two copies of \ocamlin{(work data)} (line~\ref{ln:eval_thread}) in separate threads, and sum their results.
+The \ocamlin{work} function simulates time passing using the \ocamlin{yield} function (line~\ref{ln:eval_work}) and returns its first argument.
+Yield performs a \esuspend{} effect but calls the \ocamlin{waker} function immediately, which has the effect of placing the current fiber at the back of the scheduler's run queue to give other fibers a chance to run.
+
+The example program therefore uses the basic functions for forking and awaiting the completion of fibers, multiple schedulers running in different threads, as well as thread-local variables to communicate between fibers within one thread.
+
+\begin{figure}[ht]
+    \begin{minted}[escapeinside=@@]{ocaml}
+let yield () = @\label{ln:eval_yield}@
+  perform (Suspend (fun waker -> waker ()))
+
+let work x () = 
+  yield (); @\label{ln:eval_work}@
+  x
+
+let rec wait_for_read tlv =
+  match !tlv with
+  | None -> yield (); wait_for_read tlv
+  | Some data -> tlv <- None; data @\label{ln:eval_receive}@
+
+let dispatch () =
+  let tlv = get_context ().tlv in
+  let data = wait_for_data tlv in @\label{ln:eval_wait}@
+  let p1 = Fiber.fork_promise (Domain_manager.run (work data)) in @\label{ln:eval_thread}@
+  let p2 = Fiber.fork_promise (Domain_manager.run (work data)) in
+  let r1 = Promise.await p1 in
+  let r2 = Promise.await p2 in
+  r1 + r2
+
+let main_fiber data () =
+  let p = Fiber.fork_promise dispatch in @\label{ln:eval_dispatch}@
+  let tlv = get_context ().tlv in
+  tlv <- Some data @\label{ln:eval_send}@
+  Promise.await p
+
+let main () = 
+  Scheduler.run None (main_fiber 21) @\label{ln:eval_none}@
+\end{minted}
+    \caption{Example program to use all implemented features.}
+    \label{fig:eval_code}
+\end{figure}
+
+We first give the final specifications of the most important components of our model library in figure~\ref{fig:eval-total}.
+The specifications contain both extensions we discussed in sections~\ref{sec:domain-manager} and~\ref{sec:thread-local-vars}.
+
+\begin{figure}[ht]
+    \begin{align*}
+        \gsReady{}~l~\Omega~\gamma~q~k & \triangleq \begin{aligned}[t]
+                                                         & \gsFiberResources{l}{\Omega} \wand                                                                                                           \\
+                                                         & \later isQueueReader~q~(\gsReady{}~l~\Omega~\gamma~q) \wand                                                                                  \\
+                                                         & \quad \ewp{k~()}{\bot}{\_.\; \gsFiberResources{l}{\Omega} \ast \later isQueueReader~q~(\gsReady{}~l~\Omega~\gamma~q) \ast \gspdone{\gamma} }
+                                                    \end{aligned} \\
+        \gsIsWaker{}~wkr~W             & \triangleq \forall v.   \;  W\; v \wand{} \ewp{wkr\ \ v}{\bot}{\top}                                                                                                \\
+        \gsIsReg{}~reg~W~S             & \triangleq \forall wkr. \; \gsIsWaker{}\; wkr\; W \wand{} \ewp{reg\ \ wkr}{\bot}{\always S}                                                                         \\
+        \proto{}~l~\Omega              & \triangleq \begin{aligned}[t]
+                                                        Fork\;       & \#\; \begin{aligned}[t]
+                                     & !\; e\; ((l, e))\; \begin{aligned}[t]
+                                           & \big\{ \gsFiberResources{l}{\Omega} \ast                                                                              \\
+                                           & \later\; (\gsFiberResources{l}{\Omega} \wand{} \ewp{e\ \ ()}{\proto{}~l~\Omega}{\gsFiberResources{l}{\Omega}}) \big\}
+                                      \end{aligned} . \\
+                                     & ?\; ()\; \{ \gsFiberResources{l}{\Omega} \}
+                                \end{aligned}                                             \\
+                                                        Suspend\;    & \#\; \begin{aligned}[t]
+                                     & !\; reg\; W\; S\; (reg)\; \{\gsFiberResources{l}{\Omega} \ast \gsIsReg{}\; reg\; W\; S\}. \\
+                                     & ?\; v\; (v)\; \{ \gsFiberResources{l}{\Omega} \ast W~v \ast S \}
+                                \end{aligned} \\
+                                                        GetContext\; & \#\; !\; ()\; \{\top\}.\; ?\; (l)\; \{ \top \}
+                                                    \end{aligned}
+    \end{align*}
+    \begin{mathpar}
+        \inferrule[Spec-Run]
+        { \Omega~init \;\ast \\\\ \forall l_{tlv}.\; \gsFiberResources{l_{tlv}}{\Omega} \wand \ewp{main\ \ ()}{\proto{}~l_{tlv}~\Omega}{v.\; \always \Phi~v \ast \gsFiberResources{l_{tlv}}{\Omega}} }
+        { \ewp{run\ \ init\ \ main}{\bot}{v.\; \always \Phi~v \ast \gsFiberResources{l_{tlv}}{\Omega}} }
+        %
+        \and
+        %
+        \inferrule[Spec-ForkPromise]
+        { \gsPInv{} \ast \gsFiberResources{l_{tlv}}{\Omega} \;\ast \\\\ \gsFiberResources{l_{tlv}}{\Omega} \wand \ewp{f\ \ ()}{\proto{}~l_{tlv}~\Omega}{v.\; \always \Phi~v \ast \gsFiberResources{l_{tlv}}{\Omega}} }
+        { \ewp{fork\_promise\ \ f}{\proto{}~l_{tlv}~\Omega}{p.\; \gsIsPr{}~p~\Phi \ast \gsFiberResources{l_{tlv}}{\Omega}} }
+        %
+        \and
+        %
+        \inferrule[Spec-Await]
+        { \gsPInv{} \ast \gsFiberResources{l_{tlv}}{\Omega} \ast \gsIsPr{}~p~\Phi }
+        { \ewp{await\ \ p}{\proto{}~l_{tlv}~\Omega}{p.\; \gsIsPr{}~p~\Phi \ast \gsFiberResources{l_{tlv}}{\Omega}} }
+        %
+        \and
+        %
+        \inferrule[Spec-NewScheduler]
+        { \Omega'~init \;\ast \\\\ \forall l'_{tlv}.\; \gsFiberResources{l'_{tlv}}{\Omega} \wand \ewp{main\ \ ()}{\proto{}~l'_{tlv}~\Omega'}{v.\; \always \Phi~v \ast \gsFiberResources{l'_{tlv}}{\Omega'}} }
+        { \ewp{new\_scheduler\ \ init\ \ main}{\proto{}~l~\Omega}{v.\; \always \Phi~v \ast \gsFiberResources{l}{\Omega}} }
+    \end{mathpar}
+
+    \caption{Specification of the public interface of the Eio library model.}
+    \label{fig:eval-total}
+\end{figure}
+
+Using these specifications we proved the safety of the example program and its functional correctness by establishing specifications for each function as shown in figure~\ref{fig:eval-spec}.
+We can see that there is some amount of boilerplate (colored in {\color{blue} blue}).
+Each function that yields execution to another fiber by performing an effect -- either directly or indirectly through another function call -- needs \({\color{blue}\gsFiberResources{l_{tlv}}{\Omega}}\), which signifies the ownership over the thread-local variable.
+Additionally, any fiber that wants to fork off another fiber using \ocamlin{Fiber.fork_promise} needs the persistent \({\color{blue}\gsPInv{}}\) resource to interact with the global collection of promises.
+The predicate \(\Omega_{chan}~\gamma\) as part of \(\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}\) restricts the thread-local variable \(l_{tlv}\) to be a channel for a single message \(n\).
+
+\begin{figure}[ht]
+    \begin{align*}
+        \Omega_{chan}~\gamma~v & \triangleq \begin{aligned}[t]
+                                                       & \ulcorner v = None \urcorner                                                    \\[-5pt]
+                                                \vee\; & \exists n.\; \ulcorner v = Some~n \urcorner \ast \ownGhost{\gamma}{\aginj{}(n)}
+                                            \end{aligned} \\
+    \end{align*}
+    \begin{mathpar}
+        \inferrule[Spec-Work]
+        { {\color{blue}\gsFiberResources{l_{tlv}}{\Omega}} }
+        { \ewp{work\ \ n\ \ ()}{\proto{}~l_{tlv}~\Omega}{v.\; \ulcorner v = n \urcorner \ast {\color{blue}\gsFiberResources{l_{tlv}}{\Omega}}} }
+        %
+        \and
+        %
+        \inferrule[Spec-WaitForData]
+        { {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}} }
+        { \ewp{wait\_for\_data\ \ l}{\proto{}}{v.\; \exists n.\; \ulcorner v = n \urcorner \ast \ownGhost{\gamma}{\aginj{}(n)} \ast {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}}} }
+        %
+        \and
+        %
+        \inferrule[Spec-Dispatch]
+        { {\color{blue}\gsPInv{}} \ast {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}} }
+        { \ewp{dispatch\ \ ()}{\proto{}}{v.\; \exists n.\; \ulcorner v' = n + n \urcorner \ast \ownGhost{\gamma}{\aginj{}(n)} \ast {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}}} }
+        %
+        \and
+        %
+        \inferrule[Spec-MainFiber]
+        { {\color{blue}\gsPInv{}} \ast {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}} \ast \ownGhost{\gamma}{\aginj{}(n)} }
+        { \ewp{main\_fiber\  n\  ()}{\proto{}}{v.\; \ulcorner v = n + n \urcorner \ast {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}}} }
+        %
+        \and
+        % 
+        \inferrule[Spec-Main]
+        { }
+        { \ewp{main\ \ ()}{\bot}{v.\; \ulcorner v = 42 \urcorner} }
+    \end{mathpar}
+    \caption{Specification of the example program.}
+    \label{fig:eval-spec}
+\end{figure}
+
+While we proved the safety of this program (and of the core abstractions of the Eio library), the complete Eio library has more features that are still unexplored.
+This includes cancellation of fibers, resource management using switches and several operating system primitives like timers, so we cannot make any statements about programs using these features.
+Nevertheless, our model is an important step in the direction of proving the safety of Eio and programs that use it.
+Iris along with its features like ghost state and shareable invariants to reason about multithreaded and stateful code were key in this development.
+

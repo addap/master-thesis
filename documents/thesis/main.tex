@@ -16,8 +16,9 @@
 \usepackage{makecell}
 \usepackage{cancel}
 \usepackage{xcolor}
+\usepackage[misc]{ifsym}
 \usepackage{longtable}
-% In case I need better line number links apparently I need to use listings. minted will always just link to the whole code.
+% In case \Psi need better line number links apparently \Psi need to use listings. minted will always just link to the whole code.
 % from https://tex.stackexchange.com/questions/24945/reference-source-code-line-in-minted-package
 % \usepackage{listings}
 
@@ -111,28 +112,28 @@
 \newcommand{\efork}{\emph{Fork}}
 \newcommand{\esuspend}{\emph{Suspend}}
 \newcommand{\egetctx}{\emph{GetContext}}
-\newcommand{\proto}{\emph{Coop}}
-\newcommand{\protod}{\emph{Coop}~\ensuremath{\delta}}
-\newcommand{\gsIsReg}{\emph{isRegister}}
-\newcommand{\gsIsWaker}{\emph{isWaker}}
+\newcommand{\proto}[1]{\ensuremath{Coop_{#1}}}
+\newcommand{\gsIsReg}[1]{\ensuremath{isRegister_{#1}}}
+\newcommand{\gsIsWaker}[1]{\ensuremath{isWaker_{#1}}}
 \newcommand{\gsIsCb}{\emph{isCallback}}
 \NewDocumentCommand\ewp{O{} m O{} m m}%
-  {\mathit{ewp}^{#1}_{#3}\spac\left(#2\right)\spac\left\langle#4\right\rangle\spac{\left\{#5\right\}}}
+  {\mathit{ewp}^{#1}_{#3}\spac\left(\mathtt{\scriptstyle #2}\right)\spac\left\langle#4\right\rangle\spac{\left\{#5\right\}}}
 \newcommand{\ewpt}{\emph{ewp}}
-\newcommand{\gsReady}{\emph{Ready}}
+\newcommand{\gsReady}[1]{\ensuremath{Ready_{#1}}}
 \newcommand{\gsPState}{\emph{PromiseState}}
 \newcommand{\gsPInvIn}{\emph{PInvInner}}
 \newcommand{\gsPInv}{\emph{PromiseInv}}
 \newcommand{\invN}{\ensuremath{\mathcal{N}}}
-\newcommand{\gsFiberResources}{\emph{fiberResources}}
+\newcommand{\gsFiberResources}[2]{\ensuremath{fiberResources~#1~#2}}
 \newcommand{\gsIsFiberContext}{\emph{isFiberContext}}
-\newcommand{\gsTLVAg}{\emph{tlvAg}}
+\newcommand{\gsTLVAg}[2]{\ensuremath{tlvAg~#1~#2}}
 \newcommand{\gsSavedPred}{\emph{savedPred}}
 \newcommand{\gsIsPr}{\emph{isPromise}}
 \newcommand{\gsIsQueue}{\emph{isQueue}}
 \newcommand{\gsIsBcst}{\emph{isBroadcast}}
-\newcommand{\gspwait}{\emph{promiseWaiting}~\ensuremath{\gamma}}
-\newcommand{\gspdone}{\emph{promiseDone}~\ensuremath{\gamma}}
+\newcommand{\gsOneShotAssign}{\ensuremath{OneShotAssign}}
+\newcommand{\gspwait}[1]{\ensuremath{osWaiting\;#1}}
+\newcommand{\gspdone}[1]{\ensuremath{osAssigned\;#1}}
 \newcommand{\gssignal}{\emph{signalAllPermit}}
 % A variable number of quads
 % https://tex.stackexchange.com/a/330591
@@ -163,6 +164,7 @@
 \include{1_Introduction}
 \include{2_Scheduler}
 \include{3_CQS}
+\include{4_DomainManager}
 \include{4_ThreadLocal}
 \include{5_Evaluation}
 \include{6_Conclusion}

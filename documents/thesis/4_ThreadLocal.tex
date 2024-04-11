@@ -1,10 +1,10 @@
-\section{Extending the Scheduler with Thread-Local Variables}
+\section{Adding Support for Thread-Local Variables}
 \label{sec:thread-local-vars}
 
 % General information about the GetContext effect and that it's used to implement thread-local variables
 
-So far we have looked at a protocol \(\proto{}\) that has two effects which suffice to model fibers that can suspend and fork off new fibers.
-But in Eio fibers can use an additional effect called \egetctx{} that we discuss in this section.
+So far we have looked at a protocol \(\proto{2}\) that has two effects which suffice to model fibers that can suspend and fork off new fibers.
+But fibers in Eio can use an additional effect called \egetctx{} that we discuss in this section.
 For each fiber the scheduler keeps track of context metadata, one part of which are \emph{thread-local variables}.
 Thread-local variables are state that is shared between all fibers of one scheduler (hence thread-local) and a fiber gets access to them via the \egetctx{} effect.
 
@@ -22,16 +22,16 @@ In Eio thread-local variables are represented by a dictionary from variable name
 However, it is still possible for fibers to arbitrarily modify the whole dictionary, so for demonstration purposes we model thread-local variables as a single mutable reference that is part of the context record: \ocamlin{ctx.tlv}.
 Properties we want to prove about thread-local variables are:
 \begin{enumerate}
-  \item Each time a fiber performs a \egetctx{} effect it receives the same reference.
-  \item As long as a fiber does not perform other effects like \efork{} or \esuspend{}, it holds exclusive ownership of the reference.
+    \item Each time a fiber performs a \egetctx{} effect it receives the same reference.
+    \item As long as a fiber does not perform other effects like \efork{} or \esuspend{}, it holds exclusive ownership of the reference.
 \end{enumerate}
 
 Code examples illustrating the properties are shown in figure~\ref{fig:tlv-example}.
 Note that these are only the most basic properties showing that \ocamlin{ctx.tlv} acts like a normal reference, but one that can be accessed via an effect.
 To enable modular proofs of concrete fibers using thread-local variables, we include in our logical definition a predicate \(T\) on the stored value that can be instantiated by fibers as needed.
 
-\begin{figure}
-  \begin{minted}{ocaml}
+\begin{figure}[ht]
+    \begin{minted}{ocaml}
 let fiber1 () =
   let ctx = perform (GetContext ()) in
   let ctx2 = perform (GetContext ()) in
@@ -44,8 +44,8 @@ let fiber2 () =
   ...
   assert (!ctx.tlv == v)
   \end{minted}
-  \caption{Constructed example of safety for thread-local variables.}
-  \label{fig:tlv-example}
+    \caption{Constructed example of safety for thread-local variables.}
+    \label{fig:tlv-example}
 \end{figure}
 
 \subsection{Changes to Logical State}
@@ -63,14 +63,14 @@ This predicate represents all resources that a fiber owns while it is running, s
 Finally, we must change the definition of \(\gsReady{}\) to require \(\gsFiberResources{}\) as a precondition because it is needed to invoke the continuations saved in the scheduler's run-queue.
 
 \begin{figure}[ht]
-  \begin{align*}
-    \gsTLVAg{}\; \delta\; tlv \triangleq\;            & \ownGhost{\delta}{agree(tlv)}  \qquad \textrm{Persistent}(\gsTLVAg{}\; \delta\; tlv)                      \\
-    \gsIsFiberContext{}\; \delta\; tlv\; \triangleq\; & \gsTLVAg{}\; \delta\; tlv \ast \exists T\; v.\; tlv \mapsto v \ast \gsSavedPred{}\; \delta\; T \ast T\; v \\
-    \gsFiberResources{}\; \delta\; \triangleq\;       & \exists\; tlv.\; \gsIsFiberContext{}\; \delta\; tlv\;                                                     \\
-    \gsReady{}\; \delta\; f \triangleq\;              & \gsFiberResources{}\; \delta\; \wand{} \ewp{f\; ()}{\bot}{\top}
-  \end{align*}
-  \caption{Logical state definitions for the verification of our Eio model.}
-  \label{fig:logical-state-ext}
+    \begin{align*}
+        \gsTLVAg{}\; \delta\; tlv \triangleq\;            & \ownGhost{\delta}{agree(tlv)}  \qquad \textrm{Persistent}(\gsTLVAg{\delta}{tlv})                          \\
+        \gsIsFiberContext{}\; \delta\; tlv\; \triangleq\; & \gsTLVAg{}\; \delta\; tlv \ast \exists T\; v.\; tlv \mapsto v \ast \gsSavedPred{}\; \delta\; T \ast T\; v \\
+        \gsFiberResources{}\; \delta\; \triangleq\;       & \exists\; tlv.\; \gsIsFiberContext{}\; \delta\; tlv\;                                                     \\
+        \gsReady{}\; \delta\; f \triangleq\;              & \gsFiberResources{}\; \delta\; \wand{} \ewp{f\; ()}{\bot}{\top}
+    \end{align*}
+    \caption{Logical state definitions for the verification of our Eio model.}
+    \label{fig:logical-state-ext}
 \end{figure}
 
 The effect protocols of \efork{} and \esuspend{} are amended so that they pass \(\gsFiberResources{}\) from a fiber to the scheduler and from there to the next running fiber via the protocol pre- and postconditions as shown in figure~\ref{fig:coop-protocol-ext}.
@@ -78,28 +78,28 @@ The \efork{} effect now also passes the concrete reference that should be used a
 A fiber uses the \egetctx{} effect to receive the fiber context value and a copy of \(\gsTLVAg{}\).
 This is used to show that the reference \(ctx.tlv\) is equal to the one from \(\gsFiberResources{}\) that the fiber already owns so that the contained points-to predicate can be used.
 
-The crux is that now the protocol \protod{} is parameterized by the ghost name \(\delta\) that identifies the thread-local variable.
+The crux is that now the protocol \proto{} is parameterized by the ghost name \(\delta\) that identifies the thread-local variable.
 This so that both the fiber and the scheduler agree on this ghost name.
 
 \begin{figure}[ht]
-  \begin{equation*}
-    \protod{} \triangleq \begin{aligned}[t]
-      Fork\;       & \#\; \begin{aligned}[t]
-                             & !\; tlv\; e\; ((tlv, e))\; \begin{aligned}[t]
-                                         & \big\{ \gsFiberResources{}\; \delta\; T \ast \gsTLVAg{}\; \delta\; tlv\; \ast                              \\
-                                         & \later\; (\gsFiberResources{}\; \delta\; T \wand{} \ewp{e}{Coop}{\gsFiberResources{}\; \delta\; T}) \big\}
-                                      \end{aligned} . \\
-                             & ?\; ()\; \{ \gsFiberResources{}\; \delta\; T \}
-                          \end{aligned}                                 \\
-      Suspend\;    & \#\; \begin{aligned}[t]
-                             & !\; reg\; P\; (reg)\; \{\gsFiberResources{}\; \delta\; T \ast \gsIsReg{}\; reg\; P\}. \\
-                             & ?\; y\; (y)\; \{ \gsFiberResources{}\; \delta\; T \ast P\; y \}
-                          \end{aligned} \\
-      GetContext\; & \#\; !\; ()\; \{\top\}.\; ?\; ctx\; (ctx)\; \{ \gsTLVAg{}\; \delta\; ctx.tlv \}
-    \end{aligned}
-  \end{equation*}
-  \caption{Definition of extended \protod{} protocol with \efork{}, \esuspend{}, and \egetctx{} effects.}
-  \label{fig:coop-protocol-ext}
+    \begin{equation*}
+        \proto{}~\delta \triangleq \begin{aligned}[t]
+            Fork\;       & \#\; \begin{aligned}[t]
+                                     & !\; tlv\; e\; ((tlv, e))\; \begin{aligned}[t]
+                                                   & \big\{ \gsFiberResources{}\; \delta\; T \ast \gsTLVAg{}\; \delta\; tlv\; \ast                              \\
+                                                   & \later\; (\gsFiberResources{}\; \delta\; T \wand{} \ewp{e}{Coop}{\gsFiberResources{}\; \delta\; T}) \big\}
+                                              \end{aligned} . \\
+                                     & ?\; ()\; \{ \gsFiberResources{}\; \delta\; T \}
+                                \end{aligned}                                 \\
+            Suspend\;    & \#\; \begin{aligned}[t]
+                                     & !\; reg\; W\; (reg)\; \{\gsFiberResources{}\; \delta\; T \ast \gsIsReg{}\; reg\; W\}. \\
+                                     & ?\; y\; (y)\; \{ \gsFiberResources{}\; \delta\; T \ast W\; y \}
+                                \end{aligned} \\
+            GetContext\; & \#\; !\; ()\; \{\top\}.\; ?\; ctx\; (ctx)\; \{ \gsTLVAg{}\; \delta\; ctx.tlv \}
+        \end{aligned}
+    \end{equation*}
+    \caption{Definition of extended \proto{} protocol with \efork{}, \esuspend{}, and \egetctx{} effects.}
+    \label{fig:coop-protocol-ext}
 \end{figure}
 
 These changes suffice to prove the safety of the two examples in figure~\ref{fig:tlv-example}.
