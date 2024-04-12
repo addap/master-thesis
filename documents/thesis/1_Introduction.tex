@@ -50,7 +50,7 @@ Separation logics have been successfully applied in many program verification de
 Iris is not only a separation logic, but a whole separation logic framework implemented in Coq that can be instantiated with different programming languages.
 This allows us to layer different \emph{program logics} on top of the base separation logic, which contain additional reasoning rules about the evaluation of programs in a concrete language.
 Verifying a program in Iris follows the schema of first deciding which specifications are necessary for each of the program's components.
-These are expressed using predicates in the logic, which we will call the \emph{logical state definitions}.
+These are expressed using predicates in the logic, which we call the \emph{logical state definitions}.
 If necessary, one can also use so-called \emph{ghost state},
 which is a versatile feature of Iris that allows keeping track of program state and mutating it during a proof.
 For complicated programs we often define ghost state and derive additional rules that modify it, in order to model the complex state space and state transitions of the program execution.
@@ -77,11 +77,11 @@ However, it does not support effect handlers as present in \ocf{}.
 So for reasoning about programs with effect handlers we use the \hazel{} language for Iris.
 
 \paragraph{Effect Handlers}
-Effect handlers are a versatile concept explored in some research languages~\cite{koka,eff} and now also implemented in \ocf{}.
-The \ocf{} implementation brings with it an extensible variant type \ocamlin{Effect.t}, meaning one can add new constructors to the type, and a keyword \ocamlin{perform} to perform an effect,
-which transfers control to an appropriate effect handler.
-They are often called "resumable exceptions" because analogous to exception handlers, one installs an effect handler around an expression \ocamlin{e} to handle its effects,
+\emph{Effect handlers}~\cite{plotkin2013handling} (and the related concept of \emph{algebraic effects}) are a versatile concept explored in some research languages~\cite{eff,koka} and now also implemented in \ocf{}~\cite{ocamleff}.
+They are often called \emph{resumable exceptions} because analogous to exception handlers, one installs an effect handler around an expression \ocamlin{e} to handle its effects,
 but the effect handler also receives a delimited continuation \ocamlin{k}, representing the rest of the computation of \ocamlin{e} from the point where the effect was performed.
+The \ocf{} implementation brings with it an extensible variant type \ocamlin{Effect.t}, meaning one can add new constructors to the type to define effects, and a keyword \ocamlin{perform} to perform an effect,
+which transfers control to an appropriate effect handler.
 
 We present code examples in a simplified \ocf{} syntax\footnote{This syntax is planned to be implemented in \ocf{} in the future: \url{https://github.com/ocaml/ocaml/pull/12309}}
 as shown in figure~\ref{fig:effect-example}, because the concrete syntax of effect handlers is verbose.

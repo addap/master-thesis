@@ -1,98 +1,112 @@
-\section{Verifying a Simplified Eio Scheduler with Promises}
+\section{Verifying a Basic Eio Scheduler}
 \label{sec:scheduler}
 
-\todo{Mention that all code examples are an OCaml rendering of the verified \hazel{} code, based on but not equal to the Eio code}
-
 Cooperative concurrency schedulers for user-level threads (i.e. \emph{fibers}) are commonly treated in the literature
-on effect handlers~\cite{dolan2018concurrent,leijen2017structured,de2021separation} to because they are a good example for the usefulness
+on effect handlers~\cite{dolan2018concurrent,leijen2017structured,de2021separation} because they are a good example for the usefulness
 of manipulating delimited continuations with effect handlers.
-Generally, the architecture contains an effect handler as the scheduler and fibers are normal functions which perform effects to yield execution.
-This is because performing an effect causes execution to jump to the enclosing effect handler (i.e. the scheduler), providing it with the rest of the fiber's computation in the form of a delimited continuation.
-The scheduler keeps track of a collection of these continuations and by invoking one of them the next fiber is scheduled.
+Generally, the scheduler contains an effect handler and fibers are normal functions which perform effects to yield execution.
+Performing an effect causes execution to jump to the enclosing effect handler, providing it with the rest of the fiber's computation in the form of a delimited continuation.
+The scheduler keeps track of a collection of these continuations and by invoking one of them it can schedule the next fiber.
 This approach is also used in Eio.
 
-We can therefore use the simple cooperative concurrency scheduler case study from the dissertation of de Vilhena~\cite{de2022proof} as a starting point for our verification work.
-In the following section we first discuss our simplified implementation of Eio and give an intuition about the specification of each component.
+In the following we define a basic model of the Eio scheduler and related data structures such as promises.
+Throughout the thesis we then extend this model with more features.
+We first discuss the implementation of our model and give an intuition about the behavior of each component in section~\ref{sec:sched-impl}.
 Based on this intuition we then build a formalization in section~\ref{sec:sched-spec}.
+We mechanize our development in the Coq proof assistant and use the simple cooperative concurrency scheduler case study from the dissertation of de Vilhena~\cite{de2022proof} (Chapter 4) as a basis.
 
 \subsection{Implementation}
 \label{sec:sched-impl}
 
-Let us first get an idea of how different components of the core Eio fiber abstraction interact by looking at their types.
-\ocamlin{Scheduler.run}\footnote{The scheduler's result is optional because the main fiber might deadlock.} is the main entry point to Eio.
-It runs a scheduler and is provided a function which represents the first fiber to be executed.
-A scheduler runs the main fiber and all forked off fibers in a single thread.
-However, a fiber can also spawn new schedulers in separate threads to run other fibers in parallel as detailed in appendix~\ref{sec:apdx-mt}.
-The \ocamlin{Fiber.fork_promise} function is used to spawn fibers in the current scheduler.
-The function returns a promise holding the eventual return value of the new fiber.
-The promise is thread-safe so that it can be shared with fibers running in different threads.
-The \ocamlin{Promise.await} function can be used by any fiber to wait until the value of a promise is available.
-Common problems like deadlocks are not prevented in any way and are the responsibility of the programmer.
-% The function sends the fiber to the scheduler by performing an effect, so it must always be called from a fiber itself.
+Let us first get an idea of how the different core elements of Eio interact by looking at their types.
+The code we present throughout the thesis is \ocf{} code that represents the \hh{} code we verify.
 
 \begin{minted}{ocaml}
   (* Basic interface of the Eio library. *)
-  Scheduler.run : (unit -> 'a) -> 'a option
+  Scheduler.run : (unit -> 'a) -> 'a
   Fiber.fork_promise : (unit -> 'a) -> 'a Promise.t
   Promise.await : 'a Promise.t -> 'a
 \end{minted}
+
+\ocamlin{Scheduler.run} is the main entry point to Eio.
+It runs a scheduler and is provided a function which represents main fiber.
+A scheduler runs the main fiber and all forked off fibers in a single thread.
+However, in Eio a fiber can also spawn new schedulers in separate threads to run other fibers in parallel.
+We extend our model with this feature in section~\ref{sec:domain-manager}, but in this section we already assume that fibers can run in different threads to build key data structures in a thread-safe way.
+
+The \ocamlin{Fiber.fork_promise} function is used to spawn fibers in the current scheduler.
+The function returns a promise holding the eventual return value of the new fiber.
+The promise is thread-safe so that it can be shared with fibers running in different threads.
+The \ocamlin{Promise.await} function can be used by any fiber to suspend execution until the value of a promise is available.
+Common problems like deadlocks are not prevented in any way and are the responsibility of the programmer.
 
 \subsubsection{\ocamlin{Scheduler.run}}
 \label{sec:sched-impl-run}
 
 \begin{figure}[ht]
-    \begin{minted}[escapeinside=@@]{ocaml}
-effect Fork : (unit -> 'a) -> unit
-type 'a waker : 'a -> unit
-effect Suspend : ('a waker -> unit) -> 'a
+  \begin{minted}[escapeinside=@@]{ocaml}
+module Scheduler = struct
+  effect Fork : (unit -> unit) -> unit
+  type 'a waker : 'a -> unit
+  effect Suspend : ('a waker -> unit) -> 'a
 
-let run (main : unit -> 'a) : 'a option =
-  let run_queue = Lf_queue.create () in @\label{ln:run_queue}@
-  let next () = @\label{ln:run_next}@
-    match Lf_queue.pop run_queue with
-    | None -> ()
-    | Some cont -> cont () 
-  in
-  let rec execute fiber = @\label{ln:run_execute}@
-    match fiber () with
-    | () -> next () @\label{ln:run_value}@
-    | @\texttt{\textbf{effect}}@ (Fork fiber) k -> @\label{ln:run_fork}@
-        Lf_queue.push run_queue (fun () -> invoke k ()); @\label{ln:run_push}@
-        execute fiber @\label{ln:run_rec}@
-    | @\texttt{\textbf{effect}}@ (Suspend register) k => @\label{ln:run_suspend}@
-        let waker = fun v -> Lf_queue.push run_queue (fun () -> invoke k v) in @\label{ln:run_waker}@ 
-        register waker; @\label{ln:run_register}@
-        next ()
-  in
-  let result = ref None in
-  execute (fun () -> result := main ()); @\label{ln:run_main}@
-  !result @\label{ln:run_return}@
+  let run (main : unit -> 'a) : 'a =
+    let result = ref None in
+    let run_queue = Queue.create () in @\label{ln:run_queue}@
+    let next () = @\label{ln:run_next}@
+      match Queue.pop run_queue with
+      | None -> 
+        match !result with @\label{ln:run_check}@
+        | None -> next ()
+        | Some _ -> ()
+      | Some cont -> cont () 
+    in
+    let rec execute fiber = @\label{ln:run_execute}@
+      match fiber () with
+      | () -> next () @\label{ln:run_value}@
+      | @\texttt{\textbf{effect}}@ (Fork fiber) k -> @\label{ln:run_fork}@
+          Queue.push run_queue (fun () -> invoke k ()); @\label{ln:run_push}@
+          execute fiber @\label{ln:run_rec}@
+      | @\texttt{\textbf{effect}}@ (Suspend register) k => @\label{ln:run_suspend}@
+          let waker = fun v -> Queue.push run_queue (fun () -> invoke k v) in @\label{ln:run_waker}@ 
+          register waker; @\label{ln:run_register}@
+          next ()
+    in
+    execute (fun () -> result := main ()); @\label{ln:run_main}@
+    match !result with @\label{ln:run_return}@
+    | None -> error "impossible" @\label{ln:run_error}@
+    | Some result -> result
+end
   \end{minted}
-    \caption{Implementation of \ocamlin{Scheduler.run}.}
-    \label{fig:sched-impl-run}
+  \caption{Implementation of \ocamlin{Scheduler.run}.}
+  \label{fig:sched-impl-run}
 \end{figure}
 
 As mentioned above this is the main entry point to the Eio library and its code is shown in figure~\ref{fig:sched-impl-run}.
-It sets up the scheduler environment and runs the main fiber that is passed as an argument.
+It sets up the scheduler environment and then runs the main fiber (and every subsequent fiber) under an effect handler.
 
+The \ocamlin{result} reference eventually holds the final value of the main fiber.
 The \ocamlin{run_queue} (line~\ref{ln:run_queue}) contains closures that invoke the continuation of an effect.
-This represents ready fibers which can continue execution from the point where they performed an effect.
+The closures represent ready fibers which can continue execution from the point where they performed an effect.
 The \ocamlin{next} function (line~\ref{ln:run_next}) pops one fiber (i.e. function) from the \ocamlin{run_queue} and executes it.
-If no more ready fibers remain -- either because all fibers terminated or there is a deadlock -- the \ocamlin{next} function returns and the scheduler exits.
+If no more ready fibers remain, the function will check if the main fiber has already finished execution~\ref{ln:run_check} and if so it will also exit, which causes the scheduler to return the main fiber's final value~\ref{ln:run_return}.
+Otherwise, the main fiber's continuation exists \emph{somewhere} -- it could be deadlocked or just awaiting a promise from a different thread -- so the \ocamlin{next} function busy loops until a fiber becomes available again.
+Busy looping makes sense in this case because other threads can push values into the \ocamlin{run_queue}.
+For the verification we assume the specification of a suitable \ocamlin{Queue} module that supports thread-safe push and pop operations.
 
 The inner \ocamlin{execute} function (line~\ref{ln:run_execute}) is called once on each fiber to evaluate it and handle any performed effects.
 \subsubsection*{Value Case}
 The non-effect case of the \ocamlin{match} (line~\ref{ln:run_value}) only runs the next fiber because Eio adopts the convention that all fibers return a unit value and their real return value is handled out of band.
 \begin{itemize}
-    \item The main fiber is wrapped in a closure that saves its return value in a reference (line~\ref{ln:run_main}) that is read when the scheduler exits (line~\ref{ln:run_return}).
-    \item All other fibers are forked using \ocamlin{Fiber.fork_promise}, which wraps them in a closure that saves their return value in a promise.
+  \item The main fiber is wrapped in a closure that saves its return value in a reference (line~\ref{ln:run_main}).
+  \item All other fibers are forked using \ocamlin{Fiber.fork_promise}, which wraps them in a closure that saves their return value in a promise.
 \end{itemize}
 
 This emphasizes the fact that an Eio scheduler is only used for running fibers.
 The interaction between fibers waiting for values of other fibers is handled separately by promises.
 
 \subsubsection*{\efork{} Case}
-Handling a \efork{} effect (line~\ref{ln:run_fork}) is simple because it only carries a new \ocamlin{fiber} to be executed, so the handler recursively calls the \ocamlin{execute} function (line~\ref{ln:run_rec}) to execute it immediately.
+Handling a \efork{} effect (line~\ref{ln:run_fork}) is simple because it only carries a new \ocamlin{fiber} to be executed, so the handler recursively calls \ocamlin{execute} (line~\ref{ln:run_rec}) on it.
 The execution of the original fiber is paused due to performing an effect and its continuation \ocamlin{k} is placed in the run queue so that it can be scheduled again (line~\ref{ln:run_push}).
 This prioritizes the execution of a new fiber and is a design decision by Eio.
 It would be equally valid to place the \ocamlin{fiber} argument in the run queue instead.
@@ -104,14 +118,11 @@ The fiber defines this condition by constructing a \ocamlin{register} function w
 The key point is that as long as the continuation \ocamlin{k} is not invoked, the fiber does not continue execution.
 So the \ocamlin{waker} function "wakes up" a fiber by placing its continuation \ocamlin{k} into the run queue (line~\ref{ln:run_waker}).
 The \ocamlin{register} function is called by the scheduler right after the fiber suspends execution (line~\ref{ln:run_register}) and is responsible for installing \ocamlin{waker} as a callback at a suitable place (or even call it directly).
-For example, to implement promises, the \ocamlin{waker} function is saved in a data structure that calls the function after the promise is fulfilled.
+For example, to implement awaiting promises, the \ocamlin{waker} function is saved in a data structure that calls the function after the promise is fulfilled.
 
 Note that the \ocamlin{waker} function's argument \ocamlin{v} has a \emph{locally abstract type}, which is a typical pattern in effect handlers.
 From the point of view of the fiber, the polymorphic type \ocamlin{'a} of the \esuspend{} effect is instantiated depending on how the effect's return value is used.
 But the scheduler does not get any information about this so the argument type of the continuation \ocamlin{k} and the \ocamlin{waker} function is abstract.
-
-Waking up must be possible across thread boundaries, which is why the \ocamlin{run_queue} in the scheduler is a thread-safe queue.
-For the verification we assume the specification of a suitable \ocamlin{Lf_queue} module that supports thread-safe push and pop operations, which exists in Eio under the same name.
 
 % <!-- In our simplified model of Eio, the `Suspend` effect is only performed in the implementation of `Promise.await` which registers the `waker` callback to be called when the promise is fulfilled. -->
 
@@ -119,75 +130,80 @@ For the verification we assume the specification of a suitable \ocamlin{Lf_queue
 \label{sec:sched-impl-fork}
 
 \begin{figure}[ht]
-    \begin{minted}[escapeinside=@@]{ocaml}
-(* promise.ml *)
-type 'a t = Done of 'a | Waiting of Broadcast.t
+  \begin{minted}[escapeinside=@@]{ocaml}
+module Promise = struct
+  type 'a t = Done of 'a | Waiting of Broadcast.t
 
-let create () : 'a t = 
-  let bcst = Broadcast.create () in
-  Atomic.create (Waiting bcst)
+  let create () : 'a t = 
+    let bcst = Broadcast.create () in
+    Atomic.create (Waiting bcst)
 
-let fulfill p result =
-  match Atomic.get p with
-  | Done _ -> error "impossible" @\label{ln:fork_error}@
-  | Waiting bcst ->
-      Atomic.set p (Done result);
-      Broadcast.signal_all bcst @\label{ln:fork_signal}@
+  let fulfill p result =
+    match Atomic.get p with
+    | Done _ -> error "impossible" @\label{ln:fork_error}@
+    | Waiting bcst ->
+        Atomic.set p (Done result);
+        Broadcast.signal_all bcst @\label{ln:fork_signal}@
+
+  (* ... *)
+end
   
-(* fiber.ml *)
-let fork_promise (f : unit -> 'a) : 'a Promise.t =
-  let p = Promise.create () in @\label{ln:fork_create}@
-  let fiber = fun () ->
-    let result = f () in
-    Promise.fulfill p result @\label{ln:fork_fulfill}@
-  in
-  perform (Fork fiber) @\label{ln:fork_perform}@
-  p
+module Fiber = struct
+  let fork_promise (f : unit -> 'a) : 'a Promise.t =
+    let p = Promise.create () in @\label{ln:fork_create}@
+    let fiber = fun () ->
+      let result = f () in
+      Promise.fulfill p result @\label{ln:fork_fulfill}@
+    in
+    perform (Fork fiber) @\label{ln:fork_perform}@
+    p
+end
   \end{minted}
-    \caption{Excerpt of the \ocamlin{Promise} module \& implementation of \ocamlin{Fiber.fork_promise}.}
-    \label{fig:sched-impl-fork}
+  \caption{Excerpt of the \ocamlin{Promise} module \& implementation of \ocamlin{Fiber.fork_promise}.}
+  \label{fig:sched-impl-fork}
 \end{figure}
 
 This function is the basic way to fork a new fiber in Eio and the only one we model in our development.
 The code is presented in figure~\ref{fig:sched-impl-fork}.
 It creates a promise (line~\ref{ln:fork_create}) and spawns the provided function as a new fiber using the \efork{} effect (line~\ref{ln:fork_perform}).
-Promises are always created in a \ocamlin{Waiting} (we also say \emph{unfulfilled}) state and calling \ocamlin{Promise.fulfill} sets it to the \ocamlin{Done} state, at which point the final value can be retrieved.
-The meaning of the \ocamlin{Broadcast.t} is explained in the next section.
-
-When \ocamlin{f} is reduced to a value \ocamlin{result}, \ocamlin{Fiber.fork_promise} then fulfills the promise with that value (line~\ref{ln:fork_fulfill}), which signals all fibers waiting for that result to wake up (line~\ref{ln:fork_signal}).
-The major difference with respect to the implementation of de Vilhena is that promises in Eio are entirely handled by the fiber, and not in the effect handler code of the scheduler.
-This achieves a better separation of concerns and simplifies the logical state needed for the proof.
+Promises are always created in a \ocamlin{Waiting} state (we also say \emph{unfulfilled}) and calling \ocamlin{Promise.fulfill} sets it to the \ocamlin{Done} state, at which point the final value can be retrieved.
+When \ocamlin{f ()} is reduced to a value \ocamlin{result}, the promise is fulfilled with that value (line~\ref{ln:fork_fulfill}), which signals all fibers waiting for that result to wake up (line~\ref{ln:fork_signal}).
+The meaning of the \ocamlin{Broadcast.t} contained in a promise is explained in the next section.
 
 \subsubsection{\ocamlin{Promise.await}}
 \label{sec:sched-impl-await}
 
 \begin{figure}[ht]
-    \begin{minted}[escapeinside=@@]{ocaml}
-let make_register (p: 'a t) (bcst: Broadcast.t) : (unit waker -> unit) = 
-  fun waker ->
-    let register_result = Broadcast.register bcst waker in @\label{ln:await_register}@
-    match register_result with
-    | None -> ()
-    | Some register_handle ->
-      match Atomic.get p with @\label{ln:await_match3}@
-      | Done result ->  
-          if Broadcast.try_unregister register_handle
-          then waker () @\label{ln:await_waker}@
-          else ()
-      | Waiting _ -> ()
+  \begin{minted}[escapeinside=@@]{ocaml}
+module Promise = struct
+  let make_register (p: 'a t) (bcst: Broadcast.t) : (unit waker -> unit) = 
+    fun waker ->
+      let register_result = Broadcast.register bcst waker in @\label{ln:await_register}@
+      match register_result with
+      | None -> ()
+      | Some register_handle ->
+        match Atomic.get p with @\label{ln:await_match3}@
+        | Done result ->  
+            if Broadcast.try_unregister register_handle
+            then waker () @\label{ln:await_waker}@
+            else ()
+        | Waiting _ -> ()
 
-let await (p: 'a t) : 'a = 
-  match Atomic.get p with @\label{ln:await_match1}@
-  | Done result -> result
-  | Waiting bcst -> @\label{ln:await_waiting1}@
-    let register = make_register p bcst
-    perform (Suspend register); @\label{ln:await_perform}@
-    match Atomic.get p with @\label{ln:await_match2}@
-    | Done result -> result 
-    | Waiting _ -> error "impossible" @\label{ln:await_error}@
+  let await (p: 'a t) : 'a = 
+    match Atomic.get p with @\label{ln:await_match1}@
+    | Done result -> result
+    | Waiting bcst -> @\label{ln:await_waiting1}@
+      let register = make_register p bcst
+      perform (Suspend register); @\label{ln:await_perform}@
+      match Atomic.get p with @\label{ln:await_match2}@
+      | Done result -> result 
+      | Waiting _ -> error "impossible" @\label{ln:await_error}@
+    
+  (* ... *)
+end
   \end{minted}
-    \caption{Implementation of \ocamlin{Promise.await}.}
-    \label{fig:sched-impl-await}
+  \caption{Implementation of \ocamlin{Promise.await}.}
+  \label{fig:sched-impl-await}
 \end{figure}
 
 This is the most complex looking function in our development which is partly due to the \esuspend{} effect and also due to the use of \emph{broadcast} functions.
@@ -196,32 +212,31 @@ The purpose of \ocamlin{Promise.await p} is to suspend execution of the calling 
 The "suspend execution" part is handled by performing a \esuspend{} effect.
 Then, the "until \ocamlin{p} is fulfilled" part is implemented by using a \emph{broadcast} data structure.
 
-In Eio, a \emph{broadcast} is an implementation of a signalling mechanism used for similar purposes as condition variables in various languages.
-The major difference is that callers do not directly suspend execution if the condition is not met, but supply a callback that will be called when the condition is signalled.
+In Eio, a broadcast is an implementation of a signalling mechanism used for similar purposes as condition variables in various languages.
+The major differences are that a broadcast does not use a mutes (it is a \emph{lock-free} data structure) and that callers do not directly suspend execution if the condition is not met, but supply a callback that will be called when the condition is signalled.
 
-In figure~\ref{fig:sched-impl-broadcast} we show the public API of the \ocamlin{Broadcast} module.
-The \ocamlin{Broadcast.register} function attempts to register a given callback with the data structure while \ocamlin{Broadcast.signal_all} calls all registered callbacks.
+In figure~\ref{fig:sched-impl-broadcast} we show the public API of Eio's \ocamlin{Broadcast} module.
+The \ocamlin{Broadcast.register} function attempts to register a given \ocamlin{callback} with the data structure while \ocamlin{Broadcast.signal_all} calls all registered callbacks.
 For \ocamlin{Broadcast.register}, a return value of \ocamlin{Invoked} means that it already called the supplied callback because the function detected the signal while it was running.
-Otherwise, a return value of \ocamlin{Registered register_handle} means that the callback was registered but the signal might have been already sent but missed.
-It is the responsibility of the caller to check if the signal was already sent and if it was, to then cancel the registration again
-This is done by calling the \ocamlin{Broadcast.try_unregister} function on the \ocamlin{register_handle}, which returns a boolean indicating the cancellation status.
+Otherwise, a return value of \ocamlin{Registered} means that the callback was registered.
+A registered callback can be unregistered by calling \ocamlin{Broadcast.try_unregister}, which returns a boolean indicating the cancellation status.
 If the cancellation was successful, the previously registered callback is not called when \ocamlin{Broadcast.signal_all} is executed.
 The specifications of the functions is explained in more detail in section~\ref{sec:broadcast-spec}, for now we just explain their usage in the context of \ocamlin{Promise.await}.
 
 \begin{figure}[ht]
-    \begin{minted}{ocaml}
+  \begin{minted}{ocaml}
 type t
-type signal = unit -> unit
+type callback = unit -> unit
 type register_result = Invoked | Registered of register_handle
 type register_handle
 
 val create : unit -> t
-val register : t -> signal -> register_result
+val register : t -> callback -> register_result
 val try_unregister : register_handle -> bool
 val signal_all : t -> unit
   \end{minted}
-    \caption{Interface of the \ocamlin{Broadcast} module.}
-    \label{fig:sched-impl-broadcast}
+  \caption{Interface of the \ocamlin{Broadcast} module.}
+  \label{fig:sched-impl-broadcast}
 \end{figure}
 
 In the \ocamlin{Promise.await} function if the promise is not fulfilled initially (figure~\ref{fig:sched-impl-await} line~\ref{ln:await_waiting1})
@@ -232,11 +247,11 @@ Recall that calling a \ocamlin{waker} function enqueues the fiber that performed
 
 In the default case the following simplified chain of events happens:
 \begin{enumerate}
-    \item The fiber suspends execution at the point of evaluating \ocamlin{perform (Suspend register)}.
-    \item The \ocamlin{waker} function is registered with a broadcast.
-    \item The promise is fulfilled.
-    \item The \ocamlin{waker} function is called.
-    \item The fiber resumes execution at the point of evaluating \ocamlin{perform (Suspend register)}.
+  \item The fiber suspends execution at the point of evaluating \ocamlin{perform (Suspend register)}.
+  \item The \ocamlin{waker} function is registered with a broadcast.
+  \item The promise is fulfilled.
+  \item The \ocamlin{waker} function is called.
+  \item The fiber resumes execution at the point of evaluating \ocamlin{perform (Suspend register)}.
 \end{enumerate}
 Therefore, when matching on the promise state again after the \esuspend{} effect returns (line~\ref{ln:await_match2}) we know the state of the promise is \ocamlin{Done} and the final value can be returned.
 
@@ -244,7 +259,7 @@ But because broadcast is a lock-free data structure and promises can be shared b
 The definition of the register function is interesting enough that we split it out into \ocamlin{make_register} and give a separate specification, which is not part of the public API of the module.
 First, there could be a race on the state of the promise itself.
 Right after the state is read (figure~\ref{fig:sched-impl-await} line~\ref{ln:await_match1}) another thread might change the state to \ocamlin{Done} and go on to call \ocamlin{Broadcast.signal_all}.
-If that happens there is another possible race between the call to \ocamlin{Broadcast.register} (line~\ref{ln:await_register}) and the call to \ocamlin{Broadcast.signal_all} in the other thread\footnote{There is a possible race to set an atomic location that holds the state of the registration. Interested readers are directed to the implementation linked in~\cite{koval2023cqs}.}.
+If that happens there is another possible race between the call to \ocamlin{Broadcast.register} (line~\ref{ln:await_register}) and the call to \ocamlin{Broadcast.signal_all} in the other thread\footnote{They both race to set an atomic reference holding the state of the callback registration. For more details see the implementation linked in~\cite{koval2023cqs}.}.
 If \ocamlin{Broadcast.register} detects that it lost the race, it directly calls the \ocamlin{waker} function and returns \ocamlin{Invoked}.
 Otherwise, the \ocamlin{waker} function is registered but in fact the \ocamlin{Broadcast.signal_all} might have already finished before \ocamlin{Broadcast.register} even started, so it failed to detect the race.
 In this case the \ocamlin{waker} would be "lost" in the broadcast, never to be called.
@@ -252,17 +267,22 @@ To avoid this, \ocamlin{register} must check the state of the promise again (lin
 The cancellation fails if the \ocamlin{waker} function was already called.
 Otherwise, the cancellation succeeds and the \ocamlin{register} function has the responsibility of calling \ocamlin{waker} itself (line~\ref{ln:await_waker}).
 
-The only \textbf{safety} concerns in the above implementation are \ocamlin{Fiber.fork_promise} expecting the promise to be unfulfilled after the fiber has finished execution (figure~\ref{fig:sched-impl-fork} line~\ref{ln:fork_error}),
-and \ocamlin{Promise.await} expecting the promise to be fulfilled in the last match (figure~\ref{fig:sched-impl-await} line~\ref{ln:await_error}).
-In both cases, the program would crash (signified by the \ocamlin{error} expression) if the expectation is violated.
-So to establish the safety of Eio we wish to prove that the expectations always hold, and the two \ocamlin{error} expressions are never reached.
-In the next section we show how the former situation is addressed by defining an affine permission to fulfill a promise, and the latter is a consequence of the protocol of the \esuspend{} effect.
+\subsubsection{Safety of the Implementation}
+The \textbf{safety} concerns in the above implementation are
+\begin{enumerate}
+  \item \ocamlin{Scheduler.run} expecting the \ocamlin{result} reference to hold \ocamlin{Some} value after \ocamlin{execute} returns(figure~\ref{fig:sched-impl-run} line~\ref{ln:run_error})
+  \item \ocamlin{Fiber.fork_promise} expecting the promise to be unfulfilled after the fiber has finished execution (figure~\ref{fig:sched-impl-fork} line~\ref{ln:fork_error}),
+  \item and \ocamlin{Promise.await} expecting the promise to be fulfilled in the last match (figure~\ref{fig:sched-impl-await} line~\ref{ln:await_error}).
+\end{enumerate}
+In all cases, the program would crash (signified by the \ocamlin{error} expression) if the expectation is violated.
+So to establish the safety of Eio we wish to prove that the expectations always hold, and the \ocamlin{error} expressions are never reached.
+In the next section we show how the first two situations are addressed by defining resource describing a one-shot assignment to a reference, and the last is a consequence of the protocol of the \esuspend{} effect.
 
 \subsection{Specification}
 \label{sec:sched-spec}
 
-To prove specifications for an effectful program in \hazel{} we have to define not only ghost state constructs to track program state but also protocols which describe the behavior of the program's effects.
-For our Eio development we adapt both the ghost state and the effect protocols from the cooperative concurrency scheduler development from chapter 4 of de Vilhena's dissertation~\cite{de2022proof}.
+To prove specifications for an effectful program in \hazel{}, in addition defining to ghost state constructs for describing the program state space, we also need to define protocols that describe the behavior of the program's effects.
+For our Eio development we heavily modify the ghost state and the effect protocols from the cooperative concurrency scheduler development from chapter 4 of de Vilhena's dissertation~\cite{de2022proof}.
 
 \subsubsection{Protocols}
 \label{sec:sched-spec-protocols}
@@ -273,16 +293,16 @@ The subscripts on definitions indicate that we will change them later when exten
 % To have multiple (nested) areas of alignment.
 % https://tex.stackexchange.com/a/586487
 \begin{figure}[ht]
-    \begin{align*}
-        \gsIsWaker{1}\; wkr\; W & \triangleq \forall v.   \;  W\; v \wand{} \ewp{wkr\; v}{\bot}{\top}\label{spec:is_waker}                                                  \\
-        \gsIsReg{1}\; reg\; W   & \triangleq \forall wkr. \; \gsIsWaker{1}\; wkr\; W \wand{} \ewp{reg\; wkr}{\bot}{\top}                                                    \\
-        \proto{1}               & \triangleq \begin{aligned}[t]
-                                                 Fork\;    & \# \; !\; e\; (e)\; \left\{\later \ewp{e\;()}{\proto{1}}{\top}\right\}. ?\; ()\; \{ \top \}           \\
-                                                 Suspend\; & \# \; !\; reg\; W\; (reg)\; \left\{\gsIsReg{1}\; reg\; W\right\}.?\; y\; (y)\; \left\{ W\; y \right\}
-                                             \end{aligned}
-    \end{align*}
-    \caption{Definition of \proto{1} protocol with \efork{} \& \esuspend{} effects.}
-    \label{fig:coop-protocol-1}\label{spec:suspend}
+  \begin{align*}
+    \gsIsWaker{1}\; wkr\; W & \triangleq \forall v.   \;  W\; v \wand{} \ewp{wkr\; v}{\bot}{\top}\label{spec:is_waker}                                                  \\
+    \gsIsReg{1}\; reg\; W   & \triangleq \forall wkr. \; \gsIsWaker{1}\; wkr\; W \wand{} \ewp{reg\; wkr}{\bot}{\top}                                                    \\
+    \proto{1}               & \triangleq \begin{aligned}[t]
+                                           Fork\;    & \# \; !\; e\; (e)\; \left\{\later \ewp{e\ \ ()}{\proto{1}}{\top}\right\}. ?\; ()\; \{ \top \}           \\
+                                           Suspend\; & \# \; !\; reg\; W\; (reg)\; \left\{\gsIsReg{1}\; reg\; W\right\}.?\; y\; (y)\; \left\{ W\; y \right\}
+                                         \end{aligned}
+  \end{align*}
+  \caption{Definition of \proto{1} protocol with \efork{} \& \esuspend{} effects.}
+  \label{fig:coop-protocol-1}\label{spec:suspend}
 \end{figure}
 
 \paragraph*{\efork{}}
@@ -295,23 +315,23 @@ The weakest precondition argument is guarded behind a later modality because of 
 % Second, because the scheduler does not create and return the promise, the protocol itself also has a trivial postcondition.
 
 \paragraph*{\esuspend{}}
-From the type of the \esuspend{} effect in figure~\ref{fig:sched-impl-run} we know that a value can be transmitted from the party that calls the \ocamlin{waker} function to the fiber that performed the effect.
+From the type of the \esuspend{} effect in figure~\ref{fig:sched-impl-run} we already know that a value (of type \ocamlin{'a}) can be transmitted from the party that calls the \ocamlin{waker} function to the fiber that performed the effect.
 The \esuspend{} protocol now expresses the same idea on the level of resources.
 To suspend, a fiber must supply a function \ocamlin{register} that satisfies the \gsIsReg{} predicate.
-This predicate says that \ocamlin{register} must be callable on a \ocamlin{waker} function for which we get to assume that it is callable on any value \(v\) that satisfies \(W\; v\).
+This predicate expresses that \ocamlin{register} can be called on a \ocamlin{waker} function for which we get to assume that it is callable on any value \(v\) that satisfies \(W\; v\).
 
 Both \ocamlin{register} and \ocamlin{waker} must not perform effects and are callable only once (since the \ewpt{} is an affine resource itself).
 The predicate \(W\) appears twice in the definition of the protocol.
 Once in the precondition of \ocamlin{waker} and then in the postcondition of the whole protocol.
 It signifies the resources that are transmitted from the party that calls the \ocamlin{waker} function to the fiber that performed the effect.
 By appropriately instantiating \(W\), we can enforce that some condition holds before the fiber can be signalled to continue execution, and we get to assume the resources \(W\; v\) for the rest of the execution.
-% For example, in the \ocamlin{Promise.await} specification below, we ensure that the promise must be fulfilled before the effect returns by instantiating \(W\) with a resource that says the promise is fulfilled.
 
 \subsubsection{Logical State}
 \label{sec:sched-spec-state}
 
-The most basic logical state definition we use is whether a promise is fulfilled or not.
-If a promise \ocamlin{p} is unfulfilled, two copies of \gspwait{} exist\todo{Maybe use meta\_tokens to hide gamma}, one owned by the fiber and one by the invariant that tracks the state of all promises.
+The most basic ghost state we define is a variation of a \emph{one-shot}, which we use in several places to track whether a reference has been assigned a value.
+As the name implies, 
+If a promise \ocamlin{p} is unfulfilled, two copies of \gspwait{} exist, one owned by the fiber and one by the invariant that tracks the state of all promises.
 When fulfilling the promise, both copies can be combined and converted to a persistent \gspdone{} resource.
 The \gspwait{} and \gspdone{} resources cannot exist at the same time.
 This design allows us to deduce the current state of the promise depending on if we own a \gspwait{} or a \gspdone{}.
@@ -334,43 +354,55 @@ The \gsReady{} predicate describes fibers in a scheduler's \ocamlin{run_queue}.
 It expresses that \emph{f} is safe to be executed and is used as the invariant for a scheduler's run queue, i.e. it should hold for all fibers in the run queue that they can be executed.
 
 \begin{figure}
-    \begin{mathpar}
-        \mathrm{Persistent}(\gspdone{\gamma})
-        \and
-        \inferrule[OS-Create]
-        { }
-        { \upd \exists \gamma.\; \gspwait{\gamma} \ast \gspwait{\gamma} }
-        % TODO this update modality looks horrible
-        % 
-        \and
-        % 
-        \inferrule[OS-Combine]
-        { \gspwait{\gamma} \ast \gspwait{\gamma} }
-        { \always \gspdone{\gamma} }
-        % 
-        \and
-        % 
-        \inferrule[OS-Contra]
-        { \gspwait{\gamma} \ast \gspdone{\gamma} }
-        { \bot }
-    \end{mathpar}
-    \caption{Rules for the \gspwait{} and \gspdone{}.}
-    \label{fig:promise-state-rules}\label{spec:ps_contra}
+  \begin{mathpar}
+    \textsc{OneShotV} \triangleq \textsc{Frac} \csumm \textsc{Ag}(val)
+    \and
+    %
+    \mathrm{Persistent}(\gspdone{\gamma}~v)\\
+    %
+    \gspwait{\gamma} \triangleq \ownGhost{\gamma}{\frac{1}{2}}
+    \and
+    \gspdone{\gamma}~v \triangleq \ownGhost{\gamma}{\aginj{}(v)} \\
+    \inferrule[OS-Create]
+    { }
+    { \upd \exists \gamma.\; \gspwait{\gamma} \ast \gspwait{\gamma} }
+    % TODO this update modality looks horrible
+    % 
+    \and
+    % 
+    \inferrule[OS-Combine]
+    { \gspwait{\gamma} \ast \gspwait{\gamma} }
+    { \always \gspdone{\gamma}~v }
+    % 
+    \and
+    % 
+    \inferrule[OS-Contra]
+    { \gspwait{\gamma} \ast \gspdone{\gamma}~v }
+    { \bot }
+    %
+  \end{mathpar}
+  \caption{Rules for the one-shot assignment resource.}
+  \label{fig:promise-state-rules}\label{spec:ps_contra}
 \end{figure}
 
 \begin{figure}[ht]
-    \begin{align*}
-        \gsPState{}\; p\; \gamma\; \Phi & \triangleq\; \begin{aligned}[t]
-                                                                  & (\exists\, v.\; p \mapsto Done\; v \ast \gspdone{} \ast \always \Phi\; v)                             \\
-                                                           \vee\; & (\exists\, bcst.\; p \mapsto Waiting\; bcst \ast \gsIsBcst{}\; bcst \ast \gspwait{} \ast \gssignal{})
-                                                       \end{aligned}                                   \\
-        \gsPInvIn{}                     & \triangleq\;                     \exists M.\; \ownGhost{pn}{\authfull{}\; M} \ast \forall\, (p, \gamma) \mapsto \Phi \in M.\; \gsPState{}\; p\; \gamma\; \Phi \\
-        \gsPInv{}                       & \triangleq\;                        \knowInv{\invN{}}{\gsPInvIn{}}                                                                                            \\
-        \gsIsPr{}\; p\; \Phi            & \triangleq\;             \exists \gamma.\; \ownGhost{pn}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}}                                  \\
-        \gsReady{1}\; f                 & \triangleq\;                   \ewp{f\; ()}{\bot}{\top}
-    \end{align*}
-    \caption{Logical state definitions for the verification of our Eio model.}
-    \label{fig:logical-state-simpl}\label{spec:pinv}\label{spec:is_promise}\label{spec:pstate}
+  \begin{align*}
+    \gsPState{}\; p\; \gamma\; \Phi & \triangleq\; \begin{aligned}[t]
+                                                            & (\exists\, bcst.\; p \mapsto Waiting\; bcst \ast \gsIsBcst{}\; bcst \ast \gspwait{} \ast \gssignal{}) \\
+                                                     \vee\; & (\exists\, v.\; p \mapsto Done\; v \ast \gspdone{} \ast \always \Phi\; v)                             
+                                                   \end{aligned}                                   \\
+    \gsIsPr{}\; p\; \Phi            & \triangleq\; \exists \gamma.\; \ownGhost{\delta}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}}                                  \\
+    \gsPInvIn{}                     & \triangleq\; \exists M.\; \ownGhost{\delta}{\authfull{}\; M} \ast \forall\, (p, \gamma) \mapsto \Phi \in M.\; \gsPState{}\; p\; \gamma\; \Phi \\
+    \gsPInv{}                       & \triangleq\; \knowInv{\pN{}}{\gsPInvIn{}}                                                                                            \\
+    mainResultInner~\gamma~l_{res}~\Phi & \triangleq\; \begin{aligned}[t]
+                                                        & (l_{res} \mapsto None \ast \gspwait{\gamma}) \\
+                                                        \vee\; & (\exists\, v.\; l_{res} \mapsto Some~v \ast \gspdone{\gamma} \ast \always \Phi~v)
+                                                       \end{aligned} \\
+    mainResult~\gamma~l_{res}~\Phi & \triangleq\; \knowInv{\rN{}}{mainResultInner~\gamma~l_{res}~\Phi} \\
+    \gsReady{1}\; f                 & \triangleq\;                   \ewp{f\; ()}{\bot}{\top}
+  \end{align*}
+  \caption{Logical state definitions for the verification of our Eio model.}
+  \label{fig:logical-state-simpl}\label{spec:pinv}\label{spec:is_promise}\label{spec:pstate}
 \end{figure}
 
 In the next sections we discuss the specifications we proved for the three functions.
@@ -384,9 +416,9 @@ This is expressed by allowing the fiber \(main\) to perform effects according to
 Of course, the \ewpt{} itself also implies \textbf{safety} of running both the main fiber and the scheduler.
 
 \[
-    \inferrule[Spec-Run]
-    {\ewp{main\; ()}{\proto{}}{v,\; \always \Phi\; v}}
-    {\ewp{run\; main}{\bot}{v,\; \always \Phi\; v}}
+  \inferrule[Spec-Run]
+  {\ewp{main\; ()}{\proto{}}{v,\; \always \Phi\; v}}
+  {\ewp{run\; main}{\bot}{v,\; \always \Phi\; v}}
 \]
 
 % The proof proceeds as follows:
@@ -410,9 +442,9 @@ When called, \(f\) obeys the \proto{} protocol and returns some value \(v\) sati
 Also, \(fork\_promise\) needs the \gsPInv{} invariant to interact with the global collection of promises, because it creates a new promise and fulfills it after \(f\) has finished executing.
 
 \[
-    \inferrule[Spec-ForkPromise]
-    {\gsPInv{} \ast \ewp{f\;()}{\proto{}}{v,\; \always \Phi\; v}}
-    {\ewp{fork\_promise\; f}{\proto{}}{p,\; \gsIsPr{}\; p\; \Phi}}
+  \inferrule[Spec-ForkPromise]
+  {\gsPInv{} \ast \ewp{f\;()}{\proto{}}{v,\; \always \Phi\; v}}
+  {\ewp{fork\_promise\; f}{\proto{}}{p,\; \gsIsPr{}\; p\; \Phi}}
 \]
 
 \subsubsection{\ocamlin{Promise.await}}
@@ -426,15 +458,15 @@ If \(p\) is still unfulfilled the first time \(await\) checks the promise state,
 As the \textsc{Spec-MakeRegister} specification shows, \ocamlin{make_register} returns a suitable function that satisfies the \gsIsReg{} predicate, instantiating \(W\) with \((\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})\) so that we obtain a \gspdone{} resource when the effect returns.
 
 \begin{mathpar}
-    \inferrule[Spec-MakeRegister]
-    { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi \ast \gsIsBcst{}\; bcst }
-    { \ewp{make\_register\; p\; bcst}{\bot}{reg,\; \gsIsReg{}\; reg\; (\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})}}\label{spec:make_register}
-    % 
-    \and
-    % 
-    \inferrule[Spec-Await]
-    { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi }
-    { \ewp{await\; p}{\proto{}}{v,\; \always \Phi\; v}}\label{spec:await}
+  \inferrule[Spec-MakeRegister]
+  { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi \ast \gsIsBcst{}\; bcst }
+  { \ewp{make\_register\; p\; bcst}{\bot}{reg,\; \gsIsReg{}\; reg\; (\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})}}\label{spec:make_register}
+  % 
+  \and
+  % 
+  \inferrule[Spec-Await]
+  { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi }
+  { \ewp{await\; p}{\proto{}}{v,\; \always \Phi\; v}}\label{spec:await}
 \end{mathpar}
 
 In figures~\ref{fig:sched-spec-makeregister-proof} and~\ref{fig:sched-spec-await-proof} we give Hoare-style proof annotations for the two functions \ocamlin{make_register} and \ocamlin{Promise.await} from figure~\ref{fig:sched-impl-await}.
@@ -442,24 +474,24 @@ The proof of \textsc{Spec-MakeRegister} uses the specifications of some broadcas
 We briefly explain these specifications and their logical state definitions now and expand upon them in section~\ref{sec:broadcast-spec}.
 
 \begin{align*}
-    \gsIsCb{}\; cb\; R                            & \triangleq R \wand \ewp{cb\; ()}{\bot}{\top}                                                                    \\
-    \emph{isBroadcastRegisterResult}\; r\; cb\; R & \triangleq \begin{aligned}[t]
-                                                                          & (\ulcorner r = Invoked \urcorner)                                                           \\
-                                                                   \vee\; & (\ulcorner r = Registered\; h \urcorner \ast \emph{isBroadcastRegisterHandle}\; h\; cb\; R)
-                                                               \end{aligned} \\
-    \emph{isBroadcastRegisterHandle}              & : Val \to Val \to iProp \to iProp
+  \gsIsCb{}\; cb\; R                            & \triangleq R \wand \ewp{cb\; ()}{\bot}{\top}                                                                    \\
+  \emph{isBroadcastRegisterResult}\; r\; cb\; R & \triangleq \begin{aligned}[t]
+                                                                      & (\ulcorner r = Invoked \urcorner)                                                           \\
+                                                               \vee\; & (\ulcorner r = Registered\; h \urcorner \ast \emph{isBroadcastRegisterHandle}\; h\; cb\; R)
+                                                             \end{aligned} \\
+  \emph{isBroadcastRegisterHandle}              & : Val \to Val \to iProp \to iProp
 \end{align*}
 
 \begin{mathpar}
-    \inferrule[Spec-BroadcastRegister]
-    { \gsIsBcst{}\; bcst \ast \gsIsCb{}\; callback\; R }
-    { \ewp{register\; bcst\; callback}{\bot}{r,\; \emph{isBroadcastRegisterResult}\; r\; callback\; R}}\label{spec:bcst_register}
-    % 
-    \and
-    % 
-    \inferrule[Spec-BroadcastTryCancel]
-    { \emph{isBroadcastRegisterHandle}\; h\; cb\; R }
-    { \ewp{try\_unregister\; h}{\bot}{b,\; if\; b\; then\; \gsIsCb{}\; cb\; R\; else\; \top}}\label{spec:bcst_cancel}
+  \inferrule[Spec-BroadcastRegister]
+  { \gsIsBcst{}\; bcst \ast \gsIsCb{}\; callback\; R }
+  { \ewp{register\; bcst\; callback}{\bot}{r,\; \emph{isBroadcastRegisterResult}\; r\; callback\; R}}\label{spec:bcst_register}
+  % 
+  \and
+  % 
+  \inferrule[Spec-BroadcastTryCancel]
+  { \emph{isBroadcastRegisterHandle}\; h\; cb\; R }
+  { \ewp{try\_unregister\; h}{\bot}{b,\; if\; b\; then\; \gsIsCb{}\; cb\; R\; else\; \top}}\label{spec:bcst_cancel}
 \end{mathpar}
 
 The function \ocamlin{Broadcast.register} takes a callback \(cb\) that satisfies the \gsIsCb{} predicate to register it in the broadcast data structure.
@@ -478,96 +510,96 @@ For \textsc{Spec-Await}, the crux is that we define \textsc{Spec-MakeRegister} s
 Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect returns, and we can refute the case of the promise still being unfulfilled when checking the state of promise again for the last time.
 
 \begin{figure}[H]
-    \[
-        \inferrule[Spec-MakeRegister]
-        { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi \ast \gsIsBcst{}\; bcst }
-        { \ewp{make\_register\; p\; bcst}{\bot}{reg,\; \gsIsReg{}\; reg\; (\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})}}\label{spec:make_register}
-    \]
-    \hspace*{-5em}{\setlength{\extrarowheight}{3pt}
-        \begin{tabular}{@{}ll@{}}
-            \ocamlreal{let make_register (p: 'a t) (bcst: Broadcast.t)}                                 &                                                                                                            \\
-            \myquad[2] \ocamlreal{: (unit waker -> unit) =}                                             &                                                                                                            \\
-            \(\left\{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \right\}\)                   &                                                                                                            \\
-            \myquad[1] \ocamlreal{  fun (waker: unit waker) ->}                                         & [ intro waker that satisfies \hyperref[spec:is_waker]{\gsIsWaker{}} ]                                      \\
-            \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \ast                                                                                                                            \\ (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) } \right\} \)&\\
-            \myquad[2] \ocamlreal{  let regres = Broadcast.register bcst waker in}                      & [ apply \hyperref[spec:bcst_register]{\textsc{Spec-BroadcastRegister}} with \(R \coloneq \gspdone{}\) ]    \\
-            \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \ast                                                                                                                            \\ \emph{isBroadcastRegisterResult}\; regres } \right\}\) &\\
-            \myquad[2] \ocamlreal{  match regres with}                                                  & [ CA on \(regres\) ]                                                                                       \\[3pt]
-            \hline                                                                                                                                                                                                   \\[-15pt]
-            1. \(\left\{  regres = None \right\}\)                                                      &                                                                                                            \\
-            \myquad[2] \ocamlreal{ | None -> () }                                                       & [ goal is {\color{red}trivial} ]                                                                           \\
-            \hphantom{1..} \(\left\{ \top \right\}\)                                                    &                                                                                                            \\[3pt]
-            \hline                                                                                                                                                                                                   \\[-12pt]
-            2. \(\left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst\; \ast                                                                                                                      \\ regres = Some\; handle \ast \emph{isBroadcastRegisterHandle}\; handle } \right\}\) & \\
-            \myquad[2] \ocamlreal{ | Some handle -> }                                                   & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\(\gsIsPr{}\; p\)} ] \\
-            \hphantom{2..} \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsBcst{}\; bcst\; \ast                                                                                                                    \\ \emph{isBroadcastRegisterHandle}\; handle \ast \gsPState{}\; p\; \gamma\; \Phi } \right\}\) &\\
-            \myquad[3] \ocamlreal{ match Atomic.get p with }                                            & [ CA on \hyperref[spec:pstate]{\gsPState{}} ]                                                              \\[3pt]
-            \hline                                                                                                                                                                                                   \\[-12pt]
-            2.1. \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsBcst{}\; bcst\; \ast                                                                                                                              \\ \emph{isBroadcastRegisterHandle}\; handle \ast \\ p \mapsto Done\; result \ast \gspdone{} } \right\}\)  &\\
-            \myquad[3] \ocamlreal{| Done result -> }                                                    & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                  \\
-            \hphantom{2.1..} \(\left\{ \makecell{ \gsIsBcst{}\; bcst \ast \emph{isBroadcastRegisterHandle}\; handle \ast                                                                                             \\ \gspdone{} } \right\}\) &\\
-            \myquad[4] \ocamlreal{ if Broadcast.try_unregister handle }                                 & [ apply \hyperref[spec:bcst_cancel]{\textsc{Spec-BroadcastTryCancel}}, CA on return value  ]               \\[3pt]
-            \hline                                                                                                                                                                                                   \\[-15pt]
-            2.1.1. \(\left\{ \gspdone{} \ast (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) \right\}\) & [ specialize assumption ]                                                                                  \\
-            \hphantom{2.1.1..} \(\left\{ {\color{red}\ewp{waker\; ()}{\bot}{\top}} \right\}\)           &                                                                                                            \\
-            \myquad[4] \ocamlreal{ then waker () }                                                      & [ by {\color{red}apply} \ewpt{} ]                                                                          \\
-            \hphantom{2.1.1..} \(\left\{ \top \right\}\)                                                &                                                                                                            \\[3pt]
-            \hline                                                                                                                                                                                                   \\[-15pt]
-            2.1.2. \(\left\{ \top \right\}\)                                                            &                                                                                                            \\
-            \myquad[4] \ocamlreal{ else () }                                                            & [ goal is {\color{red}trivial} ]                                                                           \\
-            \hphantom{2.1.2..} \(\left\{ \top \right\}\)                                                &                                                                                                            \\[3pt]
-            \hline                                                                                                                                                                                                   \\[-15pt]
-            2.2. \(\left\{ \cancel{\gsPInv{}} \ast p \mapsto Waiting\; \_  \right\}\)                   &                                                                                                            \\
-            \myquad[3] \ocamlreal{| Waiting _ -> () }                                                   & [ close \hyperref[spec:pinv]{\gsPInv{}}, goal is {\color{red}trivial} ]                                    \\
-            \hphantom{2.2..} \(\left\{ \top \right\}\)                                                  &
-        \end{tabular}}
-    \caption{Annotated proof of \hyperref[spec:make_register]{\textsc{Spec-MakeRegister}}.}
-    \label{fig:sched-spec-makeregister-proof}
+  \[
+    \inferrule[Spec-MakeRegister]
+    { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi \ast \gsIsBcst{}\; bcst }
+    { \ewp{make\_register\; p\; bcst}{\bot}{reg,\; \gsIsReg{}\; reg\; (\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})}}\label{spec:make_register}
+  \]
+  \hspace*{-5em}{\setlength{\extrarowheight}{3pt}
+    \begin{tabular}{@{}ll@{}}
+      \ocamlreal{let make_register (p: 'a t) (bcst: Broadcast.t)}                                 &                                                                                                            \\
+      \myquad[2] \ocamlreal{: (unit waker -> unit) =}                                             &                                                                                                            \\
+      \(\left\{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \right\}\)                   &                                                                                                            \\
+      \myquad[1] \ocamlreal{  fun (waker: unit waker) ->}                                         & [ intro waker that satisfies \hyperref[spec:is_waker]{\gsIsWaker{}} ]                                      \\
+      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \ast                                                                                                                            \\ (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) } \right\} \)&\\
+      \myquad[2] \ocamlreal{  let regres = Broadcast.register bcst waker in}                      & [ apply \hyperref[spec:bcst_register]{\textsc{Spec-BroadcastRegister}} with \(R \coloneq \gspdone{}\) ]    \\
+      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \ast                                                                                                                            \\ \emph{isBroadcastRegisterResult}\; regres } \right\}\) &\\
+      \myquad[2] \ocamlreal{  match regres with}                                                  & [ CA on \(regres\) ]                                                                                       \\[3pt]
+      \hline                                                                                                                                                                                                   \\[-15pt]
+      1. \(\left\{  regres = None \right\}\)                                                      &                                                                                                            \\
+      \myquad[2] \ocamlreal{ | None -> () }                                                       & [ goal is {\color{red}trivial} ]                                                                           \\
+      \hphantom{1..} \(\left\{ \top \right\}\)                                                    &                                                                                                            \\[3pt]
+      \hline                                                                                                                                                                                                   \\[-12pt]
+      2. \(\left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst\; \ast                                                                                                                      \\ regres = Some\; handle \ast \emph{isBroadcastRegisterHandle}\; handle } \right\}\) & \\
+      \myquad[2] \ocamlreal{ | Some handle -> }                                                   & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\(\gsIsPr{}\; p\)} ] \\
+      \hphantom{2..} \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsBcst{}\; bcst\; \ast                                                                                                                    \\ \emph{isBroadcastRegisterHandle}\; handle \ast \gsPState{}\; p\; \gamma\; \Phi } \right\}\) &\\
+      \myquad[3] \ocamlreal{ match Atomic.get p with }                                            & [ CA on \hyperref[spec:pstate]{\gsPState{}} ]                                                              \\[3pt]
+      \hline                                                                                                                                                                                                   \\[-12pt]
+      2.1. \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsBcst{}\; bcst\; \ast                                                                                                                              \\ \emph{isBroadcastRegisterHandle}\; handle \ast \\ p \mapsto Done\; result \ast \gspdone{} } \right\}\)  &\\
+      \myquad[3] \ocamlreal{| Done result -> }                                                    & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                  \\
+      \hphantom{2.1..} \(\left\{ \makecell{ \gsIsBcst{}\; bcst \ast \emph{isBroadcastRegisterHandle}\; handle \ast                                                                                             \\ \gspdone{} } \right\}\) &\\
+      \myquad[4] \ocamlreal{ if Broadcast.try_unregister handle }                                 & [ apply \hyperref[spec:bcst_cancel]{\textsc{Spec-BroadcastTryCancel}}, CA on return value  ]               \\[3pt]
+      \hline                                                                                                                                                                                                   \\[-15pt]
+      2.1.1. \(\left\{ \gspdone{} \ast (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) \right\}\) & [ specialize assumption ]                                                                                  \\
+      \hphantom{2.1.1..} \(\left\{ {\color{red}\ewp{waker\; ()}{\bot}{\top}} \right\}\)           &                                                                                                            \\
+      \myquad[4] \ocamlreal{ then waker () }                                                      & [ by {\color{red}apply} \ewpt{} ]                                                                          \\
+      \hphantom{2.1.1..} \(\left\{ \top \right\}\)                                                &                                                                                                            \\[3pt]
+      \hline                                                                                                                                                                                                   \\[-15pt]
+      2.1.2. \(\left\{ \top \right\}\)                                                            &                                                                                                            \\
+      \myquad[4] \ocamlreal{ else () }                                                            & [ goal is {\color{red}trivial} ]                                                                           \\
+      \hphantom{2.1.2..} \(\left\{ \top \right\}\)                                                &                                                                                                            \\[3pt]
+      \hline                                                                                                                                                                                                   \\[-15pt]
+      2.2. \(\left\{ \cancel{\gsPInv{}} \ast p \mapsto Waiting\; \_  \right\}\)                   &                                                                                                            \\
+      \myquad[3] \ocamlreal{| Waiting _ -> () }                                                   & [ close \hyperref[spec:pinv]{\gsPInv{}}, goal is {\color{red}trivial} ]                                    \\
+      \hphantom{2.2..} \(\left\{ \top \right\}\)                                                  &
+    \end{tabular}}
+  \caption{Annotated proof of \hyperref[spec:make_register]{\textsc{Spec-MakeRegister}}.}
+  \label{fig:sched-spec-makeregister-proof}
 \end{figure}
 
 \begin{figure}[H]
-    \[
-        \inferrule[Spec-Await]
-        { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi }
-        { \ewp{await\; p}{\proto{}}{v,\; \always \Phi\; v}}\label{spec:await}
-    \]
-    \hspace*{-3em}{\setlength{\extrarowheight}{3pt}
-        \begin{tabular}{@{}ll@{}}
-            \ocamlreal{ let await (p: 'a t) : 'a = }                                                                       &                                                                                                                              \\
-            \( \left\{ \gsPInv{} \ast \gsIsPr{}\; p \right\} \)                                                            & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\(\gsIsPr{}\; p\)} ]                   \\
-            \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; p \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) &                                                                                                                              \\
-            \myquad[1] \ocamlreal{match Atomic.get p with}                                                                 & [ CA on \hyperref[spec:pstate]{\gsPState{}} ]                                                                                \\[3pt]
-            \hline                                                                                                                                                                                                                                        \\[-12pt]
-            1. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast                                                                                                                                                                                              \\ p \mapsto Done\; result \ast \always (\Phi\; result) } \right\} \)                                                       &                             \\
-            \myquad[1] \ocamlreal{| Done result -> }                                                                       & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                                    \\
-            \hphantom{1..} \( \left\{ \gsPInv{} \ast {\color{red}\always (\Phi\; result)} \right\} \)                      &                                                                                                                              \\
-            \myquad[2] \ocamlreal{result}                                                                                  & [ by {\color{red}assumption} ]                                                                                               \\
-            \hphantom{1..} \( \left\{ \always (\Phi\; result) \right\} \)                                                  &                                                                                                                              \\[3pt]
-            \hline                                                                                                                                                                                                                                        \\[-12pt]
-            2. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; p \ast                                                                                                                                                                           \\ p \mapsto Waiting\; bcst \ast \gsIsBcst{}\; bcst } \right\} \) &                                                  \\
-            \myquad[1] \ocamlreal{| Waiting bcst ->}                                                                       & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                                    \\
-            \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gsIsBcst{}\; bcst } \right\} \) &                                                  \\
-            \myquad[2] \ocamlreal{let register = make_register p bcst}                                                     & [ apply \hyperref[spec:make_register]{\textsc{Spec-MakeRegister}} ]                                                          \\
-            \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gsIsReg{}\; register } \right\} \) &                                                  \\
-            \myquad[2] \ocamlreal{perform (Suspend register);}                                                             & [ protocol of \hyperref[spec:suspend]{\esuspend{}} with \((W := \lambda v,\; \ulcorner v = () \urcorner \ast \gspdone{})\) ] \\
-            \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gspdone{} } \right\} \) & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\(\gsIsPr{}\; p\)} ] \\
-            \hphantom{2..} \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{}                                                                                                                                                                       \\ \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) & \\
-            \myquad[2] \ocamlreal{match Atomic.get p with}                                                                 & [ CA on \hyperref[spec:pstate]{\gsPState{}} ]                                                                                \\[3pt]
-            \hline                                                                                                                                                                                                                                        \\[-12pt]
-            2.1.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast                                                                                                                                                                                           \\ p \mapsto Done\; result \ast \always (\Phi\; result) } \right\} \) &                                                  \\
-            \myquad[2] \ocamlreal{| Done result -> }                                                                       & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                                    \\
-            \hphantom{2.1..}  \( \left\{ \gsPInv{} \ast {\color{red}\always (\Phi\; result)}  \right\} \)                  &                                                                                                                              \\
-            \myquad[3] \ocamlreal{result}                                                                                  & [ by {\color{red}assumption} ]                                                                                               \\
-            \hphantom{2.1..}  \( \left\{ \always (\Phi\; result) \right\} \)                                               &                                                                                                                              \\[3pt]
-            \hline                                                                                                                                                                                                                                        \\[-12pt]
-            2.2.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{} \ast                                                                                                                                                                           \\ p \mapsto Waiting\; bcst \ast \gspwait{} } \right\} \) &                                                  \\
-            \myquad[2] \ocamlreal{| Waiting _ -> }                                                                         & [ specialize \hyperref[spec:ps_contra]{\textsc{PS-Contra}} ]                                                                 \\
-            \hphantom{2.2..}  \( \left\{ \cancel{\gsPInv{}} \ast {\color{red}\bot} \right\} \)                             &                                                                                                                              \\
-            \myquad[3] \ocamlreal{error "impossible"}                                                                      & [ by {\color{red}contradiction} ]                                                                                            \\
-            \hphantom{2.2..}  \( \left\{ \bot \right\} \)                                                                  &
-        \end{tabular}}
-    \caption{Annotated proof of \hyperref[spec:await]{\textsc{Spec-Await}}.}
-    \label{fig:sched-spec-await-proof}
+  \[
+    \inferrule[Spec-Await]
+    { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi }
+    { \ewp{await\; p}{\proto{}}{v,\; \always \Phi\; v}}\label{spec:await}
+  \]
+  \hspace*{-3em}{\setlength{\extrarowheight}{3pt}
+    \begin{tabular}{@{}ll@{}}
+      \ocamlreal{ let await (p: 'a t) : 'a = }                                                                       &                                                                                                                              \\
+      \( \left\{ \gsPInv{} \ast \gsIsPr{}\; p \right\} \)                                                            & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\(\gsIsPr{}\; p\)} ]                   \\
+      \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; p \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) &                                                                                                                              \\
+      \myquad[1] \ocamlreal{match Atomic.get p with}                                                                 & [ CA on \hyperref[spec:pstate]{\gsPState{}} ]                                                                                \\[3pt]
+      \hline                                                                                                                                                                                                                                        \\[-12pt]
+      1. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast                                                                                                                                                                                              \\ p \mapsto Done\; result \ast \always (\Phi\; result) } \right\} \)                                                       &                             \\
+      \myquad[1] \ocamlreal{| Done result -> }                                                                       & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                                    \\
+      \hphantom{1..} \( \left\{ \gsPInv{} \ast {\color{red}\always (\Phi\; result)} \right\} \)                      &                                                                                                                              \\
+      \myquad[2] \ocamlreal{result}                                                                                  & [ by {\color{red}assumption} ]                                                                                               \\
+      \hphantom{1..} \( \left\{ \always (\Phi\; result) \right\} \)                                                  &                                                                                                                              \\[3pt]
+      \hline                                                                                                                                                                                                                                        \\[-12pt]
+      2. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; p \ast                                                                                                                                                                           \\ p \mapsto Waiting\; bcst \ast \gsIsBcst{}\; bcst } \right\} \) &                                                  \\
+      \myquad[1] \ocamlreal{| Waiting bcst ->}                                                                       & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                                    \\
+      \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gsIsBcst{}\; bcst } \right\} \) &                                                  \\
+      \myquad[2] \ocamlreal{let register = make_register p bcst}                                                     & [ apply \hyperref[spec:make_register]{\textsc{Spec-MakeRegister}} ]                                                          \\
+      \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gsIsReg{}\; register } \right\} \) &                                                  \\
+      \myquad[2] \ocamlreal{perform (Suspend register);}                                                             & [ protocol of \hyperref[spec:suspend]{\esuspend{}} with \((W := \lambda v,\; \ulcorner v = () \urcorner \ast \gspdone{})\) ] \\
+      \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gspdone{} } \right\} \) & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\(\gsIsPr{}\; p\)} ] \\
+      \hphantom{2..} \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{}                                                                                                                                                                       \\ \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) & \\
+      \myquad[2] \ocamlreal{match Atomic.get p with}                                                                 & [ CA on \hyperref[spec:pstate]{\gsPState{}} ]                                                                                \\[3pt]
+      \hline                                                                                                                                                                                                                                        \\[-12pt]
+      2.1.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast                                                                                                                                                                                           \\ p \mapsto Done\; result \ast \always (\Phi\; result) } \right\} \) &                                                  \\
+      \myquad[2] \ocamlreal{| Done result -> }                                                                       & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                                    \\
+      \hphantom{2.1..}  \( \left\{ \gsPInv{} \ast {\color{red}\always (\Phi\; result)}  \right\} \)                  &                                                                                                                              \\
+      \myquad[3] \ocamlreal{result}                                                                                  & [ by {\color{red}assumption} ]                                                                                               \\
+      \hphantom{2.1..}  \( \left\{ \always (\Phi\; result) \right\} \)                                               &                                                                                                                              \\[3pt]
+      \hline                                                                                                                                                                                                                                        \\[-12pt]
+      2.2.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{} \ast                                                                                                                                                                           \\ p \mapsto Waiting\; bcst \ast \gspwait{} } \right\} \) &                                                  \\
+      \myquad[2] \ocamlreal{| Waiting _ -> }                                                                         & [ specialize \hyperref[spec:ps_contra]{\textsc{PS-Contra}} ]                                                                 \\
+      \hphantom{2.2..}  \( \left\{ \cancel{\gsPInv{}} \ast {\color{red}\bot} \right\} \)                             &                                                                                                                              \\
+      \myquad[3] \ocamlreal{error "impossible"}                                                                      & [ by {\color{red}contradiction} ]                                                                                            \\
+      \hphantom{2.2..}  \( \left\{ \bot \right\} \)                                                                  &
+    \end{tabular}}
+  \caption{Annotated proof of \hyperref[spec:await]{\textsc{Spec-Await}}.}
+  \label{fig:sched-spec-await-proof}
 \end{figure}
 
 % The proof of the \ocamlin{Promise.await} specification proceeds as follows:

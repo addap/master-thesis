@@ -22,7 +22,7 @@ the function uses the standard \ocamlin{thread_fork} and \ocamlin{thread_join} f
 %
 We implemented threads for the operational semantics of \hazel{} and proved the specifications for these functions as described in appendix~\ref{sec:apdx-mt}.
 This pair of functions is analogous to \ocamlin{Fiber.fork_promise} and \ocamlin{Promise.await} but on the level of threads.
-The difference is that \ocamlin{thread_join} is considered \emph{blocking} in the sense that the calling thread will not continue execution until the thread associated with the \(joinHandle\) has terminated.
+The difference is that \ocamlin{thread_join} is considered \emph{blocking} in the sense that the calling thread does not continue execution until the thread associated with the \(joinHandle\) has terminated.
 
 \begin{figure}[ht]
   \begin{minted}[escapeinside=@@]{ocaml}
@@ -144,7 +144,7 @@ The latter allows pushing elements that are missing an \(S\) to fulfill the queu
 We do this by internally converting the whole queue invariant to the predicate \(I' v \triangleq S \wand I\; v\).
 Elements already in the queue, satisfying \(I\; v\), can be trivially converted to this form by ignoring the \(S\) and new elements inserted by \textsc{Spec-DQueuePush} satisfy \(I'\) by definition.
 Since every element is now missing an \(S\) we can use \textsc{Spec-DQueueFulfill} with \(\always S\) to restore the original invariant and get back the \(isQueueReader\) by supplying each element with one copy of \(S\).
-As a result, the pop operation has a standard specification \textsc{Spec-DQueuePop}, if it returns an element \(v\) it will always satisfy \(I\; v\).
+As a result, the pop operation has a standard specification \textsc{Spec-DQueuePop}, if it returns an element \(v\) it always satisfies \(I\; v\).
 
 % Shortly explain the logical state of the queue with that illustration.
 
