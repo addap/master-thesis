@@ -37,7 +37,7 @@ It means that given preconditions \(P\), execution of the program \(s\) either d
 Further, separation logics are a type of affine logic that have a \emph{separating conjunction} connective \(P \ast Q\) in addition to the standard logical connectives.
 
 The separating conjunction allows an interpretation of propositions as \emph{resources} that can be split up into disjoint parts \(P\) and \(Q\).
-The most prominent example of a resource is the proposition \(l \mapsto v\), representing a heap fragment where the location \(l\) holds the value \(v\).
+The most prominent example of a resource is the proposition \(l \mapsto v\) (also called \emph{points-to connective}), representing a heap fragment where the location \(l\) holds the value \(v\).
 This also implies \emph{ownership} over the location \(l\), i.e. no one else can access the location as long as we have that resource.
 A separating conjunction of heap fragments \(l \mapsto v \ast l' \mapsto v'\) additionally implies that \(l \neq l'\), because the heap fragments are necessarily disjoint.
 The dual connective of a separating conjunction is the \emph{magic wand} \(P \wand Q\), which follows the elimination rule \(P \ast (P \wand Q) \vdash Q\).

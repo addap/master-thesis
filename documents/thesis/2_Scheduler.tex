@@ -297,7 +297,7 @@ The subscripts on definitions indicate that we will change them later when exten
     \gsIsWaker{1}\; wkr\; W & \triangleq \forall v.   \;  W\; v \wand{} \ewp{wkr\; v}{\bot}{\top}\label{spec:is_waker}                                                  \\
     \gsIsReg{1}\; reg\; W   & \triangleq \forall wkr. \; \gsIsWaker{1}\; wkr\; W \wand{} \ewp{reg\; wkr}{\bot}{\top}                                                    \\
     \proto{1}               & \triangleq \begin{aligned}[t]
-                                           Fork\;    & \# \; !\; e\; (e)\; \left\{\later \ewp{e\ \ ()}{\proto{1}}{\top}\right\}. ?\; ()\; \{ \top \}           \\
+                                           Fork\;    & \# \; !\; e\; (e)\; \left\{\later \ewp{e\ \ ()}{\proto{1}}{\top}\right\}. ?\; ()\; \{ \top \}         \\
                                            Suspend\; & \# \; !\; reg\; W\; (reg)\; \left\{\gsIsReg{1}\; reg\; W\right\}.?\; y\; (y)\; \left\{ W\; y \right\}
                                          \end{aligned}
   \end{align*}
@@ -329,15 +329,15 @@ By appropriately instantiating \(W\), we can enforce that some condition holds b
 \subsubsection{Logical State}
 \label{sec:sched-spec-state}
 
-The most basic ghost state we define is a variation of a \emph{one-shot}, which we use in several places to track whether a reference has been assigned a value.
-As the name implies, 
-If a promise \ocamlin{p} is unfulfilled, two copies of \gspwait{} exist, one owned by the fiber and one by the invariant that tracks the state of all promises.
-When fulfilling the promise, both copies can be combined and converted to a persistent \gspdone{} resource.
+The most basic ghost state we define is a variation of a \emph{one-shot}, which we use in several places to track whether a reference \(l\) has been assigned a value.
+Its rules are described in figure~\ref{fig:promise-state-rules}.
+In the beginning, two copies of \gspwait{\gamma} are created.
+This is because we often put one copy into an invariant that either holds a \gspwait{\gamma} or a \gspdone{\gamma} along with the points-to connective of the reference \(l\).
+Using the second copy, we can then differentiate the two cases of the invariant.
+When assigning a value to the reference, both copies are combined and converted to a persistent \gspdone{} resource.
 The \gspwait{} and \gspdone{} resources cannot exist at the same time.
-This design allows us to deduce the current state of the promise depending on if we own a \gspwait{} or a \gspdone{}.
-This is formalized in the rules in figure~\ref{fig:promise-state-rules}.
 
-Other pieces of ghost state are \gsPInvIn{}, \gsIsPr{}, and \gsReady{} described in figure~\ref{fig:logical-state-simpl}.
+Other pieces of ghost state are \gsPInvIn{}, \gsIsPr{}, and \gsReady{} described in figure~\ref{fig:logical-state-simpl}.\todo{explain the mainResult}
 \gsPInvIn{} tracks additional resources for all existing promises by using an authoritative map which contains for each promise:
 a location \(p\) holding its current program value,
 a ghost name \(\gamma\) that is used for the \gspwait{} and \gspdone{} resources,
@@ -387,19 +387,19 @@ It expresses that \emph{f} is safe to be executed and is used as the invariant f
 
 \begin{figure}[ht]
   \begin{align*}
-    \gsPState{}\; p\; \gamma\; \Phi & \triangleq\; \begin{aligned}[t]
-                                                            & (\exists\, bcst.\; p \mapsto Waiting\; bcst \ast \gsIsBcst{}\; bcst \ast \gspwait{} \ast \gssignal{}) \\
-                                                     \vee\; & (\exists\, v.\; p \mapsto Done\; v \ast \gspdone{} \ast \always \Phi\; v)                             
-                                                   \end{aligned}                                   \\
-    \gsIsPr{}\; p\; \Phi            & \triangleq\; \exists \gamma.\; \ownGhost{\delta}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}}                                  \\
-    \gsPInvIn{}                     & \triangleq\; \exists M.\; \ownGhost{\delta}{\authfull{}\; M} \ast \forall\, (p, \gamma) \mapsto \Phi \in M.\; \gsPState{}\; p\; \gamma\; \Phi \\
-    \gsPInv{}                       & \triangleq\; \knowInv{\pN{}}{\gsPInvIn{}}                                                                                            \\
+    \gsPState{}\; p\; \gamma\; \Phi     & \triangleq\; \begin{aligned}[t]
+                                                                & (\exists\, bcst.\; p \mapsto Waiting\; bcst \ast \gsIsBcst{}\; bcst \ast \gspwait{} \ast \gssignal{}) \\
+                                                         \vee\; & (\exists\, v.\; p \mapsto Done\; v \ast \gspdone{} \ast \always \Phi\; v)
+                                                       \end{aligned}                   \\
+    \gsIsPr{}\; p\; \Phi                & \triangleq\; \exists \gamma.\; \ownGhost{\delta}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}}                          \\
+    \gsPInvIn{}                         & \triangleq\; \exists M.\; \ownGhost{\delta}{\authfull{}\; M} \ast \forall\, (p, \gamma) \mapsto \Phi \in M.\; \gsPState{}\; p\; \gamma\; \Phi \\
+    \gsPInv{}                           & \triangleq\; \knowInv{\pN{}}{\gsPInvIn{}}                                                                                                     \\
     mainResultInner~\gamma~l_{res}~\Phi & \triangleq\; \begin{aligned}[t]
-                                                        & (l_{res} \mapsto None \ast \gspwait{\gamma}) \\
-                                                        \vee\; & (\exists\, v.\; l_{res} \mapsto Some~v \ast \gspdone{\gamma} \ast \always \Phi~v)
-                                                       \end{aligned} \\
-    mainResult~\gamma~l_{res}~\Phi & \triangleq\; \knowInv{\rN{}}{mainResultInner~\gamma~l_{res}~\Phi} \\
-    \gsReady{1}\; f                 & \triangleq\;                   \ewp{f\; ()}{\bot}{\top}
+                                                                & (l_{res} \mapsto None \ast \gspwait{\gamma})                                      \\
+                                                         \vee\; & (\exists\, v.\; l_{res} \mapsto Some~v \ast \gspdone{\gamma} \ast \always \Phi~v)
+                                                       \end{aligned}                                       \\
+    mainResult~\gamma~l_{res}~\Phi      & \triangleq\; \knowInv{\rN{}}{mainResultInner~\gamma~l_{res}~\Phi}                                                                             \\
+    \gsReady{1}\; f                     & \triangleq\;                   \ewp{f\; ()}{\bot}{\top}
   \end{align*}
   \caption{Logical state definitions for the verification of our Eio model.}
   \label{fig:logical-state-simpl}\label{spec:pinv}\label{spec:is_promise}\label{spec:pstate}
