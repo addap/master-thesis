@@ -88,11 +88,11 @@ It sets up the scheduler environment and then runs the main fiber (and every sub
 The \ocamlin{result} reference eventually holds the final value of the main fiber.
 The \ocamlin{run_queue} (line~\ref{ln:run_queue}) contains closures that invoke the continuation of an effect.
 The closures represent ready fibers which can continue execution from the point where they performed an effect.
-The \ocamlin{next} function (line~\ref{ln:run_next}) pops one fiber (i.e. function) from the \ocamlin{run_queue} and executes it.
+The \ocamlin{next} function (line~\ref{ln:run_next}) pops one fiber from the \ocamlin{run_queue} and executes it.
 If no more ready fibers remain, the function will check if the main fiber has already finished execution~\ref{ln:run_check} and if so it will also exit, which causes the scheduler to return the main fiber's final value~\ref{ln:run_return}.
 Otherwise, the main fiber's continuation exists \emph{somewhere} -- it could be deadlocked or just awaiting a promise from a different thread -- so the \ocamlin{next} function busy loops until a fiber becomes available again.
 Busy looping makes sense in this case because other threads can push values into the \ocamlin{run_queue}.
-For the verification we assume the specification of a suitable \ocamlin{Queue} module that supports thread-safe push and pop operations.
+For the verification we assume the specification of a suitable \ocamlin{Queue} module that supports thread-safe push and pop operations and given a predicate \(I\), maintains that all elements \(v\) in the queue satisfy \(I~v\).
 
 The inner \ocamlin{execute} function (line~\ref{ln:run_execute}) is called once on each fiber to evaluate it and handle any performed effects.
 \subsubsection*{Value Case}
@@ -270,7 +270,7 @@ Otherwise, the cancellation succeeds and the \ocamlin{register} function has the
 \subsubsection{Safety of the Implementation}
 The \textbf{safety} concerns in the above implementation are
 \begin{enumerate}
-  \item \ocamlin{Scheduler.run} expecting the \ocamlin{result} reference to hold \ocamlin{Some} value after \ocamlin{execute} returns(figure~\ref{fig:sched-impl-run} line~\ref{ln:run_error})
+  \item \ocamlin{Scheduler.run} expecting the \ocamlin{result} reference to hold \ocamlin{Some} value after \ocamlin{execute} returns (figure~\ref{fig:sched-impl-run} line~\ref{ln:run_error})
   \item \ocamlin{Fiber.fork_promise} expecting the promise to be unfulfilled after the fiber has finished execution (figure~\ref{fig:sched-impl-fork} line~\ref{ln:fork_error}),
   \item and \ocamlin{Promise.await} expecting the promise to be fulfilled in the last match (figure~\ref{fig:sched-impl-await} line~\ref{ln:await_error}).
 \end{enumerate}
@@ -294,15 +294,15 @@ The subscripts on definitions indicate that we will change them later when exten
 % https://tex.stackexchange.com/a/586487
 \begin{figure}[ht]
   \begin{align*}
-    \gsIsWaker{1}\; wkr\; W & \triangleq \forall v.   \;  W\; v \wand{} \ewp{wkr\; v}{\bot}{\top}\label{spec:is_waker}                                                  \\
-    \gsIsReg{1}\; reg\; W   & \triangleq \forall wkr. \; \gsIsWaker{1}\; wkr\; W \wand{} \ewp{reg\; wkr}{\bot}{\top}                                                    \\
+    \gsIsWaker{}\; wkr\; W & \triangleq \forall v. \;  W\; v \wand{} \ewp{wkr\; v}{\bot}{\top}                                                  \\
+    \gsIsReg{1}\; reg\; W   & \triangleq \forall wkr. \; \gsIsWaker{}\; wkr\; W \wand{} \ewp{reg\; wkr}{\bot}{\top}                                                    \\
     \proto{1}               & \triangleq \begin{aligned}[t]
                                            Fork\;    & \# \; !\; e\; (e)\; \left\{\later \ewp{e\ \ ()}{\proto{1}}{\top}\right\}. ?\; ()\; \{ \top \}         \\
                                            Suspend\; & \# \; !\; reg\; W\; (reg)\; \left\{\gsIsReg{1}\; reg\; W\right\}.?\; y\; (y)\; \left\{ W\; y \right\}
                                          \end{aligned}
   \end{align*}
   \caption{Definition of \proto{1} protocol with \efork{} \& \esuspend{} effects.}
-  \label{fig:coop-protocol-1}\label{spec:suspend}
+  \label{fig:coop-protocol-1}\label{spec:suspend}\label{spec:is_waker}
 \end{figure}
 
 \paragraph*{\efork{}}
@@ -317,7 +317,7 @@ The weakest precondition argument is guarded behind a later modality because of 
 \paragraph*{\esuspend{}}
 From the type of the \esuspend{} effect in figure~\ref{fig:sched-impl-run} we already know that a value (of type \ocamlin{'a}) can be transmitted from the party that calls the \ocamlin{waker} function to the fiber that performed the effect.
 The \esuspend{} protocol now expresses the same idea on the level of resources.
-To suspend, a fiber must supply a function \ocamlin{register} that satisfies the \gsIsReg{} predicate.
+To suspend, a fiber must supply a function \ocamlin{register} that satisfies the \gsIsReg{1} predicate.
 This predicate expresses that \ocamlin{register} can be called on a \ocamlin{waker} function for which we get to assume that it is callable on any value \(v\) that satisfies \(W\; v\).
 
 Both \ocamlin{register} and \ocamlin{waker} must not perform effects and are callable only once (since the \ewpt{} is an affine resource itself).
@@ -329,29 +329,37 @@ By appropriately instantiating \(W\), we can enforce that some condition holds b
 \subsubsection{Logical State}
 \label{sec:sched-spec-state}
 
-The most basic ghost state we define is a variation of a \emph{one-shot}, which we use in several places to track whether a reference \(l\) has been assigned a value.
+The most basic ghost state we define is a variation of a \emph{one-shot}, which we use in several places to track whether a reference \(l\) holding an optional value has been assigned to.
 Its rules are described in figure~\ref{fig:promise-state-rules}.
-In the beginning, two copies of \gspwait{\gamma} are created.
-This is because we often put one copy into an invariant that either holds a \gspwait{\gamma} or a \gspdone{\gamma} along with the points-to connective of the reference \(l\).
-Using the second copy, we can then differentiate the two cases of the invariant.
-When assigning a value to the reference, both copies are combined and converted to a persistent \gspdone{} resource.
-The \gspwait{} and \gspdone{} resources cannot exist at the same time.
+Initially, we create two copies of \gspwait{\gamma}, which expresses that the reference holds a \(None\) value.
+One copy can be placed into an invariant that either holds an \gspwait{\gamma} or an \(\gspdone{\gamma}~v\) along with the points-to connective of the reference \(l\).
+Using the second copy, we can then differentiate the two cases of the invariant because the \gspwait{\gamma} and \gspdone{\gamma} resources cannot exist at the same time.
+When assigning a value \(v\) to the reference, both copies are combined and converted to a persistent \(\gspdone{\gamma}~v\). 
+If the value does not matter we just write \gspdone{\gamma}.
 
-Other pieces of ghost state are \gsPInvIn{}, \gsIsPr{}, and \gsReady{} described in figure~\ref{fig:logical-state-simpl}.\todo{explain the mainResult}
+Other pieces of ghost state are \gsPInvIn{}, \gsIsPr{}, \gsMainResIn{}, and \gsReady{1} described in figure~\ref{fig:logical-state-simpl}.
+
 \gsPInvIn{} tracks additional resources for all existing promises by using an authoritative map which contains for each promise:
 a location \(p\) holding its current program value,
-a ghost name \(\gamma\) that is used for the \gspwait{} and \gspdone{} resources,
+a ghost name \(\gamma\) that is used for the \gspwait{\gamma} and \gspdone{\gamma} resources,
 and a predicate \(Φ\) that describes the value the promise will eventually hold.
-
-Additionally, for each promise in the map we own some resources as part of \gsPInvIn{} that depend on the current state of the promise.
-As long as the promise is not fulfilled we own a broadcast, one copy of \gspwait{}, and a \gssignal{}.
+Additionally, for each promise in the map we own resources as part of \gsPInvIn{} that depend on the current state of the promise.
+As long as the promise is not fulfilled we know that \(bcst\) is a broadcast instance, and we own one copy of \gspwait{\gamma} and a \gssignal{}.
 The \gssignal{} is used to call the \ocamlin{Broadcast.signal_all} function which must only be called once.
-When the promise has been fulfilled, we instead own a \gspdone{} and the knowledge that the final value satisfies the given postcondition \(Φ\).\todo{\gsPInv{} is an invariant that wraps \gsPInvIn{} so that we can share it.}
+When the promise is fulfilled, we instead own an \gspdone{\gamma}, and we know that the final value satisfies the given postcondition \(Φ\).
 
-\gsIsPr{} is a persistent resource that denotes that \(p\) exists as a promise in \gsPInvIn{}. The \(pn\) ghost name is globally unique and included in the resource algebra we use for the proofs.
+We define \gsPInv{} as an invariant that contains the promise map so that we can globally share it.
+\gsIsPr{} represents the knowledge that a certain promise is contained in the map of \gsPInvIn{} and can be used to temporarily access the resources of this promise.
+The \(\gamma_p\) ghost name is globally unique.
 
-The \gsReady{} predicate describes fibers in a scheduler's \ocamlin{run_queue}.
-It expresses that \emph{f} is safe to be executed and is used as the invariant for a scheduler's run queue, i.e. it should hold for all fibers in the run queue that they can be executed.
+We take a similar approach for the result of the main fiber but this resource exists for each scheduler instead of being globally unique.
+\(\gsMainResIn{}~\gamma~l_{res}~\Phi\) tracks the state of the location \(l_{res}\) (\ocamlin{result} in figure~\ref{fig:sched-impl-run}).
+The location either contains \(None\) or a value that satisfies the postcondition of the main fiber \(Phi\).
+
+The \gsReady{1} predicate is used as the invariant for each scheduler's \ocamlin{run_queue}.
+It is parameterized by the ghost name \(\gamma\) of the scheduler's \gsMainResIn{} resource.
+\(\gsReady{1}~\gamma\) expresses that all fibers are safe to execute and will only return when the result of the main fiber has been assigned (hence the \gspdone{\gamma}).
+This formulation is due to the continuation passing style construction of the scheduler, which invokes a continuation at the end of the \ocamlin{execute} function, so it only returns when all fibers have finished.
 
 \begin{figure}
   \begin{mathpar}
@@ -388,18 +396,18 @@ It expresses that \emph{f} is safe to be executed and is used as the invariant f
 \begin{figure}[ht]
   \begin{align*}
     \gsPState{}\; p\; \gamma\; \Phi     & \triangleq\; \begin{aligned}[t]
-                                                                & (\exists\, bcst.\; p \mapsto Waiting\; bcst \ast \gsIsBcst{}\; bcst \ast \gspwait{} \ast \gssignal{}) \\
-                                                         \vee\; & (\exists\, v.\; p \mapsto Done\; v \ast \gspdone{} \ast \always \Phi\; v)
+                                                                & (\exists\, bcst.\; p \mapsto Waiting\; bcst \ast \gspwait{\gamma} \ast \gsIsBcst{}\; bcst \ast \gssignal{}) \\
+                                                         \vee\; & (\exists\, v.\; p \mapsto Done\; v \ast \gspdone{\gamma} \ast \always \Phi\; v)
                                                        \end{aligned}                   \\
-    \gsIsPr{}\; p\; \Phi                & \triangleq\; \exists \gamma.\; \ownGhost{\delta}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}}                          \\
-    \gsPInvIn{}                         & \triangleq\; \exists M.\; \ownGhost{\delta}{\authfull{}\; M} \ast \forall\, (p, \gamma) \mapsto \Phi \in M.\; \gsPState{}\; p\; \gamma\; \Phi \\
+    \gsPInvIn{}                         & \triangleq\; \exists M.\; \ownGhost{\gamma_p}{\authfull{}\; M} \ast \forall\, (p, \gamma) \mapsto \Phi \in M.\; \gsPState{}\; p\; \gamma\; \Phi \\
+    \gsIsPr{}\; p\; \Phi                & \triangleq\; \exists \gamma.\; \ownGhost{\gamma_p}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}}                          \\
     \gsPInv{}                           & \triangleq\; \knowInv{\pN{}}{\gsPInvIn{}}                                                                                                     \\
-    mainResultInner~\gamma~l_{res}~\Phi & \triangleq\; \begin{aligned}[t]
-                                                                & (l_{res} \mapsto None \ast \gspwait{\gamma})                                      \\
+    \gsMainResIn{}~\gamma~l_{res}~\Phi & \triangleq\; \begin{aligned}[t]
+                                                     & (l_{res} \mapsto None \ast \gspwait{\gamma})                                      \\
                                                          \vee\; & (\exists\, v.\; l_{res} \mapsto Some~v \ast \gspdone{\gamma} \ast \always \Phi~v)
                                                        \end{aligned}                                       \\
-    mainResult~\gamma~l_{res}~\Phi      & \triangleq\; \knowInv{\rN{}}{mainResultInner~\gamma~l_{res}~\Phi}                                                                             \\
-    \gsReady{1}\; f                     & \triangleq\;                   \ewp{f\; ()}{\bot}{\top}
+    \gsMainRes{}~\gamma~l_{res}~\Phi      & \triangleq\; \knowInv{\rN{}}{\gsMainRes{}~\gamma~l_{res}~\Phi}                                                                             \\
+    \gsReady{1}~\gamma~f                     & \triangleq\;                   \ewp{f\; ()}{\bot}{\gspdone{\gamma}}
   \end{align*}
   \caption{Logical state definitions for the verification of our Eio model.}
   \label{fig:logical-state-simpl}\label{spec:pinv}\label{spec:is_promise}\label{spec:pstate}
@@ -412,39 +420,30 @@ We show a detailed proof of the specification only for \ocamlin{Promise.await} b
 \label{sec:sched-spec-run}
 
 The interesting part about the scheduler specification \textsc{Spec-Run} is that it proves \textbf{effect safety} of the fiber runtime, i.e. no matter what a fiber does it will not crash the scheduler due to an unhandled effect.
-This is expressed by allowing the fiber \(main\) to perform effects according to the \proto{} protocol, but running the scheduler on the main fiber (\(run\; main\)) obeys the empty protocol, so no effects escape.
+This is expressed by allowing the fiber \(main\) to perform effects according to the \proto{1} protocol, but running the scheduler on the main fiber (\(run~main\)) obeys the empty protocol, so no effects escape.
 Of course, the \ewpt{} itself also implies \textbf{safety} of running both the main fiber and the scheduler.
 
 \[
   \inferrule[Spec-Run]
-  {\ewp{main\; ()}{\proto{}}{v,\; \always \Phi\; v}}
-  {\ewp{run\; main}{\bot}{v,\; \always \Phi\; v}}
+  {\ewp{main\; ()}{\proto{1}}{v.\; \always \Phi\; v}}
+  {\ewp{run\; main}{\bot}{v.\; \always \Phi\; v}}
 \]
 
-% The proof proceeds as follows:
-% - Creating the run queue also returns a persistent resource which is used for all later calls to the \ocamlin{next} function.
-% - For the inner \efork{} function we use Löb induction since it is called recursively.
-% - Since it is a deep effect handler we need to satisfy the \ocamlin{deep-handler} predicate for the \ocamlin{Coop} protocol.
-% - The \efork{} case just recurses in the \efork{} function so we use the induction hypothesis.
-% - For the \esuspend{} case we define the \ocamlin{waker} function and prove \ocamlin{W v -∗ EWP waker () <| ⊥ |> {{ ⊤ }}} in order to call the \ocamlin{register} function on it.
-% This holds by construction of the \ocamlin{waker} function because \ocamlin{W v} is a precondition for invoking the fiber's continuation \ocamlin{k}.
-
-However, the specification only talks about effect safety and not about handling fibers correctly in any other way, e.g. regarding fairness of scheduling or just not dropping fibers.
-For example, a trivial \(run\) function which ignores the \(main\) argument and immediately returns satisfies the same specification.
-For a scheduler it would be desirable to prove these properties, too, but since they are liveness properties it is hard to do in Iris\todo{Explain why it's hard} and not a focus of this thesis.
+Regarding the safety of matching on the \ocamlin{result} reference: Because the \ocamlin{execute} function only returns when the main fiber has finished (so it has also assigned a value to \ocamlin{result}),
+we show that the postcondition of \ocamlin{execute} includes \(\gspdone{\gamma}\), which allows us to refute the error branch of the final match expression.
 
 \subsubsection{\ocamlin{Fiber.fork_promise}}
 \label{sec:sched-spec-fork}
 
-The specification \textsc{Spec-ForkPromise} expresses that we receive from \(fork\_promise\) a value \(p\) that will eventually hold a value satisfying \(\Phi\).
+The specification \textsc{Spec-ForkPromise} expresses that we receive from \(fork\_promise\) a promise \(p\) that will eventually hold a value satisfying \(\Phi\).
 It has two preconditions, for one we must give it an arbitrary expression \(f\) representing the new fiber.
-When called, \(f\) obeys the \proto{} protocol and returns some value \(v\) satisfying \(\Phi\).
-Also, \(fork\_promise\) needs the \gsPInv{} invariant to interact with the global collection of promises, because it creates a new promise and fulfills it after \(f\) has finished executing.
+When called on unit, \(f\) obeys the \proto{1} protocol and returns some value \(v\) satisfying \(\Phi\).
+Also, \(fork\_promise\) needs the \gsPInv{} invariant to interact with the global collection of promises, because it creates a new promise and fulfills it after \(f\) has finished execution.
 
 \[
   \inferrule[Spec-ForkPromise]
-  {\gsPInv{} \ast \ewp{f\;()}{\proto{}}{v,\; \always \Phi\; v}}
-  {\ewp{fork\_promise\; f}{\proto{}}{p,\; \gsIsPr{}\; p\; \Phi}}
+  {\gsPInv{} \ast \ewp{f\;()}{\proto{1}}{v.\; \always \Phi\; v}}
+  {\ewp{fork\_promise\; f}{\proto{1}}{p.\; \gsIsPr{}\; p\; \Phi}}
 \]
 
 \subsubsection{\ocamlin{Promise.await}}
@@ -455,21 +454,22 @@ It shows that \(await\) consumes a promise \(p\) and eventually returns its valu
 The precondition \gsPInv{} is again necessary to interact with the global collection of promises and \gsIsPr{} is used to identify the promise \(p\) in that collection.
 
 If \(p\) is still unfulfilled the first time \(await\) checks the promise state, it calls \(make\_register\) to create a \ocamlin{register} function which it passes to the \esuspend{} effect.
-As the \textsc{Spec-MakeRegister} specification shows, \ocamlin{make_register} returns a suitable function that satisfies the \gsIsReg{} predicate, instantiating \(W\) with \((\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})\) so that we obtain a \gspdone{} resource when the effect returns.
+As the \textsc{Spec-MakeRegister} specification shows, \(make\_register\) returns a suitable function that satisfies the \gsIsReg{1} predicate, instantiating \(W\) with \((\lambda\; v.\; \ulcorner v = () \urcorner \ast \gspdone{\gamma})\) so that we obtain an \gspdone{\gamma} resource when the effect returns.
+This then allows us to refute the error case in the final match.
 
 \begin{mathpar}
   \inferrule[Spec-MakeRegister]
-  { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi \ast \gsIsBcst{}\; bcst }
-  { \ewp{make\_register\; p\; bcst}{\bot}{reg,\; \gsIsReg{}\; reg\; (\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})}}\label{spec:make_register}
+  { \gsPInv{} \ast \ownGhost{\gamma_p}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}} \ast \gsIsBcst{}\; bcst }
+  { \ewp{make\_register\; p\; bcst}{\bot}{reg.\; \gsIsReg{1}\; reg\; (\lambda\; v.\; \ulcorner v = () \urcorner \ast \gspdone{\gamma})}}\label{spec:make_register}
   % 
   \and
   % 
   \inferrule[Spec-Await]
   { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi }
-  { \ewp{await\; p}{\proto{}}{v,\; \always \Phi\; v}}\label{spec:await}
+  { \ewp{await\; p}{\proto{1}}{v.\; \always \Phi\; v}}\label{spec:await}
 \end{mathpar}
 
-In figures~\ref{fig:sched-spec-makeregister-proof} and~\ref{fig:sched-spec-await-proof} we give Hoare-style proof annotations for the two functions \ocamlin{make_register} and \ocamlin{Promise.await} from figure~\ref{fig:sched-impl-await}.
+In figures~\ref{fig:sched-spec-makeregister-proof} and~\ref{fig:sched-spec-await-proof} we give Hoare-style proof annotations for the two functions \(make\_register\) and \(await\).
 The proof of \textsc{Spec-MakeRegister} uses the specifications of some broadcast functions.
 We briefly explain these specifications and their logical state definitions now and expand upon them in section~\ref{sec:broadcast-spec}.
 
@@ -485,17 +485,17 @@ We briefly explain these specifications and their logical state definitions now 
 \begin{mathpar}
   \inferrule[Spec-BroadcastRegister]
   { \gsIsBcst{}\; bcst \ast \gsIsCb{}\; callback\; R }
-  { \ewp{register\; bcst\; callback}{\bot}{r,\; \emph{isBroadcastRegisterResult}\; r\; callback\; R}}\label{spec:bcst_register}
+  { \ewp{register\; bcst\; callback}{\bot}{r.\; \emph{isBroadcastRegisterResult}\; r\; callback\; R}}\label{spec:bcst_register}
   % 
   \and
   % 
   \inferrule[Spec-BroadcastTryCancel]
   { \emph{isBroadcastRegisterHandle}\; h\; cb\; R }
-  { \ewp{try\_unregister\; h}{\bot}{b,\; if\; b\; then\; \gsIsCb{}\; cb\; R\; else\; \top}}\label{spec:bcst_cancel}
+  { \ewp{try\_unregister\; h}{\bot}{b.\; if\; b\; then\; \gsIsCb{}\; cb\; R\; else\; \top}}\label{spec:bcst_cancel}
 \end{mathpar}
 
 The function \ocamlin{Broadcast.register} takes a callback \(cb\) that satisfies the \gsIsCb{} predicate to register it in the broadcast data structure.
-This predicate is structurally similar to \gsIsWaker{} and, in fact, in the proof of \textsc{Spec-MakeRegister} we instantiate the precondition \(R\) with \(\gspdone{}\) and pass as the callback a \ocamlin{waker} function, which has the precondition \((\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})\) as described above.
+This predicate is structurally similar to \gsIsWaker{} and, in fact, in the proof of \textsc{Spec-MakeRegister} we instantiate the precondition \(R\) with \(\gspdone{\gamma}\) and pass as the callback a \ocamlin{waker} function, which has the precondition \((\lambda\; v.\; \ulcorner v = () \urcorner \ast \gspdone{\gamma})\) as described above.
 The result of \ocamlin{Broadcast.register} is either a value \(Invoked\), which expresses that it called the callback directly, or a register handle, which can be used to call \ocamlin{Broadcast.try_unregister}.
 
 \ocamlin{Broadcast.try_unregister} attempts to cancel a previous registration identified by the given \(handle\).
@@ -506,14 +506,14 @@ If the cancellation is successful, we receive a \(\gsIsCb{}\) resource which sho
 In the proof below an opened invariant \(Inv\) is represented as \(\cancel{Inv}\) and resources that are not needed for the rest of the proof are dropped implicitly.
 
 The proof of \textsc{Spec-MakeRegister} is straightforward and follows from the specifications of \ocamlin{Broadcast.register} and \ocamlin{Broadcast.try_unregister}.
-For \textsc{Spec-Await}, the crux is that we define \textsc{Spec-MakeRegister} so that it returns a \(register\) function which satisfies \(\gsIsReg{}\; register\; (\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})\).
-Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect returns, and we can refute the case of the promise still being unfulfilled when checking the state of promise again for the last time.
+For \textsc{Spec-Await}, the crux is that we define \textsc{Spec-MakeRegister} so that it returns a \(register\) function which satisfies \(\gsIsReg{1}\; register\; (\lambda\; v.\; \ulcorner v = () \urcorner \ast \gspdone{\gamma})\).
+Then, we get access to the \(\gspdone{\gamma}\) resource when the \esuspend{} effect returns, and we can refute the case of the promise still being unfulfilled when checking the state of promise again for the last time.
 
 \begin{figure}[H]
   \[
     \inferrule[Spec-MakeRegister]
-    { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi \ast \gsIsBcst{}\; bcst }
-    { \ewp{make\_register\; p\; bcst}{\bot}{reg,\; \gsIsReg{}\; reg\; (\lambda\; v,\; \ulcorner v = () \urcorner \ast \gspdone{})}}\label{spec:make_register}
+    { \gsPInv{} \ast \ownGhost{\gamma_p}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}} \ast \gsIsBcst{}\; bcst }
+    { \ewp{make\_register\; p\; bcst}{\bot}{reg.\; \gsIsReg{1}\; reg\; (\lambda\; v.\; \ulcorner v = () \urcorner \ast \gspdone{\gamma})}}\label{spec:make_register}
   \]
   \hspace*{-5em}{\setlength{\extrarowheight}{3pt}
     \begin{tabular}{@{}ll@{}}
@@ -521,10 +521,10 @@ Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect r
       \myquad[2] \ocamlreal{: (unit waker -> unit) =}                                             &                                                                                                            \\
       \(\left\{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \right\}\)                   &                                                                                                            \\
       \myquad[1] \ocamlreal{  fun (waker: unit waker) ->}                                         & [ intro waker that satisfies \hyperref[spec:is_waker]{\gsIsWaker{}} ]                                      \\
-      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \ast                                                                                                                            \\ (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) } \right\} \)&\\
-      \myquad[2] \ocamlreal{  let regres = Broadcast.register bcst waker in}                      & [ apply \hyperref[spec:bcst_register]{\textsc{Spec-BroadcastRegister}} with \(R \coloneq \gspdone{}\) ]    \\
+      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \ast                                                                                                                            \\ (\gspdone{\gamma} \wand \ewp{waker\; ()}{\bot}{\top}) } \right\} \)&\\
+      \myquad[2] \ocamlreal{  let regres = Broadcast.register bcst waker in}                      & [ apply \hyperref[spec:bcst_register]{\textsc{Spec-BroadcastRegister}} with \(R \coloneq \gspdone{\gamma}\) ]    \\
       \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \ast                                                                                                                            \\ \emph{isBroadcastRegisterResult}\; regres } \right\}\) &\\
-      \myquad[2] \ocamlreal{  match regres with}                                                  & [ CA on \(regres\) ]                                                                                       \\[3pt]
+      \myquad[2] \ocamlreal{  match regres with}                                                  & [ case analysis on \(regres\) ]                                                                                       \\[3pt]
       \hline                                                                                                                                                                                                   \\[-15pt]
       1. \(\left\{  regres = None \right\}\)                                                      &                                                                                                            \\
       \myquad[2] \ocamlreal{ | None -> () }                                                       & [ goal is {\color{red}trivial} ]                                                                           \\
@@ -533,16 +533,16 @@ Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect r
       2. \(\left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst\; \ast                                                                                                                      \\ regres = Some\; handle \ast \emph{isBroadcastRegisterHandle}\; handle } \right\}\) & \\
       \myquad[2] \ocamlreal{ | Some handle -> }                                                   & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\(\gsIsPr{}\; p\)} ] \\
       \hphantom{2..} \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsBcst{}\; bcst\; \ast                                                                                                                    \\ \emph{isBroadcastRegisterHandle}\; handle \ast \gsPState{}\; p\; \gamma\; \Phi } \right\}\) &\\
-      \myquad[3] \ocamlreal{ match Atomic.get p with }                                            & [ CA on \hyperref[spec:pstate]{\gsPState{}} ]                                                              \\[3pt]
+      \myquad[3] \ocamlreal{ match Atomic.get p with }                                            & [ case analysis on \hyperref[spec:pstate]{\gsPState{}} ]                                                              \\[3pt]
       \hline                                                                                                                                                                                                   \\[-12pt]
-      2.1. \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsBcst{}\; bcst\; \ast                                                                                                                              \\ \emph{isBroadcastRegisterHandle}\; handle \ast \\ p \mapsto Done\; result \ast \gspdone{} } \right\}\)  &\\
+      2.1. \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsBcst{}\; bcst\; \ast                                                                                                                              \\ \emph{isBroadcastRegisterHandle}\; handle \ast \\ p \mapsto Done\; result \ast \gspdone{\gamma} } \right\}\)  &\\
       \myquad[3] \ocamlreal{| Done result -> }                                                    & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                  \\
-      \hphantom{2.1..} \(\left\{ \makecell{ \gsIsBcst{}\; bcst \ast \emph{isBroadcastRegisterHandle}\; handle \ast                                                                                             \\ \gspdone{} } \right\}\) &\\
-      \myquad[4] \ocamlreal{ if Broadcast.try_unregister handle }                                 & [ apply \hyperref[spec:bcst_cancel]{\textsc{Spec-BroadcastTryCancel}}, CA on return value  ]               \\[3pt]
+      \hphantom{2.1..} \(\left\{ \makecell{ \gsIsBcst{}\; bcst \ast \emph{isBroadcastRegisterHandle}\; handle \ast                                                                                             \\ \gspdone{\gamma} } \right\}\) &\\
+      \myquad[4] \ocamlreal{ if Broadcast.try_unregister handle }                                 & [ apply \hyperref[spec:bcst_cancel]{\textsc{Spec-BroadcastTryCancel}}, case analysis on return value  ]               \\[3pt]
       \hline                                                                                                                                                                                                   \\[-15pt]
-      2.1.1. \(\left\{ \gspdone{} \ast (\gspdone{} \wand \ewp{waker\; ()}{\bot}{\top}) \right\}\) & [ specialize assumption ]                                                                                  \\
+      2.1.1. \(\left\{ \gspdone{\gamma} \ast (\gspdone{\gamma} \wand \ewp{waker\; ()}{\bot}{\top}) \right\}\) & [ specialize assumption ]                                                                                  \\
       \hphantom{2.1.1..} \(\left\{ {\color{red}\ewp{waker\; ()}{\bot}{\top}} \right\}\)           &                                                                                                            \\
-      \myquad[4] \ocamlreal{ then waker () }                                                      & [ by {\color{red}apply} \ewpt{} ]                                                                          \\
+      \myquad[4] \ocamlreal{ then waker () }                                                      & [ by {\color{red}apply} \(\ewp{waker\; ()}{\bot}{\top}\) ]                                                                          \\
       \hphantom{2.1.1..} \(\left\{ \top \right\}\)                                                &                                                                                                            \\[3pt]
       \hline                                                                                                                                                                                                   \\[-15pt]
       2.1.2. \(\left\{ \top \right\}\)                                                            &                                                                                                            \\
@@ -561,14 +561,14 @@ Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect r
   \[
     \inferrule[Spec-Await]
     { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi }
-    { \ewp{await\; p}{\proto{}}{v,\; \always \Phi\; v}}\label{spec:await}
+    { \ewp{await\; p}{\proto{1}}{v.\; \always \Phi\; v}}\label{spec:await}
   \]
   \hspace*{-3em}{\setlength{\extrarowheight}{3pt}
     \begin{tabular}{@{}ll@{}}
       \ocamlreal{ let await (p: 'a t) : 'a = }                                                                       &                                                                                                                              \\
       \( \left\{ \gsPInv{} \ast \gsIsPr{}\; p \right\} \)                                                            & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\(\gsIsPr{}\; p\)} ]                   \\
       \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; p \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) &                                                                                                                              \\
-      \myquad[1] \ocamlreal{match Atomic.get p with}                                                                 & [ CA on \hyperref[spec:pstate]{\gsPState{}} ]                                                                                \\[3pt]
+      \myquad[1] \ocamlreal{match Atomic.get p with}                                                                 & [ case analysis on \hyperref[spec:pstate]{\gsPState{}} ]                                                                                \\[3pt]
       \hline                                                                                                                                                                                                                                        \\[-12pt]
       1. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast                                                                                                                                                                                              \\ p \mapsto Done\; result \ast \always (\Phi\; result) } \right\} \)                                                       &                             \\
       \myquad[1] \ocamlreal{| Done result -> }                                                                       & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                                    \\
@@ -580,11 +580,11 @@ Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect r
       \myquad[1] \ocamlreal{| Waiting bcst ->}                                                                       & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                                    \\
       \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gsIsBcst{}\; bcst } \right\} \) &                                                  \\
       \myquad[2] \ocamlreal{let register = make_register p bcst}                                                     & [ apply \hyperref[spec:make_register]{\textsc{Spec-MakeRegister}} ]                                                          \\
-      \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gsIsReg{}\; register } \right\} \) &                                                  \\
-      \myquad[2] \ocamlreal{perform (Suspend register);}                                                             & [ protocol of \hyperref[spec:suspend]{\esuspend{}} with \((W := \lambda v,\; \ulcorner v = () \urcorner \ast \gspdone{})\) ] \\
-      \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gspdone{} } \right\} \) & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\(\gsIsPr{}\; p\)} ] \\
-      \hphantom{2..} \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{}                                                                                                                                                                       \\ \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) & \\
-      \myquad[2] \ocamlreal{match Atomic.get p with}                                                                 & [ CA on \hyperref[spec:pstate]{\gsPState{}} ]                                                                                \\[3pt]
+      \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gsIsReg{1}\; register } \right\} \) &                                                  \\
+      \myquad[2] \ocamlreal{perform (Suspend register);}                                                             & [ protocol of \hyperref[spec:suspend]{\esuspend{}} with \((W := \lambda v.\; \ulcorner v = () \urcorner \ast \gspdone{\gamma})\) ] \\
+      \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gspdone{\gamma} } \right\} \) & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\(\gsIsPr{}\; p\)} ] \\
+      \hphantom{2..} \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{\gamma}                                                                                                                                                                       \\ \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) & \\
+      \myquad[2] \ocamlreal{match Atomic.get p with}                                                                 & [ case analysis on \hyperref[spec:pstate]{\gsPState{}} ]                                                                                \\[3pt]
       \hline                                                                                                                                                                                                                                        \\[-12pt]
       2.1.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast                                                                                                                                                                                           \\ p \mapsto Done\; result \ast \always (\Phi\; result) } \right\} \) &                                                  \\
       \myquad[2] \ocamlreal{| Done result -> }                                                                       & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                                    \\
@@ -592,7 +592,7 @@ Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect r
       \myquad[3] \ocamlreal{result}                                                                                  & [ by {\color{red}assumption} ]                                                                                               \\
       \hphantom{2.1..}  \( \left\{ \always (\Phi\; result) \right\} \)                                               &                                                                                                                              \\[3pt]
       \hline                                                                                                                                                                                                                                        \\[-12pt]
-      2.2.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{} \ast                                                                                                                                                                           \\ p \mapsto Waiting\; bcst \ast \gspwait{} } \right\} \) &                                                  \\
+      2.2.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{\gamma} \ast                                                                                                                                                                           \\ p \mapsto Waiting\; bcst \ast \gspwait{} } \right\} \) &                                                  \\
       \myquad[2] \ocamlreal{| Waiting _ -> }                                                                         & [ specialize \hyperref[spec:ps_contra]{\textsc{PS-Contra}} ]                                                                 \\
       \hphantom{2.2..}  \( \left\{ \cancel{\gsPInv{}} \ast {\color{red}\bot} \right\} \)                             &                                                                                                                              \\
       \myquad[3] \ocamlreal{error "impossible"}                                                                      & [ by {\color{red}contradiction} ]                                                                                            \\
@@ -608,7 +608,7 @@ Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect r
 %   \item If the promise is already fulfilled we can take the \ocamlin{Φ v} and return that.
 %   \item If it is not fulfilled, then we get access to a CQS instance and can make the \ocamlin{register} function using the \emph{IsPromise} and \ocamlin{is_cqs} resources.
 %   \item Using the \ewpt{} for the \ocamlin{register} function we can invoke the \esuspend{} effect and set \ocamlin{W _ := promise_done γ}.
-%   \item As a result we now have the \gspdone{} resource and when we match on the promise again, the unfulfilled case can be ruled out.
+%   \item As a result we now have the \gspdone{\gamma} resource and when we match on the promise again, the unfulfilled case can be ruled out.
 %   \item So now we can take the \ocamlin{Φ v} and return it.
 % \end{itemize}
 
@@ -640,13 +640,13 @@ Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect r
 
 % \begin{figure}[ht]
 %   \begin{align*}
-%     \gsReady{}\; q\; \phi\; k \triangleq \forall v.\; & \always \phi(v) \wand \later PromiseInv\; q \wand \later isQueue\; q\; (Ready\; q\; (\lambda w.\; w = ())) \wand \\
+%     \gsReady{1}\; q\; \phi\; k \triangleq \forall v.\; & \always \phi(v) \wand \later PromiseInv\; q \wand \later isQueue\; q\; (Ready\; q\; (\lambda w.\; w = ())) \wand \\
 %                                                       & \ewp{k\; v}{\bot}{\top}
 %   \end{align*}
 % \end{figure}
 
 % Since our logical state definitions are based on a case study of de Vilhena, we give a comparison of what had to be changed when adapting it to our model of Eio.
-% First, in the original development the \gsReady{} predicate fulfills two roles.
+% First, in the original development the \gsReady{1} predicate fulfills two roles.
 % \begin{enumerate}
 %   \item It expresses that all continuations in the scheduler's run-queue are safe to execute.
 %   \item It expresses that all continuations in a promise's waiting-queue are safe to execute.
@@ -655,14 +655,14 @@ Then, we get access to the \(\gspdone{}\) resource when the \esuspend{} effect r
 % \gsPInv{} and \gsIsQueue{} were both necessary as preconditions because they are not persistent and need to be passed around explicitly.
 
 % In our development \gsPInv{} could be dropped from the definition of Ready because it is now put into an Iris shareable invariant, and can be passed implicitly.
-% Similarly, the \gsIsQueue{} precondition was dropped from the definition of \gsReady{} because in Eio the run queue must be thread-safe, so the \gsIsQueue{} resource is persistent and can be passed to a fiber once when it is spawned.
-% Therefore, our \gsReady{} is neither recursive nor mutually recursive with \gsPInv{} anymore, which simplifies its usage in Iris.
+% Similarly, the \gsIsQueue{} precondition was dropped from the definition of \gsReady{1} because in Eio the run queue must be thread-safe, so the \gsIsQueue{} resource is persistent and can be passed to a fiber once when it is spawned.
+% Therefore, our \gsReady{1} is neither recursive nor mutually recursive with \gsPInv{} anymore, which simplifies its usage in Iris.
 % We note that the (mutual) recursion was only necessary because \gsPInv{} was used to track global state but was not put into an Iris shareable invariant, so it had to be passed around explicitly in many places.
 
-% We also split up the two uses of \gsReady{} and only use it under this name for the first role.
+% We also split up the two uses of \gsReady{1} and only use it under this name for the first role.
 % In the case of a scheduler's run-queue, \(Φ\; v\) degenerates just to \(\ulcorner v = () \urcorner\), so we can drop both from the definition and use \(()\) directly.
-% This is why our definition of \gsReady{} only contains an \ewpt{} without preconditions.
+% This is why our definition of \gsReady{1} only contains an \ewpt{} without preconditions.
 
-% For the second use case of describing the continuations in a promise's waiting-queue we now have another specialized version of \gsReady{}.
+% For the second use case of describing the continuations in a promise's waiting-queue we now have another specialized version of \gsReady{1}.
 % As explained in the next section, a broadcast has an invariant \(W\; v \wand \ewp{callback\; ()}{\bot}{\top}\) for all stored \(callback\)s.
-% This is just \gsReady{} where \(W\; v\) replaces \(Φ\; v\), and it is the same \(W\) as in the definition of the \esuspend{} effect.
+% This is just \gsReady{1} where \(W\; v\) replaces \(Φ\; v\), and it is the same \(W\) as in the definition of the \esuspend{} effect.

@@ -118,20 +118,22 @@
 \newcommand{\gsIsWaker}[1]{\ensuremath{isWaker_{#1}}}
 \newcommand{\gsIsCb}{\emph{isCallback}}
 \NewDocumentCommand\ewp{O{} m O{} m m}%
-  {\mathit{ewp}^{#1}_{#3}\spac\left(\mathtt{\scriptstyle #2}\right)\spac\left\langle#4\right\rangle\spac{\left\{#5\right\}}}
+  {\mathit{ewp}^{#1}_{#3}\spac\left(#2\right)\spac\left\langle#4\right\rangle\spac{\left\{#5\right\}}}
 \newcommand{\ewpt}{\emph{ewp}}
 \newcommand{\gsReady}[1]{\ensuremath{Ready_{#1}}}
-\newcommand{\gsPState}{\emph{PromiseState}}
-\newcommand{\gsPInvIn}{\emph{PInvInner}}
-\newcommand{\gsPInv}{\emph{PromiseInv}}
-\newcommand{\pN}{\ensuremath{\mathcal{pN}}}
-\newcommand{\rN}{\ensuremath{\mathcal{rN}}}
+\newcommand{\gsPState}{\emph{promiseState}}
+\newcommand{\gsPInvIn}{\ensuremath{promiseInv'}}
+\newcommand{\gsPInv}{\ensuremath{promiseInv}}
+\newcommand{\pN}{\ensuremath{\mathcal{N}_p}}
+\newcommand{\rN}{\ensuremath{\mathcal{N}_r}}
 \newcommand{\gsFiberResources}[2]{\ensuremath{fiberResources~#1~#2}}
 \newcommand{\gsIsFiberContext}{\emph{isFiberContext}}
 \newcommand{\gsTLVAg}[2]{\ensuremath{tlvAg~#1~#2}}
 \newcommand{\gsSavedPred}{\emph{savedPred}}
 \newcommand{\gsIsPr}{\emph{isPromise}}
 \newcommand{\gsIsQueue}{\emph{isQueue}}
+\newcommand{\gsMainResIn}{\ensuremath{\textit{mainResult'}}}
+\newcommand{\gsMainRes}{\ensuremath{\textit{mainResult}}}
 \newcommand{\gsIsBcst}{\emph{isBroadcast}}
 \newcommand{\gsOneShotAssign}{\ensuremath{OneShotAssign}}
 \newcommand{\gspwait}[1]{\ensuremath{osWaiting\;#1}}

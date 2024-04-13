@@ -114,7 +114,7 @@ We also obtain the unique resource \gssignal{}, which is held by the enclosing p
 \[
   \inferrule[Spec-BroadcastCreate]
   {inv\_heap\_inv}
-  {\ewp{create\; ()}{\bot}{bcst,\; \gsIsBcst{}\; bcst \ast \gssignal{}}}
+  {\ewp{create\; ()}{\bot}{bcst.\; \gsIsBcst{}\; bcst \ast \gssignal{}}}
 \]
 
 \subsubsection{\ocamlin{Broadcast.register}}
@@ -122,7 +122,7 @@ We also obtain the unique resource \gssignal{}, which is held by the enclosing p
 
 % For a \emph{register} operation the \emph{suspend permit} from the original CQS is not needed anymore since we do the \emph{enqueue registration} internally.
 A register operation takes a callback \(cb\) and the associated resource \(\gsIsCb{}\; cb\; R\) which represents the permission to invoke the callback.
-We instantiate \(R\) with \gspdone{} so that the callback transports the knowledge that the promise has been fulfilled.
+We instantiate \(R\) with \gspdone{\gamma} so that the callback transports the knowledge that the promise has been fulfilled.
 \(\gsIsCb{}\) is not persistent because the callback must be invoked only once.
 
 \begin{align*}
@@ -141,7 +141,7 @@ But if the cell is already in the \textbf{SIGNALLED} state, the function immedia
 \[
   \inferrule[Spec-BroadcastRegister]
   { \gsIsBcst{}\; bcst \ast \gsIsCb{}\; callback\; R }
-  { \ewp{register\; bcst\; callback}{\bot}{r,\; \emph{isBroadcastRegisterResult}\; r\; callback\; R}}
+  { \ewp{register\; bcst\; callback}{\bot}{r.\; \emph{isBroadcastRegisterResult}\; r\; callback\; R}}
 \]
 
 \subsubsection{\ocamlin{Broadcast.try_unregister}}
@@ -155,7 +155,7 @@ Otherwise, the permission to invoke the callback \(\gsIsCb{}\; cb\) is returned.
 \[
   \inferrule[Spec-BroadcastTryCancel]
   { \emph{isBroadcastRegisterHandle}\; h\; cb\; R }
-  { \ewp{try\_unregister\; h}{\bot}{b,\; if\; b\; then\; \gsIsCb{}\; cb\; R\; else\; \top}}
+  { \ewp{try\_unregister\; h}{\bot}{b.\; if\; b\; then\; \gsIsCb{}\; cb\; R\; else\; \top}}
 \]
 
 \subsubsection{\ocamlin{Broadcast.signal_all}}

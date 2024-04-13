@@ -147,10 +147,10 @@ Intuitively, the part after the exclamation mark gets "sent" to the effect handl
 \(\overrightarrow{x}\) and \(\overrightarrow{y}\) are binders whose scope extends from their position all the way to the right.
 The client who performs the effect transmits the value \(v\) to the effect handler and must prove the proposition \(P\).
 In return, the client receives from the effect handler a value \(w\) and gets to assume \(Q\).
-In total, this can be thought of as an analogue to a Hoare triple like \(\{P\}\, handler\; v\, \{w,\; Q\; w\}\), where we explicitly name the handler that handles the effect.
+In total, this can be thought of as an analogue to a Hoare triple like \(\{P\}\, handler\; v\, \{w.\; Q\; w\}\), where we explicitly name the handler that handles the effect.
 But the client only indirectly invokes the effect handler by evaluating a \(perform\) expression, so in practice we prove the following Hoare triple.
 \[
-    \{P\}\, perform\; v\, \{w,\; Q\; w\}
+    \{P\}\, perform\; v\, \{w.\; Q\; w\}
 \]
 
 Apart from the above there are three additional ways to define protocols.
