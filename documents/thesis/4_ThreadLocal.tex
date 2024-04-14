@@ -18,7 +18,7 @@ Of course, this comes with the restriction that it is only usable for fibers run
 
 % What we want to verify about thread-local variables. 
 
-In Eio thread-local variables are represented by a dictionary from variable names to arbitrary values and expose an intended API that only allows adding new entries.
+In Eio thread-local variables are represented by a dictionary from variable names to arbitrary values and expose an intended API that only allows adding new entries.\todo{Correct that you can't actually change the whole dict. But we still just use an optional integer for simplicity.}
 However, it is still possible for fibers to arbitrarily modify the whole dictionary, so for demonstration purposes we model thread-local variables as a single mutable reference that is part of the context record: \ocamlin{ctx.tlv}.
 Properties we want to prove about thread-local variables are:
 \begin{enumerate}

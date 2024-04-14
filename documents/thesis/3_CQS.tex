@@ -83,7 +83,7 @@ Then there can be another race between concurrent tryUnregister and signalAll op
 Both try to overwrite the callback with a token value, which changes the state to \(\textbf{CALLBACK}_\textbf{invoked}\) or \(\textbf{CALLBACK}_\textbf{unregistered}\), respectively, depending on the winner.
 
 \begin{figure}[ht]
-  \includegraphics[width=\textwidth]{Cell_States.eps}
+  \includegraphics[width=\textwidth]{Cell_States.png}
   \caption{State transition diagram for a single cell.}
   \label{fig:cqs-cell-states}
 \end{figure}
