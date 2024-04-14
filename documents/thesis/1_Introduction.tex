@@ -194,14 +194,15 @@ But for this work we restrict ourselves to verifying the safety and effect safet
 \end{enumerate}
 
 \begin{figure}[ht]
-    \includegraphics[width=\textwidth]{Eio_Module_Hierarchy.png}
+    \centering
+    \includegraphics[width=0.85\textwidth]{Eio_Module_Hierarchy.png}
     \caption{Eio module hierarchy.}
     \label{fig:eio-module-hierarchy}
 \end{figure}
 
 Figure~\ref{fig:eio-module-hierarchy} shows the simplified module hierarchy of the concepts we focus on.
-A standard arrow stands for a direct source code dependency from one module to another.
-The diamond arrow between \ocamlin{Scheduler} and \ocamlin{Fiber} stands for the implicit dependency that fibers perform effects which are handled by code in the scheduler module.
+A standard blue arrow stands for a direct source code dependency from one module to another.
+The highlighted green arrows from the \ocamlin{Fiber} and \ocamlin{Promise} modules to the \ocamlin{Scheduler} module stand for the implicit dependency of fiber code performing effects which are handled by the scheduler.
 
 Fibers can fork off new fibers using the \efork{} effect, suspend execution using the \esuspend{} effect, and get access to some context data using the \egetctx{} effect,
 all of which are handled by the scheduler they are running in.
