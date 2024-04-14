@@ -95,9 +95,6 @@
 \newmintinline[ocamlin]{text}{fontsize=\footnotesize}
 \newmintinline[ocamlreal]{ocaml}{fontsize=\footnotesize}
 \newmintinline[coqin]{text}{}
-% disable comments using italics
-% from https://tex.stackexchange.com/a/469702
-\xpatchcmd{\minted}{\VerbatimEnvironment}{\VerbatimEnvironment\let\itshape\relax}{}{}
 
 \BeforeBeginEnvironment{minted}{\begin{mdframed}}
 \AfterEndEnvironment{minted}{\end{mdframed}}

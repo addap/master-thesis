@@ -152,12 +152,13 @@ As a result, the pop operation has a standard specification \textsc{Spec-DQueueP
 Since our deferred queue reuses the code from the \ocamlin{Queue} module, we do not need to update the source code of \ocamlin{Scheduler.run}.
 But we must amend the proof of \textsc{Spec-Run}, namely the case for handling the \esuspend{} effect, shown below because the queue specifications changed.
 \begin{minted}[escapeinside=@@]{ocaml}
-match fiber () with
-...
-| @\texttt{\textbf{effect}}@ (Suspend register), k =>
-    let waker = fun v -> Queue.push run_queue (fun () -> continue k v) in
-    register waker;
-    next ()
+let rec execute fiber = 
+  match fiber () with
+  (* ... *)
+  | @\texttt{\textbf{effect}}@ (Suspend register), k =>
+      let waker = fun v -> Queue.push run_queue (fun () -> continue k v) in
+      register waker;
+      next ()
 \end{minted}
 First, do to a pop operation, the \ocamlin{execute} function now needs the unique \(isQueueReader\) resource.
 Since we call \ocamlin{execute} recursively for each fiber, we must pass this resource to each fiber continuation when running it.

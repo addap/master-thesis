@@ -157,7 +157,7 @@ Apart from the above there are three additional ways to define protocols.
 There is the sum constructor \(\Psi_1 + \Psi_2\) to combine two protocols, allowing \(e\) to perform effects according to both, and its neutral element, the empty protocol \(\bot\),
 which allows no effects.
 Finally, there is a tag constructor \(\mathcal{f} \mathop{\#} \Psi\) to give a name to protocols.
-Our example effect \ocamlin{E} from figure~\ref{fig:effect-example} could therefore be formalized using the following protocol \(\Psi_\mathtt{E}\).\todo{maybe more expressive example}
+Our example effect \ocamlin{E} from figure~\ref{fig:effect-example} could therefore be formalized using the following protocol \(\Psi_\mathtt{E}\).
 \[
     \Psi_\mathtt{E} \coloneq \mathtt{E} \mathop{\#}\; !\, i\, (i)\, \{ i \in \mathtt{int} \}.\; ?\, b\, (b)\, \{ b \in \mathtt{bool} \}
 \]

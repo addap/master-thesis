@@ -59,19 +59,19 @@ The specifications contain both extensions we discussed in sections~\ref{sec:dom
                                                     \end{aligned} \\
         \gsIsWaker{}~wkr~W             & \triangleq \forall v.   \;  W\; v \wand{} \ewp{wkr\ \ v}{\bot}{\top}                                                                                                \\
         \gsIsRegF{}~reg~W~S             & \triangleq \forall wkr. \; \gsIsWaker{}\; wkr\; W \wand{} \ewp{reg\ \ wkr}{\bot}{\always S}                                                                         \\
-        \protoF{}~l~\Omega              & \triangleq \begin{aligned}[t]
+        \protoF{}~l_{tlv}~\Omega              & \triangleq \begin{aligned}[t]
                                                         Fork\;       & \#\; \begin{aligned}[t]
-                                     & !\; e\; ((l, e))\; \begin{aligned}[t]
-                                           & \big\{ \gsFiberResources{l}{\Omega} \ast                                                                              \\
-                                           & \later\; (\gsFiberResources{l}{\Omega} \wand{} \ewp{e\ \ ()}{\protoF{}~l~\Omega}{\gsFiberResources{l}{\Omega}}) \big\}
-                                      \end{aligned} . \\
-                                     & ?\; ()\; \{ \gsFiberResources{l}{\Omega} \}
+                                     & !\; e\; (e)\; \begin{aligned}[t]
+                                           & \big\{ \gsFiberResources{l_{tlv}}{\Omega} \ast                                                                              \\
+                                           & \later\; (\gsFiberResources{l_{tlv}}{\Omega} \wand{} \ewp{e\ \ ()}{\protoF{}~l_{tlv}~\Omega}{\gsFiberResources{l_{tlv}}{\Omega}}) \big\} .
+                                      \end{aligned} \\
+                                     & ?\; ()\; \{ \gsFiberResources{l_{tlv}}{\Omega} \}
                                 \end{aligned}                                             \\
                                                         Suspend\;    & \#\; \begin{aligned}[t]
-                                     & !\; reg\; W\; S\; (reg)\; \{\gsFiberResources{l}{\Omega} \ast \gsIsRegF{}\; reg\; W\; S\}. \\
-                                     & ?\; v\; (v)\; \{ \gsFiberResources{l}{\Omega} \ast W~v \ast S \}
+                                     & !\; reg\; W\; S\; (reg)\; \{\gsFiberResources{l_{tlv}}{\Omega} \ast \gsIsRegF{}\; reg\; W\; S\}. \\
+                                     & ?\; v\; (v)\; \{ \gsFiberResources{l_{tlv}}{\Omega} \ast W~v \ast S \}
                                 \end{aligned} \\
-                                                        GetContext\; & \#\; !\; ()\; \{\top\}.\; ?\; (l)\; \{ \top \}
+                                                        GetContext\; & \#\; !\; ()\; \{\top\}.\; ?\; (l_{tlv})\; \{ \top \}
                                                     \end{aligned}
     \end{align*}
     \begin{mathpar}
