@@ -80,7 +80,7 @@ So for reasoning about programs with effect handlers we use the \hazel{} languag
 \emph{Effect handlers}~\cite{plotkin2013handling} (and the related concept of \emph{algebraic effects}) are a versatile concept explored in some research languages~\cite{eff,koka} and now also implemented in \ocf{}~\cite{ocamleff}.
 They are often called \emph{resumable exceptions} because analogous to exception handlers, one installs an effect handler around an expression \ocamlin{e} to handle its effects,
 but the effect handler also receives a delimited continuation \ocamlin{k}, representing the rest of the computation of \ocamlin{e} from the point where the effect was performed.
-The \ocf{} implementation brings with it an extensible variant type \ocamlin{Effect.t}, meaning one can add new constructors to the type to define effects, and a keyword \ocamlin{perform} to perform an effect,
+The \ocf{} implementation brings with it an extensible variant type \ocamlin{eff}, meaning one can add new constructors to the type to define effects, and a keyword \ocamlin{perform} to perform an effect,
 which transfers control to an appropriate effect handler.
 
 We present code examples in a simplified \ocf{} syntax\footnote{This syntax is planned to be implemented in \ocf{} in the future: \url{https://github.com/ocaml/ocaml/pull/12309}}
@@ -91,7 +91,7 @@ We use an overloading of the \ocamlin{match} expression, which includes cases fo
     \begin{minted}[fontsize=\footnotesize,escapeinside=@@]{ocaml}
     (* Declares a new constructor for the effect type 
      * E : int -> bool Effect.t *)
-    effect E : int -> bool
+    type _ eff += E : int -> bool eff
 
     (* Evaluating a perform expression with a value of type 'a Effect.t 
      * transfers control to the enclosing handler and (possibly)

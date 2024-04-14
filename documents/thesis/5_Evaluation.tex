@@ -13,31 +13,31 @@ The example program therefore uses the basic functions for forking and awaiting 
 
 \begin{figure}[ht]
     \begin{minted}[escapeinside=@@]{ocaml}
-let yield () = @\label{ln:eval_yield}@
+let yield () = @\label{ln:eval_yield}@ 
   perform (Suspend (fun waker -> waker ()))
 
 let work x () = 
   yield (); @\label{ln:eval_work}@
   x
 
-let rec wait_for_read tlv =
+let rec wait_for_data (tlv : tlv ref) =
   match !tlv with
-  | None -> yield (); wait_for_read tlv
-  | Some data -> tlv <- None; data @\label{ln:eval_receive}@
+  | None -> yield (); wait_for_data tlv
+  | Some data -> tlv := None; data @\label{ln:eval_receive}@
 
 let dispatch () =
-  let tlv = get_context ().tlv in
+  let tlv = perform (GetContext ()) in
   let data = wait_for_data tlv in @\label{ln:eval_wait}@
-  let p1 = Fiber.fork_promise (Domain_manager.run (work data)) in @\label{ln:eval_thread}@
-  let p2 = Fiber.fork_promise (Domain_manager.run (work data)) in
+  let p1 = Fiber.fork_promise (fun () -> Domain_manager.new_scheduler (work data)) in @\label{ln:eval_thread}@
+  let p2 = Fiber.fork_promise (fun () -> Domain_manager.new_scheduler (work data)) in
   let r1 = Promise.await p1 in
   let r2 = Promise.await p2 in
   r1 + r2
 
 let main_fiber data () =
   let p = Fiber.fork_promise dispatch in @\label{ln:eval_dispatch}@
-  let tlv = get_context ().tlv in
-  tlv <- Some data @\label{ln:eval_send}@
+  let tlv = perform (GetContext ()) in
+  tlv := Some data; @\label{ln:eval_send}@
   Promise.await p
 
 let main () = 
@@ -52,23 +52,23 @@ The specifications contain both extensions we discussed in sections~\ref{sec:dom
 
 \begin{figure}[ht]
     \begin{align*}
-        \gsReady{}~l~\Omega~\gamma~q~k & \triangleq \begin{aligned}[t]
+        \gsReadyF{}~l~\Omega~\gamma~q~k & \triangleq \begin{aligned}[t]
                                                          & \gsFiberResources{l}{\Omega} \wand                                                                                                           \\
-                                                         & \later isQueueReader~q~(\gsReady{}~l~\Omega~\gamma~q) \wand                                                                                  \\
-                                                         & \quad \ewp{k~()}{\bot}{\_.\; \gsFiberResources{l}{\Omega} \ast \later isQueueReader~q~(\gsReady{}~l~\Omega~\gamma~q) \ast \gspdone{\gamma} }
+                                                         & \later isQueueReader~q~(\gsReadyF{}~l~\Omega~\gamma~q) \wand                                                                                  \\
+                                                         & \quad \ewp{k~()}{\bot}{\_.\; \gsFiberResources{l}{\Omega} \ast \later isQueueReader~q~(\gsReadyF{}~l~\Omega~\gamma~q) \ast \gspdone{\gamma} }
                                                     \end{aligned} \\
         \gsIsWaker{}~wkr~W             & \triangleq \forall v.   \;  W\; v \wand{} \ewp{wkr\ \ v}{\bot}{\top}                                                                                                \\
-        \gsIsReg{}~reg~W~S             & \triangleq \forall wkr. \; \gsIsWaker{}\; wkr\; W \wand{} \ewp{reg\ \ wkr}{\bot}{\always S}                                                                         \\
-        \proto{}~l~\Omega              & \triangleq \begin{aligned}[t]
+        \gsIsRegF{}~reg~W~S             & \triangleq \forall wkr. \; \gsIsWaker{}\; wkr\; W \wand{} \ewp{reg\ \ wkr}{\bot}{\always S}                                                                         \\
+        \protoF{}~l~\Omega              & \triangleq \begin{aligned}[t]
                                                         Fork\;       & \#\; \begin{aligned}[t]
                                      & !\; e\; ((l, e))\; \begin{aligned}[t]
                                            & \big\{ \gsFiberResources{l}{\Omega} \ast                                                                              \\
-                                           & \later\; (\gsFiberResources{l}{\Omega} \wand{} \ewp{e\ \ ()}{\proto{}~l~\Omega}{\gsFiberResources{l}{\Omega}}) \big\}
+                                           & \later\; (\gsFiberResources{l}{\Omega} \wand{} \ewp{e\ \ ()}{\protoF{}~l~\Omega}{\gsFiberResources{l}{\Omega}}) \big\}
                                       \end{aligned} . \\
                                      & ?\; ()\; \{ \gsFiberResources{l}{\Omega} \}
                                 \end{aligned}                                             \\
                                                         Suspend\;    & \#\; \begin{aligned}[t]
-                                     & !\; reg\; W\; S\; (reg)\; \{\gsFiberResources{l}{\Omega} \ast \gsIsReg{}\; reg\; W\; S\}. \\
+                                     & !\; reg\; W\; S\; (reg)\; \{\gsFiberResources{l}{\Omega} \ast \gsIsRegF{}\; reg\; W\; S\}. \\
                                      & ?\; v\; (v)\; \{ \gsFiberResources{l}{\Omega} \ast W~v \ast S \}
                                 \end{aligned} \\
                                                         GetContext\; & \#\; !\; ()\; \{\top\}.\; ?\; (l)\; \{ \top \}
@@ -76,26 +76,26 @@ The specifications contain both extensions we discussed in sections~\ref{sec:dom
     \end{align*}
     \begin{mathpar}
         \inferrule[Spec-Run]
-        { \Omega~init \;\ast \\\\ \forall l_{tlv}.\; \gsFiberResources{l_{tlv}}{\Omega} \wand \ewp{main\ \ ()}{\proto{}~l_{tlv}~\Omega}{v.\; \always \Phi~v \ast \gsFiberResources{l_{tlv}}{\Omega}} }
+        { \Omega~init \;\ast \\\\ \forall l_{tlv}.\; \gsFiberResources{l_{tlv}}{\Omega} \wand \ewp{main\ \ ()}{\protoF{}~l_{tlv}~\Omega}{v.\; \always \Phi~v \ast \gsFiberResources{l_{tlv}}{\Omega}} }
         { \ewp{run\ \ init\ \ main}{\bot}{v.\; \always \Phi~v \ast \gsFiberResources{l_{tlv}}{\Omega}} }
         %
         \and
         %
         \inferrule[Spec-ForkPromise]
-        { \gsPInv{} \ast \gsFiberResources{l_{tlv}}{\Omega} \;\ast \\\\ \gsFiberResources{l_{tlv}}{\Omega} \wand \ewp{f\ \ ()}{\proto{}~l_{tlv}~\Omega}{v.\; \always \Phi~v \ast \gsFiberResources{l_{tlv}}{\Omega}} }
-        { \ewp{fork\_promise\ \ f}{\proto{}~l_{tlv}~\Omega}{p.\; \gsIsPr{}~p~\Phi \ast \gsFiberResources{l_{tlv}}{\Omega}} }
+        { \gsPInv{} \ast \gsFiberResources{l_{tlv}}{\Omega} \;\ast \\\\ \gsFiberResources{l_{tlv}}{\Omega} \wand \ewp{f\ \ ()}{\protoF{}~l_{tlv}~\Omega}{v.\; \always \Phi~v \ast \gsFiberResources{l_{tlv}}{\Omega}} }
+        { \ewp{fork\_promise\ \ f}{\protoF{}~l_{tlv}~\Omega}{p.\; \gsIsPr{}~p~\Phi \ast \gsFiberResources{l_{tlv}}{\Omega}} }
         %
         \and
         %
         \inferrule[Spec-Await]
         { \gsPInv{} \ast \gsFiberResources{l_{tlv}}{\Omega} \ast \gsIsPr{}~p~\Phi }
-        { \ewp{await\ \ p}{\proto{}~l_{tlv}~\Omega}{p.\; \gsIsPr{}~p~\Phi \ast \gsFiberResources{l_{tlv}}{\Omega}} }
+        { \ewp{await\ \ p}{\protoF{}~l_{tlv}~\Omega}{p.\; \gsIsPr{}~p~\Phi \ast \gsFiberResources{l_{tlv}}{\Omega}} }
         %
         \and
         %
         \inferrule[Spec-NewScheduler]
-        { \Omega'~init \;\ast \\\\ \forall l'_{tlv}.\; \gsFiberResources{l'_{tlv}}{\Omega} \wand \ewp{main\ \ ()}{\proto{}~l'_{tlv}~\Omega'}{v.\; \always \Phi~v \ast \gsFiberResources{l'_{tlv}}{\Omega'}} }
-        { \ewp{new\_scheduler\ \ init\ \ main}{\proto{}~l~\Omega}{v.\; \always \Phi~v \ast \gsFiberResources{l}{\Omega}} }
+        { \Omega'~init \;\ast \\\\ \forall l'_{tlv}.\; \gsFiberResources{l'_{tlv}}{\Omega} \wand \ewp{main\ \ ()}{\protoF{}~l'_{tlv}~\Omega'}{v.\; \always \Phi~v \ast \gsFiberResources{l'_{tlv}}{\Omega'}} }
+        { \ewp{new\_scheduler\ \ init\ \ main}{\protoF{}~l~\Omega}{v.\; \always \Phi~v \ast \gsFiberResources{l}{\Omega}} }
     \end{mathpar}
 
     \caption{Specification of the public interface of the Eio library model.}
@@ -118,25 +118,25 @@ The predicate \(\Omega_{chan}~\gamma\) as part of \(\gsFiberResources{l_{tlv}}{(
     \begin{mathpar}
         \inferrule[Spec-Work]
         { {\color{blue}\gsFiberResources{l_{tlv}}{\Omega}} }
-        { \ewp{work\ \ n\ \ ()}{\proto{}~l_{tlv}~\Omega}{v.\; \ulcorner v = n \urcorner \ast {\color{blue}\gsFiberResources{l_{tlv}}{\Omega}}} }
+        { \ewp{work\ \ n\ \ ()}{\protoF{}~l_{tlv}~\Omega}{v.\; \ulcorner v = n \urcorner \ast {\color{blue}\gsFiberResources{l_{tlv}}{\Omega}}} }
         %
         \and
         %
         \inferrule[Spec-WaitForData]
         { {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}} }
-        { \ewp{wait\_for\_data\ \ l}{\proto{}}{v.\; \exists n.\; \ulcorner v = n \urcorner \ast \ownGhost{\gamma}{\aginj{}(n)} \ast {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}}} }
+        { \ewp{wait\_for\_data\ \ l}{\protoF{}}{v.\; \exists n.\; \ulcorner v = n \urcorner \ast \ownGhost{\gamma}{\aginj{}(n)} \ast {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}}} }
         %
         \and
         %
         \inferrule[Spec-Dispatch]
         { {\color{blue}\gsPInv{}} \ast {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}} }
-        { \ewp{dispatch\ \ ()}{\proto{}}{v.\; \exists n.\; \ulcorner v' = n + n \urcorner \ast \ownGhost{\gamma}{\aginj{}(n)} \ast {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}}} }
+        { \ewp{dispatch\ \ ()}{\protoF{}}{v.\; \exists n.\; \ulcorner v' = n + n \urcorner \ast \ownGhost{\gamma}{\aginj{}(n)} \ast {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}}} }
         %
         \and
         %
         \inferrule[Spec-MainFiber]
         { {\color{blue}\gsPInv{}} \ast {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}} \ast \ownGhost{\gamma}{\aginj{}(n)} }
-        { \ewp{main\_fiber\  n\  ()}{\proto{}}{v.\; \ulcorner v = n + n \urcorner \ast {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}}} }
+        { \ewp{main\_fiber\  n\  ()}{\protoF{}}{v.\; \ulcorner v = n + n \urcorner \ast {\color{blue}\gsFiberResources{l_{tlv}}{(\Omega_{chan}~\gamma)}}} }
         %
         \and
         % 

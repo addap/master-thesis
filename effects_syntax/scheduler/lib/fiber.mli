@@ -1,0 +1,1 @@
+val fork_promise : (unit -> 'a) -> 'a Promise.t

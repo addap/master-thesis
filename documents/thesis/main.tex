@@ -17,6 +17,7 @@
 \usepackage{cancel}
 \usepackage{xcolor}
 \usepackage[misc]{ifsym}
+\usepackage{xifthen}% provides \isempty test
 \usepackage{longtable}
 % In case \Psi need better line number links apparently \Psi need to use listings. minted will always just link to the whole code.
 % from https://tex.stackexchange.com/questions/24945/reference-source-code-line-in-minted-package
@@ -113,14 +114,11 @@
 \newcommand{\efork}{\emph{Fork}}
 \newcommand{\esuspend}{\emph{Suspend}}
 \newcommand{\egetctx}{\emph{GetContext}}
-\newcommand{\proto}[1]{\ensuremath{Coop_{#1}}}
-\newcommand{\gsIsReg}[1]{\ensuremath{isRegister_{#1}}}
 \newcommand{\gsIsWaker}[1]{\ensuremath{isWaker_{#1}}}
 \newcommand{\gsIsCb}{\emph{isCallback}}
 \NewDocumentCommand\ewp{O{} m O{} m m}%
   {\mathit{ewp}^{#1}_{#3}\spac\left(#2\right)\spac\left\langle#4\right\rangle\spac{\left\{#5\right\}}}
 \newcommand{\ewpt}{\emph{ewp}}
-\newcommand{\gsReady}[1]{\ensuremath{Ready_{#1}}}
 \newcommand{\gsPState}{\emph{promiseState}}
 \newcommand{\gsPInvIn}{\ensuremath{promiseInv'}}
 \newcommand{\gsPInv}{\ensuremath{promiseInv}}
@@ -142,6 +140,26 @@
 % A variable number of quads
 % https://tex.stackexchange.com/a/330591
 \newcommand{\myquad}[1][1]{\hspace*{#1em}\ignorespaces}
+% Definitions for which I need subscripts.
+% Using robust command so that the ifelse does not break when used in captions as per https://tex.stackexchange.com/a/61513
+\DeclareRobustCommand{\gsReady}[1]{
+  \ifthenelse{\isempty{#1}}
+  {\PackageError{thesis}{Ready called without subscript}{Pass in a number as the first argument.}}
+  {\ensuremath{\textit{Ready}_{#1}}}
+}
+\newcommand{\gsReadyF}{\ensuremath{\textit{Ready}}}
+\DeclareRobustCommand{\gsIsReg}[1]{
+  \ifthenelse{\isempty{#1}}
+  {\PackageError{thesis}{isRegister called without subscript}{Pass in a number as the first argument.}}
+  {\ensuremath{\textit{isRegister}_{#1}}}
+}
+\newcommand{\gsIsRegF}{\ensuremath{\textit{isRegister}}}
+\DeclareRobustCommand{\proto}[1]{
+  \ifthenelse{\isempty{#1}}
+  {\PackageError{thesis}{proto called without subscript}{Pass in a number as the first argument.}}
+  {\ensuremath{\textit{Coop}_{#1}}}
+}
+\newcommand{\protoF}{\ensuremath{\textit{Coop}}}
 
 \begin{document}
 

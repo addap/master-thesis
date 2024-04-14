@@ -26,18 +26,18 @@ The difference is that \ocamlin{thread_join} is considered \emph{blocking} in th
 
 \begin{figure}[ht]
   \begin{minted}[escapeinside=@@]{ocaml}
-let new_scheduler f = 
+let new_scheduler (f: unit -> 'a) : 'a = 
   let handle = ref None in @\label{ln:new_sched_ref}@
   let register = (fun waker -> @\label{ln:new_sched_register}@ 
     let thread_fun = (fun () ->
-      let result = run f in @\label{ln:new_sched_run}@
+      let result = Scheduler.run f in @\label{ln:new_sched_run}@ 
       waker (); @\label{ln:new_sched_waker}@
       result
     ) in
     let join_handle = thread_fork thread_fun in @\label{ln:new_sched_fork}@
     handle := Some join_handle @\label{ln:new_sched_set}@
   ) in
-  suspend register; @\label{ln:new_sched_suspend}@
+  perform (Suspend register); @\label{ln:new_sched_suspend}@
   match !handle with  @\label{ln:new_sched_match}@
   | None -> error "impossible" @\label{ln:new_sched_error}@
   | Some join_handle -> thread_join join_handle @\label{ln:new_sched_join}@
@@ -154,8 +154,8 @@ But we must amend the proof of \textsc{Spec-Run}, namely the case for handling t
 \begin{minted}[escapeinside=@@]{ocaml}
 match fiber () with
 ...
-| @\texttt{\textbf{effect}}@ (Suspend register) k =>
-    let waker = fun v -> Queue.push run_queue (fun () -> invoke k v) in
+| @\texttt{\textbf{effect}}@ (Suspend register), k =>
+    let waker = fun v -> Queue.push run_queue (fun () -> continue k v) in
     register waker;
     next ()
 \end{minted}

@@ -33,16 +33,16 @@ To enable modular proofs of concrete fibers using thread-local variables, we inc
 \begin{figure}[ht]
     \begin{minted}{ocaml}
 let fiber1 () =
-  let ctx = perform (GetContext ()) in
-  let ctx2 = perform (GetContext ()) in
-  assert (ctx.tlv == ctx2.tlv)
+  let tlv1 = perform (GetContext ()) in
+  let tlv2 = perform (GetContext ()) in
+  assert (tlv1 == tlv2)
 
 let fiber2 () =
-  let ctx = perform (GetContext ()) in
-  let v = !ctx.tlv in
+  let tlv = perform (GetContext ()) in
+  let v = !tlv in
   (* some computation that does not perform Fork/Suspend *)
   ...
-  assert (!ctx.tlv == v)
+  assert (!tlv == v)
   \end{minted}
     \caption{Constructed example of safety for thread-local variables.}
     \label{fig:tlv-example}
@@ -60,14 +60,14 @@ It expresses that the location \(tlv\) is a thread-local variable which maps to 
 The predicate T is hidden behind a \(\gsSavedPred{}\) indirection to make the mechanization easier.
 \(\gsFiberResources{}\; \delta\) is then used to abstract away the concrete location \(tlv\).
 This predicate represents all resources that a fiber owns while it is running, so each fiber specification now has this as a precondition.
-Finally, we must change the definition of \(\gsReady{}\) to require \(\gsFiberResources{}\) as a precondition because it is needed to invoke the continuations saved in the scheduler's run-queue.
+Finally, we must change the definition of \(\gsReadyF{}\) to require \(\gsFiberResources{}\) as a precondition because it is needed to invoke the continuations saved in the scheduler's run-queue.
 
 \begin{figure}[ht]
     \begin{align*}
         \gsTLVAg{}\; \delta\; tlv \triangleq\;            & \ownGhost{\delta}{agree(tlv)}  \qquad \textrm{Persistent}(\gsTLVAg{\delta}{tlv})                          \\
         \gsIsFiberContext{}\; \delta\; tlv\; \triangleq\; & \gsTLVAg{}\; \delta\; tlv \ast \exists T\; v.\; tlv \mapsto v \ast \gsSavedPred{}\; \delta\; T \ast T\; v \\
         \gsFiberResources{}\; \delta\; \triangleq\;       & \exists\; tlv.\; \gsIsFiberContext{}\; \delta\; tlv\;                                                     \\
-        \gsReady{}\; \delta\; f \triangleq\;              & \gsFiberResources{}\; \delta\; \wand{} \ewp{f\; ()}{\bot}{\top}
+        \gsReady{3}\; \delta\; f \triangleq\;              & \gsFiberResources{}\; \delta\; \wand{} \ewp{f\; ()}{\bot}{\top}
     \end{align*}
     \caption{Logical state definitions for the verification of our Eio model.}
     \label{fig:logical-state-ext}
@@ -78,12 +78,12 @@ The \efork{} effect now also passes the concrete reference that should be used a
 A fiber uses the \egetctx{} effect to receive the fiber context value and a copy of \(\gsTLVAg{}\).
 This is used to show that the reference \(ctx.tlv\) is equal to the one from \(\gsFiberResources{}\) that the fiber already owns so that the contained points-to predicate can be used.
 
-The crux is that now the protocol \proto{} is parameterized by the ghost name \(\delta\) that identifies the thread-local variable.
+The crux is that now the protocol \proto{3} is parameterized by the ghost name \(\delta\) that identifies the thread-local variable.
 This so that both the fiber and the scheduler agree on this ghost name.
 
 \begin{figure}[ht]
     \begin{equation*}
-        \proto{}~\delta \triangleq \begin{aligned}[t]
+        \proto{3}~\delta \triangleq \begin{aligned}[t]
             Fork\;       & \#\; \begin{aligned}[t]
                                      & !\; tlv\; e\; ((tlv, e))\; \begin{aligned}[t]
                                                    & \big\{ \gsFiberResources{}\; \delta\; T \ast \gsTLVAg{}\; \delta\; tlv\; \ast                              \\
@@ -92,13 +92,13 @@ This so that both the fiber and the scheduler agree on this ghost name.
                                      & ?\; ()\; \{ \gsFiberResources{}\; \delta\; T \}
                                 \end{aligned}                                 \\
             Suspend\;    & \#\; \begin{aligned}[t]
-                                     & !\; reg\; W\; (reg)\; \{\gsFiberResources{}\; \delta\; T \ast \gsIsReg{}\; reg\; W\}. \\
+                                     & !\; reg\; W\; (reg)\; \{\gsFiberResources{}\; \delta\; T \ast \gsIsReg{1}\; reg\; W\}. \\
                                      & ?\; y\; (y)\; \{ \gsFiberResources{}\; \delta\; T \ast W\; y \}
                                 \end{aligned} \\
             GetContext\; & \#\; !\; ()\; \{\top\}.\; ?\; ctx\; (ctx)\; \{ \gsTLVAg{}\; \delta\; ctx.tlv \}
         \end{aligned}
     \end{equation*}
-    \caption{Definition of extended \proto{} protocol with \efork{}, \esuspend{}, and \egetctx{} effects.}
+    \caption{Definition of extended \proto{3} protocol with \efork{}, \esuspend{}, and \egetctx{} effects.}
     \label{fig:coop-protocol-ext}
 \end{figure}
 

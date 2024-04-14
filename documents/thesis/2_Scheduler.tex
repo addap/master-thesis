@@ -46,35 +46,37 @@ Common problems like deadlocks are not prevented in any way and are the responsi
 \begin{figure}[ht]
   \begin{minted}[escapeinside=@@]{ocaml}
 module Scheduler = struct
-  effect Fork : (unit -> unit) -> unit
+  type _ eff += Fork : (unit -> unit) -> unit eff
   type 'a waker : 'a -> unit
-  effect Suspend : ('a waker -> unit) -> 'a
+  type _ eff += Suspend : ('a waker -> unit) -> 'a eff
 
-  let run (main : unit -> 'a) : 'a =
+  let run init (main: unit -> 'a) : 'a =
     let result = ref None in
-    let run_queue = Queue.create () in @\label{ln:run_queue}@
-    let next () = @\label{ln:run_next}@
+    let run_queue = Queue.create () in  @\label{ln:run_queue}@
+    let rec next () =  @\label{ln:run_next}@
       match Queue.pop run_queue with
-      | None -> 
-        match !result with @\label{ln:run_check}@
-        | None -> next ()
-        | Some _ -> ()
-      | Some cont -> cont () 
+      | None -> begin
+          match !result with @\label{ln:run_check}@ 
+          | None -> next ()
+          | Some _ -> ()
+        end
+      | Some fiber -> fiber () 
     in
-    let rec execute fiber = @\label{ln:run_execute}@
+    let rec execute fiber = @\label{ln:run_execute}@ 
       match fiber () with
-      | () -> next () @\label{ln:run_value}@
-      | @\texttt{\textbf{effect}}@ (Fork fiber) k -> @\label{ln:run_fork}@
-          Queue.push run_queue (fun () -> invoke k ()); @\label{ln:run_push}@
+      | () -> next ()  @\label{ln:run_value}@
+      | @\texttt{\textbf{effect}}@ (Fork fiber), k ->  @\label{ln:run_fork}@
+          Queue.push run_queue (fun () -> continue k ()); @\label{ln:run_push}@ 
           execute fiber @\label{ln:run_rec}@
-      | @\texttt{\textbf{effect}}@ (Suspend register) k => @\label{ln:run_suspend}@
-          let waker = fun v -> Queue.push run_queue (fun () -> invoke k v) in @\label{ln:run_waker}@ 
-          register waker; @\label{ln:run_register}@
+      | @\texttt{\textbf{effect}}@ (Suspend register), k ->  @\label{ln:run_suspend}@
+          let waker = fun v -> Queue.push run_queue (fun () -> continue k v) in @\label{ln:run_waker}@  
+          register waker;  @\label{ln:run_register}@
           next ()
     in
-    execute (fun () -> result := main ()); @\label{ln:run_main}@
+    let tlv = ref init in
+    execute (fun () -> result := Some (main ())); @\label{ln:run_main}@ 
     match !result with @\label{ln:run_return}@
-    | None -> error "impossible" @\label{ln:run_error}@
+    | None -> error "impossible"  @\label{ln:run_error}@
     | Some result -> result
 end
   \end{minted}
@@ -132,30 +134,31 @@ But the scheduler does not get any information about this so the argument type o
 \begin{figure}[ht]
   \begin{minted}[escapeinside=@@]{ocaml}
 module Promise = struct
-  type 'a t = Done of 'a | Waiting of Broadcast.t
+  type 'a state = Done of 'a | Waiting of Broadcast.t
+  type 'a t = 'a state Atomic.t
 
   let create () : 'a t = 
     let bcst = Broadcast.create () in
     Atomic.create (Waiting bcst)
 
-  let fulfill p result =
+  let fulfill (p: 'a t) (result: 'a) = 
     match Atomic.get p with
-    | Done _ -> error "impossible" @\label{ln:fork_error}@
+    | Done _ -> error "impossible" @\label{ln:fork_error}@ 
     | Waiting bcst ->
         Atomic.set p (Done result);
-        Broadcast.signal_all bcst @\label{ln:fork_signal}@
+        Broadcast.signal_all bcst @\label{ln:fork_signal}@ 
 
   (* ... *)
 end
   
 module Fiber = struct
-  let fork_promise (f : unit -> 'a) : 'a Promise.t =
-    let p = Promise.create () in @\label{ln:fork_create}@
+  let fork_promise (f: unit -> 'a) : 'a Promise.t =
+    let p = Promise.create () in @\label{ln:fork_create}@ 
     let fiber = fun () ->
       let result = f () in
-      Promise.fulfill p result @\label{ln:fork_fulfill}@
+      Promise.fulfill p result @\label{ln:fork_fulfill}@ 
     in
-    perform (Fork fiber) @\label{ln:fork_perform}@
+    perform (Fork fiber); @\label{ln:fork_perform}@
     p
 end
   \end{minted}
@@ -176,12 +179,12 @@ The meaning of the \ocamlin{Broadcast.t} contained in a promise is explained in 
 \begin{figure}[ht]
   \begin{minted}[escapeinside=@@]{ocaml}
 module Promise = struct
-  let make_register (p: 'a t) (bcst: Broadcast.t) : (unit waker -> unit) = 
+  let make_register (p: 'a t) (bcst: Broadcast.t) : (unit waker -> unit) =
     fun waker ->
       let register_result = Broadcast.register bcst waker in @\label{ln:await_register}@
       match register_result with
-      | None -> ()
-      | Some register_handle ->
+      | Invoked -> ()
+      | Registered register_handle ->
         match Atomic.get p with @\label{ln:await_match3}@
         | Done result ->  
             if Broadcast.try_unregister register_handle
@@ -189,15 +192,16 @@ module Promise = struct
             else ()
         | Waiting _ -> ()
 
-  let await (p: 'a t) : 'a = 
+  let await (p: 'a t) : 'a =
     match Atomic.get p with @\label{ln:await_match1}@
     | Done result -> result
-    | Waiting bcst -> @\label{ln:await_waiting1}@
-      let register = make_register p bcst
-      perform (Suspend register); @\label{ln:await_perform}@
-      match Atomic.get p with @\label{ln:await_match2}@
-      | Done result -> result 
-      | Waiting _ -> error "impossible" @\label{ln:await_error}@
+    | Waiting bcst -> begin @\label{ln:await_waiting1}@
+        let register = make_register p bcst in
+        perform (Suspend register); @\label{ln:await_perform}@
+        match Atomic.get p with @\label{ln:await_match2}@
+        | Done result -> result 
+        | Waiting _ -> error "impossible" @\label{ln:await_error}@
+      end
     
   (* ... *)
 end
@@ -227,8 +231,8 @@ The specifications of the functions is explained in more detail in section~\ref{
   \begin{minted}{ocaml}
 type t
 type callback = unit -> unit
-type register_result = Invoked | Registered of register_handle
 type register_handle
+type register_result = Invoked | Registered of register_handle
 
 val create : unit -> t
 val register : t -> callback -> register_result
