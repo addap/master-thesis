@@ -52,10 +52,10 @@ The specifications contain both extensions we discussed in sections~\ref{sec:dom
 
 \begin{figure}[ht]
     \begin{align*}
-        \gsReadyF{}~l~\Omega~\gamma~q~k & \triangleq \begin{aligned}[t]
-                                                         & \gsFiberResources{l}{\Omega} \wand                                                                                                           \\
-                                                         & \later isQueueReader~q~(\gsReadyF{}~l~\Omega~\gamma~q) \wand                                                                                  \\
-                                                         & \quad \ewp{k~()}{\bot}{\_.\; \gsFiberResources{l}{\Omega} \ast \later isQueueReader~q~(\gsReadyF{}~l~\Omega~\gamma~q) \ast \gspdone{\gamma} }
+        \gsReadyF{}~l_{tlv}~\Omega~\gamma~q~k & \triangleq \begin{aligned}[t]
+                                                         & \gsFiberResources{l_{tlv}}{\Omega} \wand                                                                                                           \\
+                                                         & \later \gsIsQueueReader{}~q~(\gsReadyF{}~l_{tlv}~\Omega~\gamma~q) \wand                                                                                  \\
+                                                         & \quad \ewp{k~()}{\bot}{\gspdone{\gamma} \ast \gsFiberResources{l_{tlv}}{\Omega} \ast \later \gsIsQueueReader{}~q~(\gsReadyF{}~l_{tlv}~\Omega~\gamma~q) }
                                                     \end{aligned} \\
         \gsIsWaker{}~wkr~W             & \triangleq \forall v.   \;  W\; v \wand{} \ewp{wkr\ \ v}{\bot}{\top}                                                                                                \\
         \gsIsRegF{}~reg~W~S             & \triangleq \forall wkr. \; \gsIsWaker{}\; wkr\; W \wand{} \ewp{reg\ \ wkr}{\bot}{\always S}                                                                         \\

@@ -3,7 +3,7 @@
 
 % General information about the GetContext effect and that it's used to implement thread-local variables
 
-So far we have looked at a protocol with two effects which suffice to model fibers that can suspend and fork off new fibers.
+Previously we have looked at a protocol with two effects which suffice to model fibers that can suspend and fork off new fibers.
 But fibers in Eio can use an additional effect called \egetctx{} that we discuss in this section.
 For each fiber the scheduler keeps track of context metadata, one part of which are \emph{thread-local variables}.
 Thread-local variables are state that is shared between all fibers of one scheduler (hence thread-local) and a fiber gets access to them via the \egetctx{} effect.
@@ -73,7 +73,7 @@ let run @\emph{\textbf{init}}@ (main: unit -> 'a) : 'a =
 The updated definitions are described in figure~\ref{fig:logical-state-ext}.
 \(\gsFiberResources{l_{tlv}}{\Omega}\) represents all resources that a fiber owns while it is running, so each fiber specification now has this as a precondition.
 The predicate at the moment only includes the points-to connective of \(l_{tlv}\) and that its value satisfies \(\Omega\).
-Also, we must change the definition of \(\gsReadyF{}\) to include \(\gsFiberResources{}\) in the pre- and postcondition so that each suspended fiber in the run queue gets access to the resources when it resumes execution.
+Also, we must change the definition of \(\gsReadyF{}\) to include \(\gsFiberResources{l_{tlv}}{\Omega}\) in the pre- and postcondition so that each suspended fiber in the run queue gets access to the resources when it resumes execution.
 
 \begin{figure}[ht]
     \begin{align*}
@@ -84,8 +84,8 @@ Also, we must change the definition of \(\gsReadyF{}\) to include \(\gsFiberReso
     \label{fig:logical-state-ext}
 \end{figure}
 
-The effect protocols of \efork{} and \esuspend{} are amended so that they pass \(\gsFiberResources{}\) from a fiber to the scheduler and from there to the next running fiber via the protocol pre- and postconditions as shown in figure~\ref{fig:coop-protocol-ext}.
-A fiber uses the \egetctx{} effect to receive the concrete \(l_{tlv}\) reference, and by virtue of running it already holds the \(\gsFiberResources{l_{tlv}}{\Omega}\) to safely dereference \(l_{tlv}\).
+The effect protocols of \efork{} and \esuspend{} are amended so that they pass the fiber resources from a fiber to the scheduler and from there to the next running fiber via the protocol pre- and postconditions as shown in figure~\ref{fig:coop-protocol-ext}.
+A fiber uses the \egetctx{} effect to receive the concrete \(l_{tlv}\) reference, and by virtue of running it already holds the fiber resources to safely dereference \(l_{tlv}\).
 The crux is that now the whole protocol \proto{3} is parameterized by the location and the predicate on its value. 
 We must do this instead of quantifying them at the effect-level so that the fiber and the scheduler agree on the concrete location.
 

@@ -111,7 +111,7 @@ The interaction between fibers waiting for values of other fibers is handled sep
 Handling a \efork{} effect (line~\ref{ln:run_fork}) is simple because it only carries a new \ocamlin{fiber} to be executed, so the handler recursively calls \ocamlin{execute} (line~\ref{ln:run_rec}) on it.
 The execution of the original fiber is paused due to performing an effect and its continuation \ocamlin{k} is placed in the run queue so that it can be scheduled again (line~\ref{ln:run_push}).
 This prioritizes the execution of a new fiber and is a design decision by Eio.
-It would be equally valid to place the \ocamlin{fiber} argument in the run queue instead.
+It would be equally valid to push the closure \ocamlin{(fun () -> execute fiber)} into the run queue instead, to give priority to the already running fiber.
 
 \subsubsection*{\esuspend{} Case}
 Handling a \esuspend{} effect (line~\ref{ln:run_suspend}) may look complicated at first due to the higher-order \ocamlin{register} function.
@@ -644,7 +644,7 @@ Then, we get access to the \(\gspdone{\gamma}\) resource when the \esuspend{} ef
 
 % \begin{figure}[ht]
 %   \begin{align*}
-%     \gsReady{1}\; q\; \phi\; k \triangleq \forall v.\; & \always \phi(v) \wand \later PromiseInv\; q \wand \later isQueue\; q\; (Ready\; q\; (\lambda w.\; w = ())) \wand \\
+%     \gsReady{1}\; q\; \phi\; k \triangleq \forall v.\; & \always \phi(v) \wand \later PromiseInv\; q \wand \later \gsIsQueue{}\; q\; (Ready\; q\; (\lambda w.\; w = ())) \wand \\
 %                                                       & \ewp{k\; v}{\bot}{\top}
 %   \end{align*}
 % \end{figure}

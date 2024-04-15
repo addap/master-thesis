@@ -104,36 +104,38 @@
 
 % Some custom shortcuts
 \newcommand{\hazel}{Hazel}
-\newcommand{\hh}{\emph{HH}}
+\newcommand{\hh}{\textit{HH}}
 \newcommand{\ocf}{OCaml~5}
 \newcommand{\done}{{\symfontextra ✓}}
 \newcommand{\tbd}{{\symfontextra ⌛}}
-\newcommand{\efork}{\emph{Fork}}
-\newcommand{\esuspend}{\emph{Suspend}}
-\newcommand{\egetctx}{\emph{GetContext}}
-\newcommand{\gsIsWaker}[1]{\ensuremath{isWaker_{#1}}}
-\newcommand{\gsIsCb}{\emph{isCallback}}
+
+\newcommand{\efork}{\ensuremath{\mathit{Fork}}}
+\newcommand{\esuspend}{\ensuremath{\mathit{Suspend}}}
+\newcommand{\egetctx}{\ensuremath{\mathit{GetContext}}}
+\newcommand{\gsIsWaker}{\ensuremath{\mathit{isWaker}}}
+\newcommand{\gsIsCb}{\ensuremath{\mathit{isCallback}}}
 \NewDocumentCommand\ewp{O{} m O{} m m}%
   {\mathit{ewp}^{#1}_{#3}\spac\left(#2\right)\spac\left\langle#4\right\rangle\spac{\left\{#5\right\}}}
-\newcommand{\ewpt}{\emph{ewp}}
-\newcommand{\gsPState}{\emph{promiseState}}
-\newcommand{\gsPInvIn}{\ensuremath{promiseInv'}}
-\newcommand{\gsPInv}{\ensuremath{promiseInv}}
+\newcommand{\ewpt}{\ensuremath{\mathit{ewp}}}
+\newcommand{\gsPState}{\ensuremath{\mathit{promiseState}}}
+\newcommand{\gsPInvIn}{\ensuremath{\mathit{promiseInv'}}}
+\newcommand{\gsPInv}{\ensuremath{\mathit{promiseInv}}}
 \newcommand{\pN}{\ensuremath{\mathcal{N}_p}}
 \newcommand{\rN}{\ensuremath{\mathcal{N}_r}}
-\newcommand{\gsFiberResources}[2]{\ensuremath{fiberResources~#1~#2}}
-\newcommand{\gsIsFiberContext}{\emph{isFiberContext}}
-\newcommand{\gsTLVAg}[2]{\ensuremath{tlvAg~#1~#2}}
-\newcommand{\gsSavedPred}{\emph{savedPred}}
-\newcommand{\gsIsPr}{\emph{isPromise}}
-\newcommand{\gsIsQueue}{\emph{isQueue}}
-\newcommand{\gsMainResIn}{\ensuremath{\textit{mainResult'}}}
-\newcommand{\gsMainRes}{\ensuremath{\textit{mainResult}}}
-\newcommand{\gsIsBcst}{\emph{isBroadcast}}
-\newcommand{\gsOneShotAssign}{\ensuremath{OneShotAssign}}
-\newcommand{\gspwait}[1]{\ensuremath{osWaiting\;#1}}
-\newcommand{\gspdone}[1]{\ensuremath{osAssigned\;#1}}
-\newcommand{\gssignal}{\emph{signalAllPermit}}
+\newcommand{\gsFiberResources}[2]{\ensuremath{\mathit{fiberResources}~{#1}~{#2}}}
+\newcommand{\gsSavedPred}{\ensuremath{\mathit{savedPred}}}
+\newcommand{\gsIsPr}{\ensuremath{\mathit{isPromise}}}
+\newcommand{\gsMainResIn}{\ensuremath{\mathit{mainResult'}}}
+\newcommand{\gsMainRes}{\ensuremath{\mathit{mainResult}}}
+\newcommand{\gsIsBcst}{\ensuremath{\mathit{isBroadcast}}}
+\newcommand{\gsOneShotAssign}{\ensuremath{\mathit{OneShotAssign}}}
+\newcommand{\gspwait}[1]{\ensuremath{\mathit{osWaiting}~{#1}}}
+\newcommand{\gspdone}[1]{\ensuremath{\mathit{osAssigned}~{#1}}}
+\newcommand{\gssignal}{\ensuremath{\mathit{signalAllPermit}}}
+\newcommand{\gsPushPermission}{\ensuremath{\mathit{pushPermission}}}
+\newcommand{\gsFulfillPermission}{\ensuremath{\mathit{fulfillPermission}}}
+\newcommand{\gsIsQueue}{\ensuremath{\mathit{isQueue}}}
+\newcommand{\gsIsQueueReader}{\ensuremath{\mathit{isQueueReader}}}
 % A variable number of quads
 % https://tex.stackexchange.com/a/330591
 \newcommand{\myquad}[1][1]{\hspace*{#1em}\ignorespaces}
@@ -142,21 +144,21 @@
 \DeclareRobustCommand{\gsReady}[1]{
   \ifthenelse{\isempty{#1}}
   {\PackageError{thesis}{Ready called without subscript}{Pass in a number as the first argument.}}
-  {\ensuremath{\textit{Ready}_{#1}}}
+  {\ensuremath{\mathit{Ready}_{#1}}}
 }
-\newcommand{\gsReadyF}{\ensuremath{\textit{Ready}}}
+\newcommand{\gsReadyF}{\ensuremath{\mathit{Ready}}}
 \DeclareRobustCommand{\gsIsReg}[1]{
   \ifthenelse{\isempty{#1}}
   {\PackageError{thesis}{isRegister called without subscript}{Pass in a number as the first argument.}}
-  {\ensuremath{\textit{isRegister}_{#1}}}
+  {\ensuremath{\mathit{isRegister}_{#1}}}
 }
-\newcommand{\gsIsRegF}{\ensuremath{\textit{isRegister}}}
+\newcommand{\gsIsRegF}{\ensuremath{\mathit{isRegister}}}
 \DeclareRobustCommand{\proto}[1]{
   \ifthenelse{\isempty{#1}}
   {\PackageError{thesis}{proto called without subscript}{Pass in a number as the first argument.}}
-  {\ensuremath{\textit{Coop}_{#1}}}
+  {\ensuremath{\mathit{Coop}_{#1}}}
 }
-\newcommand{\protoF}{\ensuremath{\textit{Coop}}}
+\newcommand{\protoF}{\ensuremath{\mathit{Coop}}}
 
 \begin{document}
 
