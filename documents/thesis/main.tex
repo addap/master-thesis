@@ -129,8 +129,6 @@
 \newcommand{\gsMainRes}{\ensuremath{\mathit{mainResult}}}
 \newcommand{\gsIsBcst}{\ensuremath{\mathit{isBroadcast}}}
 \newcommand{\gsOneShotAssign}{\ensuremath{\mathit{OneShotAssign}}}
-\newcommand{\gspwait}[1]{\ensuremath{\mathit{osWaiting}~{#1}}}
-\newcommand{\gspdone}[1]{\ensuremath{\mathit{osAssigned}~{#1}}}
 \newcommand{\gssignal}{\ensuremath{\mathit{signalAllPermit}}}
 \newcommand{\gsPushPermission}{\ensuremath{\mathit{pushPermission}}}
 \newcommand{\gsFulfillPermission}{\ensuremath{\mathit{fulfillPermission}}}
@@ -159,6 +157,16 @@
   {\ensuremath{\mathit{Coop}_{#1}}}
 }
 \newcommand{\protoF}{\ensuremath{\mathit{Coop}}}
+\DeclareRobustCommand{\gspwait}[1]{
+  \ifthenelse{\isempty{#1}}
+  {\PackageError{thesis}{gspwait called without subscript}{Pass in a number as the first argument.}}
+  {\ensuremath{\mathit{osWaiting}~{#1}}}
+}
+\DeclareRobustCommand{\gspdone}[1]{
+  \ifthenelse{\isempty{#1}}
+  {\PackageError{thesis}{gspdone called without subscript}{Pass in a number as the first argument.}}
+  {\ensuremath{\mathit{osAssigned}~{#1}}}
+}
 
 \begin{document}
 

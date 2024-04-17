@@ -83,19 +83,19 @@ The specifications contain both extensions we discussed in sections~\ref{sec:dom
         %
         \inferrule[Spec-ForkPromise]
         { \gsPInv{} \ast \gsFiberResources{l_{tlv}}{\Omega} \;\ast \\\\ \gsFiberResources{l_{tlv}}{\Omega} \wand \ewp{f\ \ ()}{\protoF{}~l_{tlv}~\Omega}{v.\; \always \Phi~v \ast \gsFiberResources{l_{tlv}}{\Omega}} }
-        { \ewp{fork\_promise\ \ f}{\protoF{}~l_{tlv}~\Omega}{p.\; \gsIsPr{}~p~\Phi \ast \gsFiberResources{l_{tlv}}{\Omega}} }
+        { \ewp{fork\_promise\ \ f}{\protoF{}~l_{tlv}~\Omega}{p.\; \exists \gamma.\; \gsIsPr{}~\gamma~p~\Phi \ast \gsFiberResources{l_{tlv}}{\Omega}} }
         %
         \and
         %
         \inferrule[Spec-Await]
-        { \gsPInv{} \ast \gsFiberResources{l_{tlv}}{\Omega} \ast \gsIsPr{}~p~\Phi }
-        { \ewp{await\ \ p}{\protoF{}~l_{tlv}~\Omega}{p.\; \gsIsPr{}~p~\Phi \ast \gsFiberResources{l_{tlv}}{\Omega}} }
+        { \gsPInv{} \ast \gsFiberResources{l_{tlv}}{\Omega} \ast \gsIsPr{}\;\gamma\;p\;\Phi }
+        { \ewp{await\ \ p}{\protoF{}~l_{tlv}~\Omega}{v.\; \always \Phi~v \ast \gsFiberResources{l_{tlv}}{\Omega}} }
         %
         \and
         %
         \inferrule[Spec-NewScheduler]
         { \Omega'~init \;\ast \\\\ \forall l'_{tlv}.\; \gsFiberResources{l'_{tlv}}{\Omega} \wand \ewp{main\ \ ()}{\protoF{}~l'_{tlv}~\Omega'}{v.\; \always \Phi~v \ast \gsFiberResources{l'_{tlv}}{\Omega'}} }
-        { \ewp{new\_scheduler\ \ init\ \ main}{\protoF{}~l~\Omega}{v.\; \always \Phi~v \ast \gsFiberResources{l}{\Omega}} }
+        { \ewp{new\_scheduler\ \ init\ \ main}{\protoF{}~l_{tlv}~\Omega}{v.\; \always \Phi~v \ast \gsFiberResources{l_{tlv}}{\Omega}} }
     \end{mathpar}
 
     \caption{Specification of the public interface of the Eio library model.}

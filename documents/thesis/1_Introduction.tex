@@ -16,7 +16,7 @@ like \emph{async/await} (Rust, Python, Javascript), \emph{goroutines} (Go), and 
 \paragraph{}
 
 In this thesis we look at the Eio library of \ocf{} and formally verify the safety of its core elements for user-level concurrency.
-The library uses the new effect handler feature~\cite{?} from \ocf{} to implement fibers in an efficient way without stack copying~\cite{?}.
+The library uses the new effect handler feature from \ocf{} to implement fibers in an efficient way without stack copying~\cite{ocamleff}.
 In order to formally verify the code that uses effect handlers we use the \hazel{} program logic by de Vilhena~\cite{de2021separation,de2022proof}.
 
 \paragraph{Formal Verification}
@@ -32,8 +32,8 @@ Specifications further restrict the possible program executions to a defined set
 
 \paragraph{Separation Logic}
 We express specifications as logical propositions and do all reasoning in a separation logic called \emph{Iris}~\cite{jung2018iris}.
-Separation logics~\cite{?} are based on Hoare logic, which has the \emph{Hoare triple} construct \(\{P\}\,s\,\{Q\}\) to encode the specification of a program.
-It means that given preconditions \(P\), execution of the program \(s\) either diverges or terminates so that the postcondition \(Q\) holds\footnote{We only look at expression-based languages where \(Q\) is allowed to mention the final value of \(s\).}.
+Separation logics~\cite{reynolds2002separation} are based on Hoare logic, which has the \emph{Hoare triple} construct \(\{P\}\,s\,\{Q\}\) to encode the specification of a program.
+It means that given preconditions \(P\), execution of the program \(s\) either diverges or terminates so that the postcondition \(Q\) holds\footnote{We only look at an expression-based language where \(Q\) is allowed to mention the final value of \(s\).}.
 Further, separation logics are a type of affine logic that have a \emph{separating conjunction} connective \(P \ast Q\) in addition to the standard logical connectives.
 
 The separating conjunction allows an interpretation of propositions as \emph{resources} that can be split up into disjoint parts \(P\) and \(Q\).

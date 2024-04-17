@@ -64,7 +64,7 @@ By the time the original fiber continues execution, the new thread will have ter
 Because the function essentially delegates to \ocamlin{Scheduler.run}, it has the same type \ocamlin{(unit -> 'a) -> 'a} and we were able to prove an analogous specification as shown below.
 \[
   \inferrule[Spec-NewScheduler]
-  {\gsIsPr{} \ast \ewp{f\; ()}{\proto{2}}{v.\; \always \Phi\, v}}
+  {\ewp{f\; ()}{\proto{2}}{v.\; \always \Phi\, v}}
   {\ewp{new\_scheduler\; f}{\proto{2}}{v.\; \always \Phi\, v}}
 \]
 %

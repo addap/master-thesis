@@ -354,7 +354,7 @@ When the promise is fulfilled, we instead own an \gspdone{\gamma}, and we know t
 
 We define \gsPInv{} as an invariant that contains the promise map so that we can globally share it.
 \gsIsPr{} represents the knowledge that a certain promise is contained in the map of \gsPInvIn{} and can be used to temporarily access the resources of this promise.
-The \(\gamma_p\) ghost name is globally unique.
+The \(\gamma_p\) ghost name is globally unique to identify the global map of promises.
 
 We take a similar approach for the result of the main fiber but this resource exists for each scheduler instead of being globally unique.
 \(\gsMainResIn{}~\gamma~l_{res}~\Phi\) tracks the state of the location \(l_{res}\) (\ocamlin{result} in figure~\ref{fig:sched-impl-run}).
@@ -404,7 +404,7 @@ This formulation is due to the continuation passing style construction of the sc
                                                          \vee\; & (\exists\, v.\; p \mapsto Done\; v \ast \gspdone{\gamma} \ast \always \Phi\; v)
                                                        \end{aligned}                   \\
     \gsPInvIn{}                         & \triangleq\; \exists M.\; \ownGhost{\gamma_p}{\authfull{}\; M} \ast \forall\, (p, \gamma) \mapsto \Phi \in M.\; \gsPState{}\; p\; \gamma\; \Phi \\
-    \gsIsPr{}\; p\; \Phi                & \triangleq\; \exists \gamma.\; \ownGhost{\gamma_p}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}}                          \\
+    \gsIsPr{}\; \gamma\; p\; \Phi                & \triangleq\; \ownGhost{\gamma_p}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}}                          \\
     \gsPInv{}                           & \triangleq\; \knowInv{\pN{}}{\gsPInvIn{}}                                                                                                     \\
     \gsMainResIn{}~\gamma~l_{res}~\Phi & \triangleq\; \begin{aligned}[t]
                                                      & (l_{res} \mapsto None \ast \gspwait{\gamma})                                      \\
@@ -447,7 +447,7 @@ Also, \(fork\_promise\) needs the \gsPInv{} invariant to interact with the globa
 \[
   \inferrule[Spec-ForkPromise]
   {\gsPInv{} \ast \ewp{f\;()}{\proto{1}}{v.\; \always \Phi\; v}}
-  {\ewp{fork\_promise\; f}{\proto{1}}{p.\; \gsIsPr{}\; p\; \Phi}}
+  {\ewp{fork\_promise\; f}{\proto{1}}{p.\; \exists \gamma.\; \gsIsPr{}\; \gamma\; p\; \Phi}}
 \]
 
 \subsubsection{\ocamlin{Promise.await}}
@@ -463,13 +463,13 @@ This then allows us to refute the error case in the final match.
 
 \begin{mathpar}
   \inferrule[Spec-MakeRegister]
-  { \gsPInv{} \ast \ownGhost{\gamma_p}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}} \ast \gsIsBcst{}\; bcst }
+  { \gsPInv{} \ast \gsIsPr{}\; \gamma\; p\; \Phi \ast \gsIsBcst{}\; bcst }
   { \ewp{make\_register\; p\; bcst}{\bot}{reg.\; \gsIsReg{1}\; reg\; (\lambda\; v.\; \ulcorner v = () \urcorner \ast \gspdone{\gamma})}}\label{spec:make_register}
   % 
   \and
   % 
   \inferrule[Spec-Await]
-  { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi }
+  { \gsPInv{} \ast \gsIsPr{}\; \gamma\; p\; \Phi }
   { \ewp{await\; p}{\proto{1}}{v.\; \always \Phi\; v}}\label{spec:await}
 \end{mathpar}
 
@@ -516,26 +516,26 @@ Then, we get access to the \(\gspdone{\gamma}\) resource when the \esuspend{} ef
 \begin{figure}[H]
   \[
     \inferrule[Spec-MakeRegister]
-    { \gsPInv{} \ast \ownGhost{\gamma_p}{\authfrag{}\; \left\{\left[(p, \gamma) \mapsto \Phi\right]\right\}} \ast \gsIsBcst{}\; bcst }
+    { \gsPInv{} \ast \gsIsPr{}\; \gamma\; p\; \Phi \ast \gsIsBcst{}\; bcst }
     { \ewp{make\_register\; p\; bcst}{\bot}{reg.\; \gsIsReg{1}\; reg\; (\lambda\; v.\; \ulcorner v = () \urcorner \ast \gspdone{\gamma})}}\label{spec:make_register}
   \]
   \hspace*{-5em}{\setlength{\extrarowheight}{3pt}
     \begin{tabular}{@{}ll@{}}
       \ocamlreal{let make_register (p: 'a t) (bcst: Broadcast.t)}                                 &                                                                                                            \\
       \myquad[2] \ocamlreal{: (unit waker -> unit) =}                                             &                                                                                                            \\
-      \(\left\{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \right\}\)                   &                                                                                                            \\
+      \(\left\{ \gsPInv{} \ast \gsIsPr{}\; \gamma\; p\; \Phi \ast \gsIsBcst{}\; bcst \right\}\)                   &                                                                                                            \\
       \myquad[1] \ocamlreal{  fun (waker: unit waker) ->}                                         & [ intro waker that satisfies \hyperref[spec:is_waker]{\gsIsWaker{}} ]                                      \\
-      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \ast                                                                                                                            \\ (\gspdone{\gamma} \wand \ewp{waker\; ()}{\bot}{\top}) } \right\} \)&\\
+      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; \gamma\; p\; \Phi \ast \gsIsBcst{}\; bcst \ast                                                                                                                            \\ (\gspdone{\gamma} \wand \ewp{waker\; ()}{\bot}{\top}) } \right\} \)&\\
       \myquad[2] \ocamlreal{  let regres = Broadcast.register bcst waker in}                      & [ apply \hyperref[spec:bcst_register]{\textsc{Spec-BroadcastRegister}} with \(R \coloneq \gspdone{\gamma}\) ]    \\
-      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst \ast                                                                                                                            \\ \emph{isBroadcastRegisterResult}\; regres } \right\}\) &\\
+      \(\left\{ \makecell{\gsPInv{} \ast \gsIsPr{}\; \gamma\; p\; \Phi \ast \gsIsBcst{}\; bcst \ast                                                                                                                            \\ \emph{isBroadcastRegisterResult}\; regres } \right\}\) &\\
       \myquad[2] \ocamlreal{  match regres with}                                                  & [ case analysis on \(regres\) ]                                                                                       \\[3pt]
       \hline                                                                                                                                                                                                   \\[-15pt]
       1. \(\left\{  regres = None \right\}\)                                                      &                                                                                                            \\
       \myquad[2] \ocamlreal{ | None -> () }                                                       & [ goal is {\color{red}trivial} ]                                                                           \\
-      \hphantom{1..} \(\left\{ \top \right\}\)                                                    &                                                                                                            \\[3pt]
+      \hphantom{1..} \(\left\{ {\color{red}\top} \right\}\)                                                    &                                                                                                            \\[3pt]
       \hline                                                                                                                                                                                                   \\[-12pt]
-      2. \(\left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast \gsIsBcst{}\; bcst\; \ast                                                                                                                      \\ regres = Some\; handle \ast \emph{isBroadcastRegisterHandle}\; handle } \right\}\) & \\
-      \myquad[2] \ocamlreal{ | Some handle -> }                                                   & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\(\gsIsPr{}\; p\)} ] \\
+      2. \(\left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; \gamma\; p\; \Phi \ast \gsIsBcst{}\; bcst\; \ast                                                                                                                      \\ regres = Some\; handle \ast \emph{isBroadcastRegisterHandle}\; handle } \right\}\) & \\
+      \myquad[2] \ocamlreal{ | Some handle -> }                                                   & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\gsIsPr{}} ] \\
       \hphantom{2..} \(\left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsBcst{}\; bcst\; \ast                                                                                                                    \\ \emph{isBroadcastRegisterHandle}\; handle \ast \gsPState{}\; p\; \gamma\; \Phi } \right\}\) &\\
       \myquad[3] \ocamlreal{ match Atomic.get p with }                                            & [ case analysis on \hyperref[spec:pstate]{\gsPState{}} ]                                                              \\[3pt]
       \hline                                                                                                                                                                                                   \\[-12pt]
@@ -547,15 +547,15 @@ Then, we get access to the \(\gspdone{\gamma}\) resource when the \esuspend{} ef
       2.1.1. \(\left\{ \gspdone{\gamma} \ast (\gspdone{\gamma} \wand \ewp{waker\; ()}{\bot}{\top}) \right\}\) & [ specialize assumption ]                                                                                  \\
       \hphantom{2.1.1..} \(\left\{ {\color{red}\ewp{waker\; ()}{\bot}{\top}} \right\}\)           &                                                                                                            \\
       \myquad[4] \ocamlreal{ then waker () }                                                      & [ by {\color{red}apply} \(\ewp{waker\; ()}{\bot}{\top}\) ]                                                                          \\
-      \hphantom{2.1.1..} \(\left\{ \top \right\}\)                                                &                                                                                                            \\[3pt]
+      \hphantom{2.1.1..} \(\left\{ {\color{red}\top} \right\}\)                                                &                                                                                                            \\[3pt]
       \hline                                                                                                                                                                                                   \\[-15pt]
       2.1.2. \(\left\{ \top \right\}\)                                                            &                                                                                                            \\
       \myquad[4] \ocamlreal{ else () }                                                            & [ goal is {\color{red}trivial} ]                                                                           \\
-      \hphantom{2.1.2..} \(\left\{ \top \right\}\)                                                &                                                                                                            \\[3pt]
+      \hphantom{2.1.2..} \(\left\{ {\color{red}\top} \right\}\)                                                &                                                                                                            \\[3pt]
       \hline                                                                                                                                                                                                   \\[-15pt]
       2.2. \(\left\{ \cancel{\gsPInv{}} \ast p \mapsto Waiting\; \_  \right\}\)                   &                                                                                                            \\
       \myquad[3] \ocamlreal{| Waiting _ -> () }                                                   & [ close \hyperref[spec:pinv]{\gsPInv{}}, goal is {\color{red}trivial} ]                                    \\
-      \hphantom{2.2..} \(\left\{ \top \right\}\)                                                  &
+      \hphantom{2.2..} \(\left\{ {\color{red}\top} \right\}\)                                                  &
     \end{tabular}}
   \caption{Annotated proof of \hyperref[spec:make_register]{\textsc{Spec-MakeRegister}}.}
   \label{fig:sched-spec-makeregister-proof}
@@ -564,43 +564,43 @@ Then, we get access to the \(\gspdone{\gamma}\) resource when the \esuspend{} ef
 \begin{figure}[H]
   \[
     \inferrule[Spec-Await]
-    { \gsPInv{} \ast \gsIsPr{}\; p\; \Phi }
+    { \gsPInv{} \ast \exists \gamma.\; \gsIsPr{}\; \gamma\; p\; \Phi }
     { \ewp{await\; p}{\proto{1}}{v.\; \always \Phi\; v}}\label{spec:await}
   \]
   \hspace*{-3em}{\setlength{\extrarowheight}{3pt}
     \begin{tabular}{@{}ll@{}}
       \ocamlreal{ let await (p: 'a t) : 'a = }                                                                       &                                                                                                                              \\
-      \( \left\{ \gsPInv{} \ast \gsIsPr{}\; p \right\} \)                                                            & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\(\gsIsPr{}\; p\)} ]                   \\
-      \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; p \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) &                                                                                                                              \\
+      \( \left\{ \gsPInv{} \ast \gsIsPr{}\; \gamma\; p\; \Phi \right\} \)                                                            & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\gsIsPr{}} ]                   \\
+      \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; \gamma\; p\; \Phi \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) &                                                                                                                              \\
       \myquad[1] \ocamlreal{match Atomic.get p with}                                                                 & [ case analysis on \hyperref[spec:pstate]{\gsPState{}} ]                                                                                \\[3pt]
       \hline                                                                                                                                                                                                                                        \\[-12pt]
       1. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast                                                                                                                                                                                              \\ p \mapsto Done\; result \ast \always (\Phi\; result) } \right\} \)                                                       &                             \\
       \myquad[1] \ocamlreal{| Done result -> }                                                                       & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                                    \\
       \hphantom{1..} \( \left\{ \gsPInv{} \ast {\color{red}\always (\Phi\; result)} \right\} \)                      &                                                                                                                              \\
       \myquad[2] \ocamlreal{result}                                                                                  & [ by {\color{red}assumption} ]                                                                                               \\
-      \hphantom{1..} \( \left\{ \always (\Phi\; result) \right\} \)                                                  &                                                                                                                              \\[3pt]
+      \hphantom{1..} \( \left\{ {\color{red}\always (\Phi\; result)} \right\} \)                                                  &                                                                                                                              \\[3pt]
       \hline                                                                                                                                                                                                                                        \\[-12pt]
-      2. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; p \ast                                                                                                                                                                           \\ p \mapsto Waiting\; bcst \ast \gsIsBcst{}\; bcst } \right\} \) &                                                  \\
+      2. \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gsIsPr{}\; \gamma\; p\; \Phi \ast                                                                                                                                                                           \\ p \mapsto Waiting\; bcst \ast \gsIsBcst{}\; bcst } \right\} \) &                                                  \\
       \myquad[1] \ocamlreal{| Waiting bcst ->}                                                                       & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                                    \\
-      \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gsIsBcst{}\; bcst } \right\} \) &                                                  \\
+      \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; \gamma\; p\; \Phi \ast                                                                                                                                                                        \\ \gsIsBcst{}\; bcst } \right\} \) &                                                  \\
       \myquad[2] \ocamlreal{let register = make_register p bcst}                                                     & [ apply \hyperref[spec:make_register]{\textsc{Spec-MakeRegister}} ]                                                          \\
-      \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gsIsReg{1}\; register } \right\} \) &                                                  \\
+      \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; \gamma\; p\; \Phi \ast                                                                                                                                                                        \\ \gsIsReg{1}\; register } \right\} \) &                                                  \\
       \myquad[2] \ocamlreal{perform (Suspend register);}                                                             & [ protocol of \hyperref[spec:suspend]{\esuspend{}} with \((W := \lambda v.\; \ulcorner v = () \urcorner \ast \gspdone{\gamma})\) ] \\
-      \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; p \ast                                                                                                                                                                        \\ \gspdone{\gamma} } \right\} \) & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\(\gsIsPr{}\; p\)} ] \\
+      \hphantom{2..} \( \left\{ \makecell{ \gsPInv{} \ast \gsIsPr{}\; \gamma\; p\; \Phi \ast                                                                                                                                                                        \\ \gspdone{\gamma} } \right\} \) & [ open \hyperref[spec:pinv]{\gsPInv{}}, lookup \(p\) using \hyperref[spec:is_promise]{\gsIsPr{}} ] \\
       \hphantom{2..} \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{\gamma}                                                                                                                                                                       \\ \ast \gsPState{}\; p\; \gamma\; \Phi } \right\} \) & \\
       \myquad[2] \ocamlreal{match Atomic.get p with}                                                                 & [ case analysis on \hyperref[spec:pstate]{\gsPState{}} ]                                                                                \\[3pt]
       \hline                                                                                                                                                                                                                                        \\[-12pt]
-      2.1.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast                                                                                                                                                                                           \\ p \mapsto Done\; result \ast \always (\Phi\; result) } \right\} \) &                                                  \\
+      2.1.  \( \left\{ \makecell{ \cancel{\gsPInv{}}\; \ast                                                                                                                                                                                           \\ p \mapsto Done\; result \ast \always (\Phi\; result) } \right\} \) &                                                  \\
       \myquad[2] \ocamlreal{| Done result -> }                                                                       & [ close \hyperref[spec:pinv]{\gsPInv{}} ]                                                                                    \\
       \hphantom{2.1..}  \( \left\{ \gsPInv{} \ast {\color{red}\always (\Phi\; result)}  \right\} \)                  &                                                                                                                              \\
       \myquad[3] \ocamlreal{result}                                                                                  & [ by {\color{red}assumption} ]                                                                                               \\
-      \hphantom{2.1..}  \( \left\{ \always (\Phi\; result) \right\} \)                                               &                                                                                                                              \\[3pt]
+      \hphantom{2.1..}  \( \left\{ {\color{red}\always (\Phi\; result)} \right\} \)                                               &                                                                                                                              \\[3pt]
       \hline                                                                                                                                                                                                                                        \\[-12pt]
-      2.2.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{\gamma} \ast                                                                                                                                                                           \\ p \mapsto Waiting\; bcst \ast \gspwait{} } \right\} \) &                                                  \\
+      2.2.  \( \left\{ \makecell{ \cancel{\gsPInv{}} \ast \gspdone{\gamma}\; \ast                                                                                                                                                                           \\ p \mapsto Waiting\; bcst \ast \gspwait{\gamma} } \right\} \) &                                                  \\
       \myquad[2] \ocamlreal{| Waiting _ -> }                                                                         & [ specialize \hyperref[spec:ps_contra]{\textsc{PS-Contra}} ]                                                                 \\
       \hphantom{2.2..}  \( \left\{ \cancel{\gsPInv{}} \ast {\color{red}\bot} \right\} \)                             &                                                                                                                              \\
       \myquad[3] \ocamlreal{error "impossible"}                                                                      & [ by {\color{red}contradiction} ]                                                                                            \\
-      \hphantom{2.2..}  \( \left\{ \bot \right\} \)                                                                  &
+      \hphantom{2.2..}  \( \left\{ {\color{red}\bot} \right\} \)                                                                  &
     \end{tabular}}
   \caption{Annotated proof of \hyperref[spec:await]{\textsc{Spec-Await}}.}
   \label{fig:sched-spec-await-proof}
