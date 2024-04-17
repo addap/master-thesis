@@ -3,45 +3,46 @@
 
 % <!-- In general, what is Broadcast/CQS? -->
 
-In this section we describe the \emph{broadcast} data structure that Eio uses to implement of \emph{promises}.
+In this section we describe the \emph{broadcast} data structure of Eio.
 Broadcasts are a customization of the recently developed \emph{CQS} data structure~\cite{koval2023cqs}.
 CQS (for CancellableQueueSynchronizer) is a lock-free synchronization primitive that allows execution contexts to wait until signalled.
-Its specification is already formally verified in Iris, so we were able to adapt the proofs to use them in our development.
+Its specification is already formally verified in Iris, so we were able to adapt the proofs to use them in our development\footnote{However, at the time of writing we proved our specifications in a subset of \emph{heaplang} instead of \hh{}. Since this subset is equivalent to \hh{} without effects we postulate that our proofs are also valid for \hh{}, but it will take some time to rewrite all proofs for \hh{}.}.
 CQS keeps the nature of an execution context abstract, but it is assumed that they support stopping execution and resuming with some value.
 This is because CQS is designed to be used in the implementation of other synchronization constructs (e.g. mutex, barrier, promise, etc.) which take care of actually suspending and resuming execution contexts as required by their semantics.
+Broadcast is used in the same way, as it is used in the implementation of Eio's \emph{promise}.
 
 % <!-- How does Eio use CQS?  -->
 
-In the case of Eio an "execution context" is an Eio fiber.
-CQS is multithreaded by design, so fibers can use the adapted broadcast functions to synchronize with fibers running in another thread.
-In the following we describe the behavior of Eio's \emph{broadcast}, highlight differences to the \emph{original CQS}, and explain how we adapted the verification of the original CQS for our development.
+In the case of Eio an \emph{execution context} is an Eio fiber.
+CQS is multithreaded by design, so fibers can use the broadcast operations to synchronize with fibers running in another thread.
+In the following we describe the behavior of Eio's \emph{broadcast} and explain the specifications of the customized operations.
+Later we also highlight differences to the \emph{original CQS}.
 
 \subsection{Operations of Broadcast}
 \label{sec:broadcast-operations}
 
 % <!-- What are the operations supported by the original CQS. -->
 
-The original CQS supports three operations that are interesting to us: \emph{suspend}, \emph{resume}, and \emph{tryCancel}.
-The equivalent operations in a broadcast are \emph{register}, \emph{signalAll}, and \emph{tryUnregister}, respectively.
+% The original CQS supports three operations that are interesting to us: \emph{suspend}, \emph{resume}, and \emph{tryCancel}.
+Broadcast has the following three main operations in its public interface: \ocamlin{register}, \ocamlin{signal_all}, and \ocamlin{try_unregister}.
 While we established Eio's broadcast as an implementation of a signalling mechanism where fibers can register callbacks to be notified about events, the original formulation of CQS uses a more abstract future-based interface for the same purpose.
+This is because it is assumed that the language runtime supports suspending an execution context until a future is completed.
+But Eio uses the broadcast data structure to \textbf{build} the runtime that allows its execution contexts (i.e. fibers) to suspend until an event happens (i.e. a promise is fulfilled), so a callback-based interface that takes \ocamlin{waker} function was chosen for the adapted operations.
 
-\paragraph*{suspend/register}
-In the original CQS, an execution context that wants to wait for an event performs a suspend operation.
-This operation creates and returns a new future that is used to stop execution because it is assumed that the language runtime supports suspending an execution context until a future is completed.
-But Eio uses the broadcast data structure to \textbf{build} the runtime that allows its execution contexts (fibers) to suspend until an event happens (a promise is fulfilled).
-So in the broadcast data structure, instead of returning a future, the register operation takes a callback as an additional argument and registers it to be called when the event happens.
+\paragraph*{\ocamlin{Broadcast.register}}
+This operation takes a callback and saves it in the data structure, to be called when an event is signalled. 
+Since all operations are lock-free, it can happen that a concurrent call to \ocamlin{signal_all} tries to modify the data structure while \ocamlin{register} is still active.
+If this case is detected, \ocamlin{register} immediately invokes the callback itself.
 
-\paragraph*{resume/signalAll}
-As a dual to suspend, a resume operation in the original CQS completes a single registered future so that the language runtime resumes the associated execution context.
-For broadcast, this is replaced by the signalAll operation, which invokes all callbacks that are registered with the data structure.
-Eio uses signalAll instead of a signal operation that only invokes one callback in order to make the implementation of promises more straightforward.
-When a promise is fulfilled, \textbf{all} fibers waiting on its value can continue execution, so the fine-grained control of a single signal operation is not needed.
+\paragraph*{\ocamlin{Broadcast.signal_all}}
+As a dual to \ocamlin{register}, the \ocamlin{signal_all} operation invokes all callbacks that are registered with the data structure.
+Eio uses \ocamlin{signal_all} instead of a \ocamlin{signal} operation that only invokes one callback in order to make the implementation of promises more straightforward.
+When a promise is fulfilled, \textbf{all} fibers waiting on its value can continue execution, so the fine-grained control of a single \ocamlin{signal} operation is not needed.
 
-\paragraph*{tryCancel/tryUnregister}
-The semantics of the tryUnregister operation do not markedly change from the original.
-A tryCancel operation can be used by an execution context to cancel the future returned by a suspend operation, so that the future is not completed by a call to resume.
-Analogously, tryUnregister tries to undo the registration of a callback, so that it is not invoked in a call to signalAll.
-The operation fails if a corresponding resume or signalAll happens first.
+\paragraph*{\ocamlin{Broadcast.try_unregister}}
+The \ocamlin{try_unregister} operation tries to undo the registration of a callback.
+If the operation succeeds, the associated callback will not be invoked by \ocamlin{signal_all}. 
+Otherwise, if a corresponding \ocamlin{signal_all} happens first, the operation fails.
 
 % % <!-- How to understand the operations?  -->
 \paragraph*{}
@@ -59,28 +60,30 @@ If the promise is not fulfilled yet, \ocamlin{Promise.await} then performs a \es
   \label{fig:cqs-usage}
 \end{figure}
 
-Note that because it is lock-free and fibers can run on different threads, there can be a race between concurrent register, tryUnregister, and signalAll operations.
-Possible interleavings and the necessity of the tryUnregister were explained in section~\ref{sec:sched-impl-await}.
+Note that because all operations are lock-free and fibers can run in different threads, there can be a race between concurrent \ocamlin{register}, \ocamlin{try_unregister}, and \ocamlin{signal_all} operations.
+Possible interleavings and the necessity of the \ocamlin{try_unregister} were explained in section~\ref{sec:sched-impl-await}.
 
 \subsection{Implementation and Logical Interface of Broadcast}
 \label{sec:broadcast-impl}
 
 % <!-- Some general information how CQS is implemented and the logical state describing the entire queue. -->
 
-Like the original CQS, broadcast is implemented as a linked list of arrays (called segments) that contain \emph{cells}\footnote{Using segments instead of single cells in the linked list is an optimization to amortize the linear runtime of linked list operations}.
+Like the original CQS, broadcast is implemented as a linked list of arrays (called segments) that contain \emph{cells}\footnote{Using segments instead of single cells in the linked list is an optimization to amortize the linear runtime of linked list operations.}.
 There are two pointers pointing to the beginning and end of the active cell range, the signal pointer and the register pointer, and cells not reachable from either pointer are garbage collected.
 There is a set of operations for manipulating the linked list and pointers to implement the higher-level functionality, but they are not part of the public API, so we do not focus on them.
 Each cell is a container for one callback and the logical state of the broadcast tracks the current state of all existing cells.
 The possible states for a single cell are shown in figure~\ref{fig:cqs-cell-states}, where the arrows are annotated with the operation that causes a state transition.
 
-The state of a cell is initialized to \textbf{EMPTY} when it is reached by the register pointer\footnote{As opposed to the original CQS, in broadcast the signal pointer never overtakes the register pointer.}.
-When a register and signalAll operation happen concurrently, they race to set the value of the empty cell.
-If the signalAll operation wins, it writes a token value into the cell and the state becomes \textbf{SIGNALLED}.
-The register operation can then read the token and invoke its callback directly.
+The state of a cell is initialized to \textbf{EMPTY} when it is reached by the register pointer\footnote{In the original CQS, a cell can also be initialized when it is reached by the signal pointer, but in broadcast the signal pointer never overtakes the register pointer.}.
+When a \ocamlin{register} and \ocamlin{signal_all} operation happen concurrently, they race to set the value of the empty cell.
+If the \ocamlin{signal_all} operation wins, it writes a token value into the cell and the state becomes \textbf{SIGNALLED}.
+The \ocamlin{register} operation can then read the token and invoke its callback directly.
 The state is thus \textbf{INVOKED}.
-If instead the register operation wins the race, it writes the callback into the cell, so the state takes the right path to \(\textbf{CALLBACK}_\textbf{waiting}\).
-Then there can be another race between concurrent tryUnregister and signalAll operations.
+If instead the \ocamlin{register} operation wins the race, it writes the callback into the cell, so the state takes the right path to \(\textbf{CALLBACK}_\textbf{waiting}\).
+Then there can be another race between concurrent \ocamlin{try_unregister} and \ocamlin{signal_all} operations.
 Both try to overwrite the callback with a token value, which changes the state to \(\textbf{CALLBACK}_\textbf{invoked}\) or \(\textbf{CALLBACK}_\textbf{unregistered}\), respectively, depending on the winner.
+A \ocamlin{signal_all} ignores a lost race against \ocamlin{try_unregister} because it should disregard the callback in question, while \ocamlin{try_unregister} returns the outcome of the race as a boolean value.
+If it won, then the caller knows that it is now responsible to invoke the callback itself.
 
 \begin{figure}[ht]
   \includegraphics[width=\textwidth]{Cell_States.png}
@@ -91,13 +94,12 @@ Both try to overwrite the callback with a token value, which changes the state t
 \subsection{Verification of Broadcast}
 \label{sec:broadcast-spec}
 
-In the following we describe the specifications we proved for the functions implemented in Eio's \ocamlin{Broadcast} module.
-Note that all specifications obey the empty protocol because the code does not perform any effects.
+Note that the specifications of all broadcast operations obey the empty protocol because the code does not perform any effects.
 For all three operations, the Eio implementation and specification differs from what is already verified in the original CQS (e.g. due to some reordered instructions or a different control flow).
 However, the specifications of the underlying operations for manipulating cell pointers are modular enough to allow us to prove the new specifications for \ocamlin{Broadcast.create}, \ocamlin{Broadcast.register}, and \ocamlin{Broadcast.try_unregister}.
 
 As for \ocamlin{Broadcast.signal_all}, Eio implements this function by atomically increasing the signal pointer by the number \(n\) of registered callbacks and then processing all \(n\) cells between the old and new pointer position.
-Because of technical differences in handling these pointers between the original CQS implementation of the paper~\cite{koval2023cqs} and the broadcast implementation of Eio we opted to verify a different implementation of \ocamlin{Broadcast.signal_all}, that increments the signal pointer \(n\) times in a loop.
+Because of technical differences in handling these pointers between the original CQS implementation of the paper~\cite{koval2023cqs} and the broadcast implementation of Eio we opted to verify a different implementation of \ocamlin{Broadcast.signal_all}, that increments the signal pointer \(n\) times in a loop and processes a single cell each time.
 We argue this does not change the observable behaviors of the function since we ensure that it can only be called once.
 
 \subsubsection{\ocamlin{Broadcast.create}}
@@ -121,8 +123,7 @@ We also obtain the unique resource \gssignal{}, which is held by the enclosing p
 \label{sec:broadcast-spec-suspend}
 
 % For a \emph{register} operation the \emph{suspend permit} from the original CQS is not needed anymore since we do the \emph{enqueue registration} internally.
-A register operation takes a callback \(cb\) and the associated resource \(\gsIsCb{}\; cb\; R\) which represents the permission to invoke the callback.
-We instantiate \(R\) with \gspdone{\gamma} so that the callback transports the knowledge that the promise has been fulfilled.
+A register operation takes a callback \(cb\) and the associated resource \(\gsIsCb{}\; cb\; R\) which represents the permission to invoke the callback when a precondition \(R\) is fulfilled.
 \(\gsIsCb{}\) is not persistent because the callback must be invoked only once.
 
 \begin{align*}
@@ -136,7 +137,7 @@ We instantiate \(R\) with \gspdone{\gamma} so that the callback transports the k
 
 The \ocamlin{Broadcast.register} function tries to insert a callback into the next cell designated by the register pointer.
 If it succeeds the function returns a \ocamlin{Registered handle} value that can be used by \ocamlin{Broadcast.try_unregister}.
-But if the cell is already in the \textbf{SIGNALLED} state, the function immediately invokes the callback and returns a \ocamlin{Invoked} value.
+But if the cell is already in the \textbf{SIGNALLED} state, the function immediately invokes the callback and returns an \ocamlin{Invoked} value.
 
 \[
   \inferrule[Spec-BroadcastRegister]
@@ -147,7 +148,7 @@ But if the cell is already in the \textbf{SIGNALLED} state, the function immedia
 \subsubsection{\ocamlin{Broadcast.try_unregister}}
 \label{sec:broadcast-spec-cance}
 
-Given a handle and its \(\textit{isBroadcastRegisterHandle}\; h\; cb\; R\) resource, \ocamlin{Broadcast.try_unregister} tries to cancel the registration of the callback.
+Given a handle \(h\) and the associated \(\textit{isBroadcastRegisterHandle}\; h\; cb\; R\) resource, \ocamlin{Broadcast.try_unregister} tries to cancel the registration of the callback.
 
 If the callback had already been invoked by \ocamlin{Broadcast.signal_all} (i.e. the state is \(\textbf{CALLBACK}_\textbf{invoked}\)) the function returns \ocamlin{false} and no resources are returned to the caller.
 Otherwise, the permission to invoke the callback \(\gsIsCb{}\; cb\) is returned.
@@ -161,13 +162,13 @@ Otherwise, the permission to invoke the callback \(\gsIsCb{}\; cb\) is returned.
 \subsubsection{\ocamlin{Broadcast.signal_all}}
 \label{sec:broadcast-spec-signal-all}
 
-To call \ocamlin{Broadcast.signal_all} the unique \(\gssignal{}\) resource is needed, along with a duplicable \(R\), so that it can be used to invoke multiple callbacks.
-The function does not return any resources because its only effect is making an unknown number of fibers resume execution, which we cannot easily formalize in Iris.
+To call \ocamlin{Broadcast.signal_all} the unique \(\gssignal{}\) resource is needed along with a persistent \(R\), so that it can be used to invoke multiple callbacks.
+The function does not return any resources because its only effect is invoking an unknown number of callbacks, none of which return any resources themselves.
 
 \[
   \inferrule[Spec-BroadcastSignalAll]
   { \gsIsBcst{}\; bcst \ast \always R \ast \gssignal{}}
-  { \ewp{signalAll\; bcst}{\bot}{\top} }
+  { \ewp{signal\_all\; bcst}{\bot}{\top} }
 \]
 
 \subsection{Changes from the Original CQS}
@@ -190,7 +191,7 @@ Additionally, there are ~4000 lines of Coq code about lower-level functionality 
 % In normal usage of CQS, the atomic variable of the outer synchronization construct would encode the length of the queue in its value and keep this resource in an associated invariant.
 % Changing the length of the queue is done using \emph{enqueue} and \emph{dequeue registration} logical operations when opening this invariant.
 
-% However, for promises the exact length of the queue is irrelevant because the \emph{signalAll} operation will always set the length to 0.
+% However, for promises the exact length of the queue is irrelevant because the \ocamlin{signal_all} operation will always set the length to 0.
 % So in the adapted proof for Eio's broadcast we keep the \(CQSState\; n\) resource in the invariant of the broadcast itself.
 % As a consequence we also move the \emph{enqueue} and \emph{dequeue registration} out of the public logical API because they are now done internally.
 

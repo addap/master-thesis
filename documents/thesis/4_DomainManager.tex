@@ -6,21 +6,21 @@ These additional schedulers are created using Eio's \emph{domain manager} and in
 It exposes a function \ocamlin{Domain_manager.new_scheduler} (shown in figure~\ref{fig:dm-impl}) which, given some function \ocamlin{f}, forks a new thread, runs a scheduler with \ocamlin{f} as its main fiber and finally returns the result of \ocamlin{f}.
 
 \subsection{Implementation}
-To interact with system-level threads\footnote{\ocf{} uses the term \emph{domain} but we use the standard thread terminology for shared-memory execution contexts running in parallel.},
+To interact with system-level threads\footnote{\ocf{} uses the term \emph{domain}, but we use the standard thread terminology for shared-memory execution contexts running in parallel.},
 the function uses the standard \ocamlin{thread_fork} and \ocamlin{thread_join} functions exposed by many thread implementations, which fulfill the specifications below.
 \begin{mathpar}
   \inferrule[Thread-Fork]
-  {\ewp{f\; ()}{\bot}{v.\; Q\, v}}
+  {\ewp{f\; ()}{\bot}{v.\; Q\; v}}
   {\ewp{thread\_fork\; f}{\bot}{j.\; joinHandle\; j\; Q}}
   %
   \and
   %
   \inferrule[Thread-Join]
   {joinHandle\; j\; Q}
-  {\ewp{thread\_join\; j}{\bot}{v.\; Q\, v}}
+  {\ewp{thread\_join\; j}{\bot}{v.\; Q\; v}}
 \end{mathpar}
 %
-We implemented threads for the operational semantics of \hazel{} and proved the specifications for these functions as described in appendix~\ref{sec:apdx-mt}.
+We implemented threads for the operational semantics of \hh{} and proved the specifications for these functions as described in appendix~\ref{sec:apdx-mt}.
 This pair of functions is analogous to \ocamlin{Fiber.fork_promise} and \ocamlin{Promise.await} but on the level of threads.
 \ocamlin{thread_fork} runs the given function \ocamlin{f} in a new thread and returns a \(joinHandle\) that can be used by \ocamlin{thread_join} to return the final result of \ocamlin{f ()}.
 The difference to fibers is that \ocamlin{thread_join} is considered \emph{blocking} in the sense that the calling thread does not continue execution until the thread associated with the \(joinHandle\) has terminated.
@@ -61,7 +61,7 @@ By the time the original fiber continues execution, the new thread will have ter
 
 \subsection{Specification and Changes to Logical State}
 % type + spec
-Because the function essentially delegates to \ocamlin{Scheduler.run}, it has the same type \ocamlin{(unit -> 'a) -> 'a} and we were able to prove an analogous specification as shown below.
+Because the function essentially delegates to \ocamlin{Scheduler.run}, it has the same type \ocamlin{(unit -> 'a) -> 'a}, and we were able to prove an analogous specification as shown below.
 \[
   \inferrule[Spec-NewScheduler]
   {\ewp{f\; ()}{\proto{2}}{v.\; \always \Phi\, v}}

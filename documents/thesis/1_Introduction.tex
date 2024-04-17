@@ -1,7 +1,6 @@
 \section{Introduction}
 \label{sec:introduction}
 
-\paragraph{}
 With the spread of the Internet and computers transmitting ever more data there has been a trend in programming languages to support \emph{user-level concurrency} constructs
 where an application is responsible to schedule the execution of multiple \emph{tasks} (i.e. some unit of work), analogous to how an operating system traditionally schedules multiple processes.
 User-level concurrency is especially beneficial when there are many small tasks that are often blocked until an I/O resource like a network socket becomes available (i.e. they are \emph{I/O bound}).
@@ -11,7 +10,7 @@ This way an application can organize many more tasks (possibly on the order of m
 
 There is not one standardized implementation for user-level concurrency.
 It is generally said to use \emph{lightweight threads} as opposed to operating system threads, but in different languages or language libraries the concept is known under terms
-like \emph{async/await} (Rust, Python, Javascript), \emph{goroutines} (Go), and \emph{fibers} (Java's Project Loom, \ocf{}'s Eio).
+like \emph{async/await} (Rust, Python, JavaScript), \emph{goroutines} (Go), and \emph{fibers} (Java's Project Loom, \ocf{}'s Eio).
 
 \paragraph{}
 
@@ -20,15 +19,15 @@ The library uses the new effect handler feature from \ocf{} to implement fibers 
 In order to formally verify the code that uses effect handlers we use the \hazel{} program logic by de Vilhena~\cite{de2021separation,de2022proof}.
 
 \paragraph{Formal Verification}
-There is a growing need for the formal verification of programs or computer systems to provide a high assurance that they are "safe to use".
+There is a growing need for the formal verification of programs or computer systems to provide a high assurance that they are \emph{safe to use}.
 Formal verification means mathematically modelling programs to enable rigorous proofs about their properties.
-As such, it also entails mathematically defining when a program is "safe to use".
+As such, it also entails mathematically defining when a program is \emph{safe to use}.
 Two important concepts behind this intuition are \textbf{safety} and \textbf{functional correctness}.
 By safety, we mean that when evaluating a given program according to the rules of the language
 it will never get into a state where there are no rules of how to evaluate it further.
 In some languages this is called \emph{undefined behavior}, but we often model it as crashing the program.
 Safety is the baseline for the type of program verification that we do and as a next step we can show that programs are functionally correct by proving that they obey a \textbf{specification}.
-Specifications further restrict the possible program executions to a defined set of "good behaviors", such as "for a given input \(n\), this program computes the \(n\)th Fibonacci number".
+Specifications further restrict the possible program executions to a defined set of \emph{good behaviors}, such as "for a given input \(n\), this program computes the \(n\)th Fibonacci number".
 
 \paragraph{Separation Logic}
 We express specifications as logical propositions and do all reasoning in a separation logic called \emph{Iris}~\cite{jung2018iris}.
@@ -72,9 +71,9 @@ They are used to encapsulate a resource \(I\) in order to share it under the res
 If the invariant is opened, the contained resource \(I\) can be accessed but must be restored at the end of the execution step.
 This ensures that even in the presence of multiple threads executing in parallel, the invariant is never observably violated.
 
-The standard language for Iris is called heaplang and is an ML-type language with mutable state and multithreading.
+The standard language for Iris is called heaplang and is an ML-like language with mutable state and multithreading.
 However, it does not support effect handlers as present in \ocf{}.
-So for reasoning about programs with effect handlers we use the \hazel{} language for Iris.
+So for reasoning about programs with effect handlers we use the \hh{} language for Iris, that is based on heaplang and includes effect handlers.
 
 \paragraph{Effect Handlers}
 \emph{Effect handlers}~\cite{plotkin2013handling} (and the related concept of \emph{algebraic effects}) are a versatile concept explored in some research languages~\cite{eff,koka} and now also implemented in \ocf{}~\cite{ocamleff}.
@@ -132,18 +131,18 @@ The \ocf{} runtime treats unhandled effects as an error and crash the program.
 So to prove the safety of \ocf{} programs we must additionally establish their effect safety.
 
 \paragraph{\hazel{} \& Protocols}
-In our development we use the Iris language \hazel{} by de Vilhena~\cite{de2021separation,de2022proof} which formalizes an ML-like language with effect handlers.
+In our development we use the Iris language \hh{} and the associated program logic \hazel{} by de Vilhena~\cite{de2021separation,de2022proof} which formalizes an ML-like language with effect handlers.
 We restate the most important concepts but for a deeper understanding we recommend reading~\cite{de2021separation}.
 
 \hazel{} defines an \emph{extended weakest precondition} \(\ewp{e}{\Psi}{v,\, Q\, v}\) which -- in addition to what is implied by a normal weakest precondition --
 shows we can observe that the expression \(e\) performs effects according to the protocol \(\Psi\).
-A protocol \(\Psi\) acts as a specification for effects in terms of their "input" and "output", casting them in a similar light to function calls.
+A protocol \(\Psi\) acts as a specification for effects in terms of their \emph{input} and \emph{output}, casting them in a similar light to function calls.
 The main way to specify a protocol is by the following constructor.
 \[
     !\, \overrightarrow{x}\, (v)\, \{P\}.\; ?\, \overrightarrow{y}\, (w)\, \{Q\}
 \]
 The input (!) and output (?) syntax is inspired by session types~\cite{sestypes} which are used to describe the behavior of communicating parties.
-Intuitively, the part after the exclamation mark gets "sent" to the effect handler and the part after the question mark is "received" as an answer.
+Intuitively, the part after the exclamation mark gets \emph{sent} to the effect handler and the part after the question mark is \emph{received} as an answer.
 \(\overrightarrow{x}\) and \(\overrightarrow{y}\) are binders whose scope extends from their position all the way to the right.
 The client who performs the effect transmits the value \(v\) to the effect handler and must prove the proposition \(P\).
 In return, the client receives from the effect handler a value \(w\) and gets to assume \(Q\).
@@ -213,7 +212,7 @@ Broadcast is based on the \emph{CQS} data structure, whose specification is alre
 We discuss this process in section~\ref{sec:broadcast}.
 Fibers in Eio also have access to \emph{thread-local variables} by performing a \egetctx{} effect, which is discussed in section~\ref{sec:thread-local-vars}.
 They are thread-local in the sense that they are shared between all fibers of one scheduler.
-Finally, we discuss our addition of multithreading to the \hazel{} operational semantics in order to model running schedulers in different threads.
+Finally, we discuss our addition of multithreading to the \hh{} operational semantics in order to model running schedulers in different threads.
 This turned out to be technically trivial, so we only discuss it in appendix~\ref{sec:apdx-mt} and take a multithreaded semantics and support for Iris \emph{shared invariants} as a given in the reminder of the main text.
 
 \subsection{Contributions}
@@ -226,5 +225,5 @@ This includes:
     \item The verification of the basic Eio \textbf{fiber abstraction} running on a common denominator scheduler.
     \item Proving reusable specifications for the main three effects of Eio: \efork{}, \esuspend{}, and \egetctx{}.
     \item An adaptation of the existing verification of CQS to the customized version used by Eio.
-    \item Adding multithreading to \hazel{}'s operational semantics, which shows we can reason about programs that use both \textbf{multithreading} and \textbf{effect handlers}.
+    \item Adding multithreading to \hh{}'s operational semantics, which shows we can reason about programs that use both \textbf{multithreading} and \textbf{effect handlers}.
 \end{itemize}

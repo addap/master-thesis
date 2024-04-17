@@ -1,10 +1,11 @@
 \begin{abstract}
     % General topic & Specific topic
-    In this thesis we work on the formal verification of the OCaml library "Eio" which provides user-level concurrency using the new effect handlers feature of \ocf{}.
+    In this thesis we work on the formal verification of the OCaml library \emph{Eio} which provides user-level concurrency using the new effect handlers feature of \ocf{}.
     % General Question of the Problem
     As part of formal verification, the goal of program verification is to show that a program obeys a specification and is safe to execute, meaning that its execution will not run into any undefined behavior or crash.
     % Previous Research
-    Program verification for languages with mutable state is commonly done using separation logics, and for languages with effect handlers there exists the program logic \hazel{} which is built on top of the Iris separation logic framework.
+    Program verification for languages with mutable state is commonly done using separation logics.
+    For reasoning about effect handlers there exists the ML-like language \hh{} and an associated separation logic called \hazel{}, built on top of the Iris framework.
 
     % Goal of the Research
     We use \hazel{} to tackle the question of safety for the central elements of the Eio library, which includes \emph{spawning fibers} that are \emph{run by a scheduler} and can wait for the completion of other fibers by \emph{awaiting promises}.
@@ -15,5 +16,5 @@
 
     % Result
     We were able to verify the safety of the central elements of the Eio library, and prove specifications for its public API and for the declared effects.
-    We also extended the \hazel{} language to include multithreading in order to adapt previous verification work on a data structure that Eio uses.
+    We also extended the \hh{} language to include multithreading in order to adapt previous verification work on a data structure that Eio uses.
 \end{abstract}

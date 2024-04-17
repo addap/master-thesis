@@ -217,7 +217,7 @@ The "suspend execution" part is handled by performing a \esuspend{} effect.
 Then, the "until \ocamlin{p} is fulfilled" part is implemented by using a \emph{broadcast} data structure.
 
 In Eio, a broadcast is an implementation of a signalling mechanism used for similar purposes as condition variables in various languages.
-The major differences are that a broadcast does not use a mutes (it is a \emph{lock-free} data structure) and that callers do not directly suspend execution if the condition is not met, but supply a callback that will be called when the condition is signalled.
+The major differences are that a broadcast does not use a mutex (it is a \emph{lock-free} data structure) and that callers do not directly suspend execution if the condition is not met, but supply a callback that will be called when the condition is signalled.
 
 In figure~\ref{fig:sched-impl-broadcast} we show the public API of Eio's \ocamlin{Broadcast} module.
 The \ocamlin{Broadcast.register} function attempts to register a given \ocamlin{callback} with the data structure while \ocamlin{Broadcast.signal_all} calls all registered callbacks.
@@ -285,7 +285,7 @@ In the next section we show how the first two situations are addressed by defini
 \subsection{Specification}
 \label{sec:sched-spec}
 
-To prove specifications for an effectful program in \hazel{}, in addition defining to ghost state constructs for describing the program state space, we also need to define protocols that describe the behavior of the program's effects.
+To prove specifications for an effectful program using \hazel{}, in addition defining to ghost state constructs for describing the program state space, we also need to define protocols that describe the behavior of the program's effects.
 For our Eio development we heavily modify the ghost state and the effect protocols from the cooperative concurrency scheduler development from chapter 4 of de Vilhena's dissertation~\cite{de2022proof}.
 
 \subsubsection{Protocols}
@@ -517,7 +517,7 @@ Then, we get access to the \(\gspdone{\gamma}\) resource when the \esuspend{} ef
   \[
     \inferrule[Spec-MakeRegister]
     { \gsPInv{} \ast \gsIsPr{}\; \gamma\; p\; \Phi \ast \gsIsBcst{}\; bcst }
-    { \ewp{make\_register\; p\; bcst}{\bot}{reg.\; \gsIsReg{1}\; reg\; (\lambda\; v.\; \ulcorner v = () \urcorner \ast \gspdone{\gamma})}}\label{spec:make_register}
+    { \ewp{make\_register\; p\; bcst}{\bot}{reg.\; \gsIsReg{1}\; reg\; (\lambda\; v.\; \ulcorner v = () \urcorner \ast \gspdone{\gamma})}}
   \]
   \hspace*{-5em}{\setlength{\extrarowheight}{3pt}
     \begin{tabular}{@{}ll@{}}
@@ -565,7 +565,7 @@ Then, we get access to the \(\gspdone{\gamma}\) resource when the \esuspend{} ef
   \[
     \inferrule[Spec-Await]
     { \gsPInv{} \ast \exists \gamma.\; \gsIsPr{}\; \gamma\; p\; \Phi }
-    { \ewp{await\; p}{\proto{1}}{v.\; \always \Phi\; v}}\label{spec:await}
+    { \ewp{await\; p}{\proto{1}}{v.\; \always \Phi\; v}}
   \]
   \hspace*{-3em}{\setlength{\extrarowheight}{3pt}
     \begin{tabular}{@{}ll@{}}
