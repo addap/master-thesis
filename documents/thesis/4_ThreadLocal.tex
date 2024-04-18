@@ -12,7 +12,7 @@ Thread-local variables are state that is shared between all fibers of one schedu
 
 Since all fibers of one scheduler execute concurrently on one system-level thread, they have exclusive access to the thread-local variables while they are running.
 This allows a practical form of shared state without the overhead of synchronization primitives of multithreaded data structures.
-Some example use-cases are per-scheduler debug tracing of, where all fibers of one scheduler write to a common log,
+Some example use-cases are per-scheduler debug tracing of events, where all fibers of one scheduler write to a common log,
 and inter-fiber message passing, where fibers use a simple queue to exchange messages.
 Of course, this comes with the restriction that it is only usable for fibers running in the same thread.
 
@@ -22,8 +22,8 @@ In Eio thread-local variables are represented by a dictionary from variable name
 However, to integrate thread-local variables into our model we simplify this into a single reference.
 Properties we want to prove about our thread-local variable are:
 \begin{enumerate}
-    \item Each time a fiber performs a \egetctx{} effect it receives the same reference.
-    \item As long as a fiber does not perform other effects like \efork{} or \esuspend{}, it holds exclusive ownership of the reference.
+  \item Each time a fiber performs a \egetctx{} effect it receives the same reference.
+  \item As long as a fiber does not perform other effects like \efork{} or \esuspend{}, it holds exclusive ownership of the reference.
 \end{enumerate}
 
 Code examples illustrating the properties are shown in figure~\ref{fig:tlv-example}.
@@ -31,9 +31,10 @@ Note that these are only the most basic properties showing that \ocamlin{tlv} ac
 To enable modular proofs of concrete fibers using the thread-local variable, we include in our logical definition a predicate \(\Omega\) on the stored value that can be instantiated by fibers as needed.
 
 \begin{figure}[ht]
-    \begin{minted}{ocaml}
+  \begin{minted}{ocaml}
 let fiber1 () =
   let tlv1 = perform (GetContext ()) in
+  (* ... *)
   let tlv2 = perform (GetContext ()) in
   assert (tlv1 = tlv2)
 
@@ -44,8 +45,8 @@ let fiber2 () =
   (* ... *)
   assert (!tlv = v)
   \end{minted}
-    \caption{Constructed example of safety for thread-local variables.}
-    \label{fig:tlv-example}
+  \caption{Constructed example of safety for thread-local variables.}
+  \label{fig:tlv-example}
 \end{figure}
 
 \subsection{Changes to Logical State}
@@ -76,38 +77,38 @@ The predicate at the moment only includes the points-to connective of \(l_{tlv}\
 Also, we must change the definition of \(\gsReadyF{}\) to include \(\gsFiberResources{l_{tlv}}{\Omega}\) in the pre- and postcondition so that each suspended fiber in the run queue gets access to the resources when it resumes execution.
 
 \begin{figure}[ht]
-    \begin{align*}
-        \gsFiberResources{l_{tlv}}{\Omega} & \triangleq\; \exists v.\; l_{tlv} \mapsto v \ast \Omega\; v \\
-        \gsReady{3}~l_{tlv}~\Omega~k & \triangleq\; \gsFiberResources{l_{tlv}}{\Omega} \wand{} \ewp{k\; ()}{\bot}{\gsFiberResources{l_{tlv}}{\Omega}}
-    \end{align*}
-    \caption{Updated logical state definitions to model the thread-local variable.}
-    \label{fig:logical-state-ext}
+  \begin{align*}
+    \gsFiberResources{l_{tlv}}{\Omega} & \triangleq\; \exists v.\; l_{tlv} \mapsto v \ast \Omega\; v                                                    \\
+    \gsReady{3}~l_{tlv}~\Omega~k       & \triangleq\; \gsFiberResources{l_{tlv}}{\Omega} \wand{} \ewp{k\; ()}{\bot}{\gsFiberResources{l_{tlv}}{\Omega}}
+  \end{align*}
+  \caption{Updated logical state definitions to model the thread-local variable.}
+  \label{fig:logical-state-ext}
 \end{figure}
 
 The effect protocols of \efork{} and \esuspend{} are amended so that they pass the fiber resources from a fiber to the scheduler and from there to the next running fiber via the protocol pre- and postconditions as shown in figure~\ref{fig:coop-protocol-ext}.
 A fiber uses the \egetctx{} effect to receive the concrete \(l_{tlv}\) reference, and by virtue of running it already holds the fiber resources to safely dereference \(l_{tlv}\).
-The crux is that now the whole protocol \proto{3} is parameterized by the location and the predicate on its value. 
+The crux is that now the whole protocol \proto{3} is parameterized by the location and the predicate on its value.
 We must do this instead of quantifying them at the effect-level so that the fiber and the scheduler agree on the concrete location.
 
 \begin{figure}[ht]
-    \begin{align*}
-        \proto{3}~l_{tlv}~\Omega              & \triangleq \begin{aligned}[t]
-                                                        Fork\;       & \#\; \begin{aligned}[t]
-                                     & !\; e\; (e)\; \begin{aligned}[t]
-                                           & \big\{ \gsFiberResources{l_{tlv}}{\Omega} \ast                                                                              \\
-                                           & \later\; (\gsFiberResources{l_{tlv}}{\Omega} \wand{} \ewp{e\ \ ()}{\proto{3}~l_{tlv}~\Omega}{\gsFiberResources{l_{tlv}}{\Omega}}) \big\} .
-                                      \end{aligned}  \\
-                                     & ?\; ()\; \{ \gsFiberResources{l_{tlv}}{\Omega} \}
-                                \end{aligned}                                             \\
-                                                        Suspend\;    & \#\; \begin{aligned}[t]
-                                     & !\; reg\; W\; S\; (reg)\; \{\gsFiberResources{l_{tlv}}{\Omega} \ast \gsIsRegF{}\; reg\; W\; S\}. \\
-                                     & ?\; v\; (v)\; \{ \gsFiberResources{l_{tlv}}{\Omega} \ast W~v \ast S \}
-                                \end{aligned} \\
-                                                        GetContext\; & \#\; !\; ()\; \{\top\}.\; ?\; (l_{tlv})\; \{ \top \}
-                                                    \end{aligned}
-    \end{align*}
-    \caption{Definition of extended \proto{3} protocol with \efork{}, \esuspend{}, and \egetctx{} effects.}
-    \label{fig:coop-protocol-ext}
+  \begin{align*}
+    \proto{3}~l_{tlv}~\Omega & \triangleq \begin{aligned}[t]
+                                            Fork\;       & \#\; \begin{aligned}[t]
+                             & !\; e\; (e)\; \begin{aligned}[t]
+                            & \big\{ \gsFiberResources{l_{tlv}}{\Omega} \ast                                                                                             \\
+                            & \later\; (\gsFiberResources{l_{tlv}}{\Omega} \wand{} \ewp{e\ \ ()}{\proto{3}~l_{tlv}~\Omega}{\gsFiberResources{l_{tlv}}{\Omega}}) \big\} .
+                         \end{aligned} \\
+                             & ?\; ()\; \{ \gsFiberResources{l_{tlv}}{\Omega} \}
+                          \end{aligned}                                                 \\
+                                            Suspend\;    & \#\; \begin{aligned}[t]
+                             & !\; reg\; W\; S\; (reg)\; \{\gsFiberResources{l_{tlv}}{\Omega} \ast \gsIsReg{1}\; reg\; W\}. \\
+                             & ?\; v\; (v)\; \{ \gsFiberResources{l_{tlv}}{\Omega} \ast W~v \}
+                          \end{aligned} \\
+                                            GetContext\; & \#\; !\; ()\; \{\top\}.\; ?\; (l_{tlv})\; \{ \top \}
+                                          \end{aligned}
+  \end{align*}
+  \caption{Definition of extended \proto{3} protocol with \efork{}, \esuspend{}, and \egetctx{} effects.}
+  \label{fig:coop-protocol-ext}
 \end{figure}
 %
 These changes suffice to prove the safety of the two examples in figure~\ref{fig:tlv-example}.

@@ -5,14 +5,14 @@
     As part of formal verification, the goal of program verification is to show that a program obeys a specification and is safe to execute, meaning that its execution will not run into any undefined behavior or crash.
     % Previous Research
     Program verification for languages with mutable state is commonly done using separation logics.
-    For reasoning about effect handlers there exists the ML-like language \hh{} and an associated separation logic called \hazel{}, built on top of the Iris framework.
+    For reasoning about effect handlers there exists the ML-like language \hh{} and an associated program logic called \hazel{}, built on top of the Iris separation logic framework.
 
     % Goal of the Research
-    We use \hazel{} to tackle the question of safety for the central elements of the Eio library, which includes \emph{spawning fibers} that are \emph{run by a scheduler} and can wait for the completion of other fibers by \emph{awaiting promises}.
+    We tackle the question of safety for the central elements of the Eio library, which includes \emph{spawning fibers} that are \emph{run by a scheduler} and can wait for the completion of other fibers by \emph{awaiting promises}.
     % Reason
     Therefore, our work serves as an extended case study on the usefulness of modelling and verifying programs with effect handlers in \hazel{}.
     % Methods
-    The formal verification is carried out in the Iris framework and our results are mechanized in the Coq proof assistant.
+    The formal verification is carried out in the Hazel logic and our results are mechanized in the Coq proof assistant.
 
     % Result
     We were able to verify the safety of the central elements of the Eio library, and prove specifications for its public API and for the declared effects.

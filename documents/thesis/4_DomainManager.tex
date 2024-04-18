@@ -7,11 +7,11 @@ It exposes a function \ocamlin{Domain_manager.new_scheduler} (shown in figure~\r
 
 \subsection{Implementation}
 To interact with system-level threads\footnote{\ocf{} uses the term \emph{domain}, but we use the standard thread terminology for shared-memory execution contexts running in parallel.},
-the function uses the standard \ocamlin{thread_fork} and \ocamlin{thread_join} functions exposed by many thread implementations, which fulfill the specifications below.
+the function uses the standard \ocamlin{thread_spawn} and \ocamlin{thread_join} functions exposed by many thread implementations, which fulfill the specifications below.
 \begin{mathpar}
-  \inferrule[Thread-Fork]
+  \inferrule[Thread-Spawn]
   {\ewp{f\; ()}{\bot}{v.\; Q\; v}}
-  {\ewp{thread\_fork\; f}{\bot}{j.\; joinHandle\; j\; Q}}
+  {\ewp{thread\_spawn\; f}{\bot}{j.\; joinHandle\; j\; Q}}
   %
   \and
   %
@@ -22,7 +22,7 @@ the function uses the standard \ocamlin{thread_fork} and \ocamlin{thread_join} f
 %
 We implemented threads for the operational semantics of \hh{} and proved the specifications for these functions as described in appendix~\ref{sec:apdx-mt}.
 This pair of functions is analogous to \ocamlin{Fiber.fork_promise} and \ocamlin{Promise.await} but on the level of threads.
-\ocamlin{thread_fork} runs the given function \ocamlin{f} in a new thread and returns a \(joinHandle\) that can be used by \ocamlin{thread_join} to return the final result of \ocamlin{f ()}.
+\ocamlin{thread_spawn} runs the given function \ocamlin{f} in a new thread and returns a \(joinHandle\) that can be used by \ocamlin{thread_join} to return the final result of \ocamlin{f ()}.
 The difference to fibers is that \ocamlin{thread_join} is considered \emph{blocking} in the sense that the calling thread does not continue execution until the thread associated with the \(joinHandle\) has terminated.
 
 \begin{figure}[ht]
@@ -35,7 +35,7 @@ let new_scheduler (f: unit -> 'a) : 'a =
       waker (); @\label{ln:new_sched_waker}@
       result
     ) in
-    let join_handle = thread_fork thread_fun in @\label{ln:new_sched_fork}@
+    let join_handle = thread_spawn thread_fun in @\label{ln:new_sched_fork}@
     handle := Some join_handle @\label{ln:new_sched_set}@
   ) in
   perform (Suspend register); @\label{ln:new_sched_suspend}@
@@ -55,7 +55,7 @@ This situation must be avoided and is a source of great complexity when calling 
 % how the function works
 \ocamlin{Domain_manager.new_scheduler} avoids blocking the current thread by suspending the calling fiber until the new thread is terminating.
 This is done by performing a \esuspend{} effect (line~\ref{ln:new_sched_suspend}) and forking the new thread inside the \ocamlin{register} function.
-The \ocamlin{thread_fun} runs the new scheduler and call the \ocamlin{waker} function (line~\ref{ln:new_sched_waker}) only after the new scheduler has finished.
+The \ocamlin{thread_fun} runs the new scheduler and calls the \ocamlin{waker} function (line~\ref{ln:new_sched_waker}) only after the new scheduler has finished.
 The resulting join handle is saved in a reference (line~\ref{ln:new_sched_set}) to be accessed after the original fiber wakes up.
 By the time the original fiber continues execution, the new thread will have terminated or terminate very soon, so it uses the join handle from the reference and retrieves the thread's final value (line~\ref{ln:new_sched_join}) without blocking (or blocking very shortly).
 
@@ -71,7 +71,7 @@ Because the function essentially delegates to \ocamlin{Scheduler.run}, it has th
 % What we need to change
 However, we need to update several definitions to make this proof possible.
 One of them is the specification of the \esuspend{} effect, which is why we now refer to the \(\proto{2}\) protocol.
-The match in line~\ref{ln:new_sched_match} is only safe because the reference is assigned a join handle in the register function which runs to completion before the effect returns.
+The match in line~\ref{ln:new_sched_match} is only safe because the reference is assigned a join handle in the \ocamlin{register} function which runs to completion before the effect returns.
 We track the status of the reference by reusing the \gsOneShotAssign{} ghost-state from figure~\ref{fig:promise-state-rules}.
 By performing the \esuspend{} effect we want to receive \gspdone{\gamma_{{\scriptscriptstyle \mathtt{handle}}}}, where \(\gamma_{{\scriptscriptstyle \mathtt{handle}}}\) is specific to the \ocamlin{handle} reference.
 Consequently, we update the protocol and its related definitions (shown in figure~\ref{fig:coop-protocol-2}) so that \esuspend{} additionally returns a persistent resource
@@ -164,12 +164,12 @@ let rec execute fiber =
 \end{minted}
 First, to do a pop operation, the \ocamlin{execute} function now needs the unique \(\gsIsQueueReader{}\) resource.
 Since we call \ocamlin{execute} recursively for each fiber, we must pass this resource to each fiber continuation when running it.
-The queue invariant \(\gsReadyF{}~\gamma~q\) therefore becomes recursive, where \(\gsIsQueueReader{}\) is passed into and out of every continuation in the queue.
+The queue invariant \(\gsReadyF{}\) therefore becomes recursive, where \(\gsIsQueueReader{}\) is passed into and out of every continuation in the queue.
 \begin{align*}
-  \gsReady{2}~\gamma~q~f \triangleq\; & \later \gsIsQueueReader{}~q~(\gsReady{2}~\gamma~q) \wand \\ 
+  \gsReady{2}~\gamma~q~f \triangleq\; & \later \gsIsQueueReader{}~q~(\gsReady{2}~\gamma~q) \wand                                                \\
                                       & \myquad[1] \ewp{f\; ()}{\bot}{\gspdone{\gamma} \ast \later \gsIsQueueReader{}~q~(\gsReady{2}~\gamma~q)}
 \end{align*}
-Before constructing the \ocamlin{waker} function we must now use \textsc{Spec-DQueueRegister} to temporarily change the queue invariant to \(I'~f \coloneq S \wand \gsReady{2}\gamma~q~f\) and obtain a \(\gsPushPermission{}\; \gamma\; S\).
+Before constructing the \ocamlin{waker} function we must now use \textsc{Spec-DQueueRegister} to temporarily change the queue invariant to \(I'~f \coloneq S \wand \gsReady{2}~\gamma~q~f\) and obtain a \(\gsPushPermission{}\; \gamma\; S\).
 Using the push permission  we can then prove that \ocamlin{waker} still satisfies \(\gsIsWaker{}\) because the continuation \ocamlin{k} satisfies \(I'\).
 After calling the \ocamlin{register} function we obtain the resource \(S\) and can use \textsc{Spec-DQueueFulfill} to restore the queue invariant and receive the \(\gsIsQueueReader{}\) resource.
 This resource is then passed to \ocamlin{next} to pop a continuation from the queue and then passed to the continuation itself to fulfill the precondition of \(\gsReady{2}\).

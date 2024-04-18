@@ -65,6 +65,8 @@
     nabla=upright
 ]{unicode-math}
 
+\newcommand{\mdpp}{\ensuremath{\mathbin{+\mkern-7mu+}}}
+
 \setmainfont{Libertinus Serif}
 \setsansfont{Libertinus Sans}
 \setmathfont{Libertinus Math}
@@ -94,7 +96,7 @@
 % Define inline shortcuts without syntax highlighting
 \newmintinline[ocamlin]{text}{fontsize=\footnotesize}
 \newmintinline[ocamlreal]{ocaml}{fontsize=\footnotesize}
-\newmintinline[coqin]{text}{}
+\newmintinline[coqin]{text}{fontsize=\footnotesize}
 
 \BeforeBeginEnvironment{minted}{\begin{mdframed}}
 \AfterEndEnvironment{minted}{\end{mdframed}}
@@ -109,6 +111,9 @@
 \newcommand{\done}{{\symfontextra ✓}}
 \newcommand{\tbd}{{\symfontextra ⌛}}
 
+\newcommand{\xfork}{\ensuremath{\mathit{fork}}}
+\newcommand{\xcmp}{\ensuremath{\mathit{cmpXchg}}}
+\newcommand{\xfaa}{\ensuremath{\mathit{faa}}}
 \newcommand{\efork}{\ensuremath{\mathit{Fork}}}
 \newcommand{\esuspend}{\ensuremath{\mathit{Suspend}}}
 \newcommand{\egetctx}{\ensuremath{\mathit{GetContext}}}
@@ -139,34 +144,40 @@
 \newcommand{\myquad}[1][1]{\hspace*{#1em}\ignorespaces}
 % Definitions for which I need subscripts.
 % Using robust command so that the ifelse does not break when used in captions as per https://tex.stackexchange.com/a/61513
-\DeclareRobustCommand{\gsReady}[1]{
-  \ifthenelse{\isempty{#1}}
-  {\PackageError{thesis}{Ready called without subscript}{Pass in a number as the first argument.}}
-  {\ensuremath{\mathit{Ready}_{#1}}}
-}
+% But for the final compilation I use normal commands again because robuscommands have weird spacing.
+% \DeclareRobustCommand{\gsReady}[1]{
+%   \ifthenelse{\isempty{#1}}
+%   {\PackageError{thesis}{Ready called without subscript}{Pass in a number as the first argument.}}
+%   {\ensuremath{\mathit{Ready}_{#1}}}
+% }
+\newcommand{\gsReady}[1]{\ensuremath{\mathit{Ready}_{#1}}}
 \newcommand{\gsReadyF}{\ensuremath{\mathit{Ready}}}
-\DeclareRobustCommand{\gsIsReg}[1]{
-  \ifthenelse{\isempty{#1}}
-  {\PackageError{thesis}{isRegister called without subscript}{Pass in a number as the first argument.}}
-  {\ensuremath{\mathit{isRegister}_{#1}}}
-}
+% \DeclareRobustCommand{\gsIsReg}[1]{
+%   \ifthenelse{\isempty{#1}}
+%   {\PackageError{thesis}{isRegister called without subscript}{Pass in a number as the first argument.}}
+%   {\ensuremath{\mathit{isRegister}_{#1}}}
+% }
+\newcommand{\gsIsReg}[1]{\textit{isRegister}\ensuremath{_{#1}}}
 \newcommand{\gsIsRegF}{\ensuremath{\mathit{isRegister}}}
-\DeclareRobustCommand{\proto}[1]{
-  \ifthenelse{\isempty{#1}}
-  {\PackageError{thesis}{proto called without subscript}{Pass in a number as the first argument.}}
-  {\ensuremath{\mathit{Coop}_{#1}}}
-}
+% \DeclareRobustCommand{\proto}[1]{
+%   \ifthenelse{\isempty{#1}}
+%   {\PackageError{thesis}{proto called without subscript}{Pass in a number as the first argument.}}
+%   {\ensuremath{\mathit{Coop}_{#1}}}
+% }
+\newcommand{\proto}[1]{\ensuremath{\mathit{Coop}_{#1}}}
 \newcommand{\protoF}{\ensuremath{\mathit{Coop}}}
-\DeclareRobustCommand{\gspwait}[1]{
-  \ifthenelse{\isempty{#1}}
-  {\PackageError{thesis}{gspwait called without subscript}{Pass in a number as the first argument.}}
-  {\ensuremath{\mathit{osWaiting}~{#1}}}
-}
-\DeclareRobustCommand{\gspdone}[1]{
-  \ifthenelse{\isempty{#1}}
-  {\PackageError{thesis}{gspdone called without subscript}{Pass in a number as the first argument.}}
-  {\ensuremath{\mathit{osAssigned}~{#1}}}
-}
+% \DeclareRobustCommand{\gspwait}[1]{
+%   \ifthenelse{\isempty{#1}}
+%   {\PackageError{thesis}{gspwait called without subscript}{Pass in a number as the first argument.}}
+%   {\ensuremath{\mathit{osWaiting}~{#1}}}
+% }
+\newcommand{\gspwait}[1]{\ensuremath{\mathit{osWaiting}~{#1}}}
+% \DeclareRobustCommand{\gspdone}[1]{
+%   \ifthenelse{\isempty{#1}}
+%   {\PackageError{thesis}{gspdone called without subscript}{Pass in a number as the first argument.}}
+%   {\textit{osAssigned} {\ensuremath{#1}}}
+% }
+\newcommand{\gspdone}[1]{\ensuremath{\mathit{osAssigned}~#1}}
 
 \begin{document}
 
@@ -174,10 +185,10 @@
 \setauthor{Adrian Dapprich}
 \settitle{Verifying an Effect-Based Cooperative Concurrency Scheduler in Iris}
 \advisorOne{Prof. Derek Dreyer}
-\advisorTwo{Prof. François Dottier}
+\advisorTwo{Prof. François Pottier}
 \university{Saarland University}
 \faculty{Department of Computer Science}
-\thesistype{Master's}
+\thesistype{Master's }
 \subdate{19}{April}{2024}
 \city{Saarbrücken}
 
@@ -205,8 +216,10 @@
 \include{4_ThreadLocal}
 \include{5_Evaluation}
 \include{6_Conclusion}
+
+\printbibliography[title=Bibliography]
+
 \include{7_Appendix}
 
-\printbibliography
 
 \end{document}

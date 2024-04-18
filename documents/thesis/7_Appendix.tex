@@ -9,136 +9,122 @@
 \subsection{Translation Table}
 \label{sec:apdx-translation}
 
+Below are some terms we used in this thesis and their corresponding terms as used in the source code of the Eio library and in our mechanization.
+
 \begin{table}[ht]
     \begin{tabular}{l|l|l}
-        Eio                          & Thesis                       & Mechanization          \\
-        \hline
-        \ocamlin{enqueue}            & \ocamlin{waker} function     & \ocamlin{waker}        \\
-        \ocamlin{f}                  & \ocamlin{register} function  & \ocamlin{register}     \\
-        \ocamlin{Fiber.fork_promise} & \ocamlin{Fiber.fork_promise} & \ocamlin{fork_promise} \\
-        \ocamlin{Promise.await}      & \ocamlin{Promise.await}      & \ocamlin{await}        \\
-        \ocamlin{Sched.run}          & \ocamlin{Scheduler.run}      & \ocamlin{run}          \\
-        \ocamlin{Domain_manager.run} & \ocamlin{Domain_manager.new_scheduler} &  \ocamlin{new_scheduler} \\
+        Thesis                                 & Eio                                    & Mechanization           \\
+                                                 \hline
+        \ocamlin{Fiber.fork_promise}           & \ocamlin{Fiber.fork_promise}           & \ocamlin{fork_promise}  \\
+        \ocamlin{Promise.await}                & \ocamlin{Promise.await}                & \ocamlin{await}         \\
+        \ocamlin{Scheduler.run}                & \ocamlin{Sched.run}                    & \ocamlin{run}           \\
+        \ocamlin{Domain_manager.new_scheduler} & \ocamlin{Domain_manager.run}           & \ocamlin{new_scheduler} \\
+        \ocamlin{waker} function               & \ocamlin{enqueue}                      & \ocamlin{waker}         \\
+        \ocamlin{register} function            & \ocamlin{f}                            & \ocamlin{register}      \\
+        \emph{broadcast}                       & \ocamlin{Broadcast} \& \ocamlin{Cells} & \ocamlin{CQS}           \\
     \end{tabular}
 \end{table}
 
-\subsection{Towards A multithreaded Scheduler}
+\subsection{Adding Multithreading to \hh{}}
 \label{sec:apdx-mt}
 
-OCaml 5 added not only effect handlers but also the ability to use multiple threads of execution, which are called \emph{domains} (in the following we use the terms interchangeably).
-Each domain in OCaml 5 corresponds to one system-level thread and the usual rules of multithreaded execution apply, i.e. domains are preemtively scheduled and can share memory.
-Eio defines an operation to make use of multi-threading by forking off a new thread and running a separate scheduler in it.
-So while each Eio scheduler is only responsible for fibers in a single thread, fibers can await and communicate with fibers running in other threads.
+\ocf{} added not only effect handlers but also the ability to run OCaml code in parallel using multiple system-level threads, called \emph{Multicore OCaml}\footnote{While it was previously possible to run code in multiple threads using the \ocamlin{Thread} module, only one thread could execute OCaml code at a time, so it was not truly parallel.}.
+\ocf{} adopts the name \emph{domain} for a parallel thread of execution, although in the following we prefer to use the term thread.
+Each domain in \ocf{} corresponds to one system-level thread and the usual rules of multithreaded execution apply, i.e. domains are preemptively scheduled and have shared memory.
+Eio defines a \emph{domain manager} to make use of multithreading by spawning a new thread and running a separate scheduler in it.
+So while each Eio scheduler only runs fibers in a single thread, multiple threads can run separate schedulers and fibers can communicate with fibers running in separate threads.
 
-In order for a fiber to be able to await fibers in another thread, the \ocamlin{wakers_queue} [note it will be in the Simple Scheduler section] from above is actually a thread-safe queue based on something called CQS, which we will discuss in detail in a later section.
+Heaplang supports reasoning about multithreaded programs by implementing fork and join operations for threads and defining atomic steps in the operational semantics, which enables opening Iris \emph{shared invariants} for one such step.
+In contrast, \hh{} did not define any multithreaded operational semantics, but as the language is based on heaplang it contained most of the required building blocks already.
+In the following we explain which missing pieces we added to enable writing multithreaded programs in \hh{}.
 
-Heaplang supports reasoning about multithreaded programs by implementing fork and join operations for threads and defining atomic steps in the operational semantics, which enables the use of Iris \emph{invariants}.
-In contrast, \hazel{} did not define any multithreaded operational semantics but it contained most of the building blocks for using invariants.
-In the following we explain how we added a multithreaded operational semantics and enabled the use of invariants.
+\paragraph*{Atomic Variables in \ocf{}}
+In the \ocf{} memory model, \emph{atomic variables} are needed in order to access shared memory without introducing data races.
+Instead of modelling atomic variables in \hh{}, we treat all references as memory locations that are potentially shared with different threads, 
+because in the standard formulation of multithreaded operational semantics in Iris all memory operations are sequentially consistent by construction. 
+That means even normal load and store operations on locations are treated as synchronized accesses.
+This seems to be the standard approach as it is the same in heaplang.
 
-% \ocamlin{}`
-% Aside: Memory Model in OCaml 5
-% In the OCaml 5 memory model, \emph{atomic variables} are needed in order to access shared memory without introducing data races.
-% Instead of modelling atomic variables in \hazel{}, we continue to use normal references because the multithreaded operational semantics by definition defines all memory operations to be sequentially consistent. This seems to be the standard approach and is done the same way in Heaplang.
-% \ocamlin{}`
+\subsubsection*{Extending the Operational Semantics}
 
-\subsubsection*{Adding Invariants to \hazel{}}
+To allow reasoning in \hazel{} about multithreaded programs we need a multithreaded operational semantics for \hh{}, as well as specifications for the new primitive operations \xfork{}, \xcmp{} (\emph{compare-and-exchange}) and \xfaa{} (\emph{fetch-and-add}).
 
-Invariants in Iris are used to share resources between threads.
+The language interface of Iris provides a way to easily define a multithreaded semantics $\to_{mt}$ via a \emph{thread-pool}, 
+provided one defines a \emph{thread-local} operational semantics $\to_t$.
+The thread-pool is a list of expressions that represents threads running in parallel.
+At each step, one expression is picked out of the pool at random and executed for one thread-local step.
+Each thread-local step additionally returns a list of forked off threads, which are then added to the pool.
+This is only relevant for the \xfork{} operation, as all other operations naturally don't fork off threads.
+
+\[
+\inferrule[MTStep]
+{(e, \sigma) \to_{t} (e', \sigma', es')}
+{(es_1 \mdpp e \mdpp es_2, \sigma) \to_{mt} (es_1 \mdpp e' \mdpp es_2 \mdpp es', \sigma')}
+\]
+
+We extend the existing thread-local operational semantics of \hh{} with the expressions \xfork{}, \xcmp{} and \xfaa{}, taking their definitions from heaplang.
+Additionally, we need to prove specifications for the three operations.
+\xcmp{} and \xfaa{} are standard and the same as heaplang, so we will not discuss them here.
+The only interesting design decision in the case of \hh{} is how effects and the \xfork{} expression interact.
+This design is guided by the fact that in \ocf{} effects never cross thread-boundaries.
+An unhandled effect that propagates up to the top level is treated as an error and crashes the program.
+As such we must impose the empty protocol on a newly forked off thread, independent on what protocol \(\Psi\) the main thread obeys.
+
+\[
+\inferrule[Step-Fork]
+{\ewp{e}{\bot}{\top}}
+{\ewp{fork\; e}{\Psi}{v.\; v = ()}}
+\]
+
+Using these primitive operations we can then build the standard $\mathit{CAS}$ (\emph{compare-and-set}), $spawn$, and $join$ operations on top and prove their specifications.
+These constructions and specifications were also taken from heaplang.
+Note that for \emph{spawn} we must also impose the empty protocol on $f$ as this expression will be forked off.
+
+\begin{mathpar}
+  \inferrule[Thread-Spawn]
+  {\ewp{f\; ()}{\bot}{v.\; Q\; v}}
+  {\ewp{thread\_spawn\; f}{\Psi}{j.\; joinHandle\; j\; Q}}
+  %
+  \and
+  %
+  \inferrule[Thread-Join]
+  {joinHandle\; j\; Q}
+  {\ewp{thread\_join\; j}{\Psi}{v.\; Q\; v}}
+\end{mathpar}
+
+This allows us to implement standard multithreaded programs which also use effect handlers.
+
+\subsubsection*{Using Invariants in \hazel{}}
+
+Invariants in Iris can be used to share resources between threads and are a crucial element to proving specifications of multithreaded programs.
 They encapsulate a resource to be shared and can be opened for a single atomic step of execution.
 During this step the resource can be taken out of the invariant and used in the proof but at the end of the step the invariant must be restored.
 
 \hazel{} did already have the basic elements necessary to support using invariants.
-It defined a ghost cell to hold invariants and proved an invariant access lemma which allows opening an invariant if the current expression is atomic.
-In order to use invariant we only had to provide proofs for which evaluation steps are atomic.
+It defined a ghost cell to hold the invariants and had an invariant access lemma which allows opening an invariant if the current expression is atomic.
+So in order to use invariants we only had to provide proofs for which expressions are atomic.
 We provided proofs for all primitive evaluation steps.
-The proofs are the same for all steps so we just explain the one for \ocamlin{Load}.
-
+The proofs are the same for all steps and always consist of two parts.
+First, we need to show that the expression is \coqin{head_atomic}, i.e. that it steps to a value in one step, which is true by definition of the operational semantics.
+Then, we need to show that all subexpressions are values, which is true by construction for the expressions we show to be atomic.
+%
 \begin{minted}{coq}
-Lemma ectx_language_atomic a e :
-head_atomic a e → sub_exprs_are_values e → Atomic a e.
+Definition head_atomic (e : expr) : Prop :=
+  ∀ σ e' σ' efs,
+    head_step e σ e' σ' efs → is_Some (to_val e').
+Definition sub_exprs_are_values (e : expr) :=
+  ∀ K e', e = fill K e' → to_val e' = None → K = [].
+Lemma ectx_language_atomic e :
+  head_atomic e → sub_exprs_are_values e → Atomic e.
+Proof. (* ... *) Qed.
 
-Instance load_atomic v : Atomic StronglyAtomic (Load (Val v)).
-Instance store_atomic v1 v2 : Atomic StronglyAtomic (Store (Val v1) (Val v2)).
-...
+Instance load_atomic v : Atomic (Load (Val v)). 
+Proof. (* ... *) Qed.
+Instance store_atomic v1 v2 : Atomic (Store (Val v1) (Val v2)). 
+Proof. (* ... *) Qed.
+Instance cmpxchg_atomic v1 v2 v3 : Atomic (CmpXchg (Val v1) (Val v2) (Val v3)). 
+Proof. (* ... *) Qed.
 \end{minted}
-
-An expression is atomic if it takes one step to a value, and if all subexpressions are already values.
-The first condition follows by definition of the step relation and the second follows by case analysis of the expression.
-
-Since performing an effect starts a chain of evaluation steps to capture the current continuation, it is not atomic.
-For the same reason an effect handler and invoking a continuation are not atomic except in degenerate cases.
+%
+Since performing an effect starts a chain of evaluation steps to capture the current continuation, it is never atomic.
 Therefore, invariants and effects do not interact in any interesting way.
-\todo{How we add support for the iInv tactic to use invariants more easily.}
-
-\subsubsection*{Adding Multi-Threading to \hazel{}}
-
-To allow reasoning in \hazel{} about multithreaded programs we need a multithreaded operational semantics as well as specifications for the new primitive operations \efork{}, \ocamlin{Cmpxcgh} and \ocamlin{FAA}.
-
-The language interface of Iris provides a multithreaded operational semantics that is based on a thread-pool.
-The thread-pool is a list of expressions that represents threads running in parallel.
-At each step, one expressions is picked out of the pool at random and executed for one thread-local step.
-Each thread-local step additionally returns a list of forked off threads, which are then added to the pool.
-This is only relevant for the \efork{} operation as all other operations naturally don't fork off threads.
-
-% (e, \sigma) ->_t (e', \sigma', es')
-% ------------------------------------------------------------
-% (es_1 ++ e ++ es_2, \sigma) ->_mt (es_1 ++ e' ++ es_2 + es', \sigma')
-
-Heaplang implements multi-threading like this and for \hazel{} we do the same thing.
-We adapt \hazel{}'s thread-local operational semantics to include \efork{}, \ocamlin{Cmpxchg} and \ocamlin{FAA} operations and to track forked off threads and get a multithreaded operational semantics "for free" from Iris' language interface.
-
-Additionally, we need to prove specifications for these three operations.
-\ocamlin{Cmpxchg} and \ocamlin{FAA} are standard so we will not discuss them here.
-The only interesting design decision in the case of \hazel{} is how effects and \efork{} interact.
-This decision is guided by the fact that in OCaml 5 effects never cross thread-boundaries.
-An unhandled effect just terminates the current thread.
-As such we must impose the empty protocol on the argument of \efork{}.
-
-% EWP e <| \bot |> { \top }
-% -------------------------------------
-% EWP (Fork e) <| \Phi |> { x, x = () }
-
-Using these primitive operations we can then build the standard \ocamlin{CAS}, \ocamlin{Spawn}, and \ocamlin{Join} operations on top and prove their specifications.
-For \ocamlin{Spawn} \& \ocamlin{Join} we already need invariants as the point-to assertion for the done flag must be shared between the two threads.
-
-% Lemma spawn_spec (Q : val → iProp Σ) (f : val) :
-% EWP (f #()) <| \bot |> {{ Q }} -∗ EWP (spawn f) {{ v, ∃ (l: loc), ⌜ v = #l ⌝ ∗ join_handle l Q }}.
-
-% Lemma join_spec (Q : val → iProp Σ) l :
-% join_handle l Q -∗ EWP join #l {{ v, Q v }}.
-
-% Definition spawn_inv (γ : gname) (l : loc) (Q : val → iProp Σ) : iProp Σ :=
-% ∃ lv, l ↦ lv ∗ (⌜lv = NONEV⌝ ∨
-% ∃ w, ⌜lv = SOMEV w⌝ ∗ (Q w ∨ own γ (Excl ()))).
-
-% Definition join_handle (l : loc) (Q : val → iProp Σ) : iProp Σ :=
-% ∃ γ, own γ (Excl ()) ∗ inv N (spawn_inv γ l Q).
-
-Note that for \ocamlin{Spawn} we must also impose the empty protocol on \ocamlin{f} as this expression will be forked off.
-
-This allows us to implement standard multithreaded programs which also use effect handlers.
-For example, we can prove the specification of the function below that is based on an analogous function in Eio which forks a thread and runs a new scheduler inside it.
-Note that same as in Eio the function blocks until the thread has finished executing, so it should be called in separate fiber.
-
-% Definition spawn_scheduler : val :=
-% (λ: "f",
-% let: "new_scheduler" := (λ: <>, run "f") in
-% let: "c" := spawn "new_scheduler" in
-% join "c")%V.
-
-% Lemma spawn_scheduler_spec (Q : val -> iProp Σ) (f: val) :
-% promiseInv -∗ EWP (f #()) <| Coop |> {{ _, True }} -∗
-% EWP (spawn_scheduler f) {{ _, True }}.
-
-The scheduler \ocamlin{run} and therefore also the \ocamlin{spawn_scheduler} function don't have interesting return values, so this part of the specification is uninteresting.
-What is more interesting is that they encapsulate the possible effects the given function \ocamlin{f} performs.
-
-\subsection{A Note on Cancellation}
-\label{sec:apdx-cancellation}
-
-\begin{itemize}
-    \item That we tried to model cancellation but the feature is too permissive to give it a specification.
-    \item There is still an interesting question of safety (fibers cannot be added to a cancelled Switch).
-    \item But including switches \& cancellation in our model would entail too much work so we leave it for future work.
-\end{itemize}

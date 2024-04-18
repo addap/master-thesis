@@ -30,7 +30,7 @@ This is because it is assumed that the language runtime supports suspending an e
 But Eio uses the broadcast data structure to \textbf{build} the runtime that allows its execution contexts (i.e. fibers) to suspend until an event happens (i.e. a promise is fulfilled), so a callback-based interface that takes \ocamlin{waker} function was chosen for the adapted operations.
 
 \paragraph*{\ocamlin{Broadcast.register}}
-This operation takes a callback and saves it in the data structure, to be called when an event is signalled. 
+This operation takes a callback and saves it in the data structure, to be called when an event is signalled.
 Since all operations are lock-free, it can happen that a concurrent call to \ocamlin{signal_all} tries to modify the data structure while \ocamlin{register} is still active.
 If this case is detected, \ocamlin{register} immediately invokes the callback itself.
 
@@ -41,7 +41,7 @@ When a promise is fulfilled, \textbf{all} fibers waiting on its value can contin
 
 \paragraph*{\ocamlin{Broadcast.try_unregister}}
 The \ocamlin{try_unregister} operation tries to undo the registration of a callback.
-If the operation succeeds, the associated callback will not be invoked by \ocamlin{signal_all}. 
+If the operation succeeds, the associated callback will not be invoked by \ocamlin{signal_all}.
 Otherwise, if a corresponding \ocamlin{signal_all} happens first, the operation fails.
 
 % % <!-- How to understand the operations?  -->
@@ -127,11 +127,11 @@ A register operation takes a callback \(cb\) and the associated resource \(\gsIs
 \(\gsIsCb{}\) is not persistent because the callback must be invoked only once.
 
 \begin{align*}
-  \gsIsCb{}\; cb\; R                            & \triangleq R \wand \ewp{cb\; ()}{\bot}{\top}                                                           \\
+  \gsIsCb{}\; cb\; R                            & \triangleq R \wand \ewp{cb\; ()}{\bot}{\top}                                                                    \\
   \emph{isBroadcastRegisterResult}\; r\; cb\; R & \triangleq \begin{aligned}[t]
-                                                  & (\ulcorner r = Invoked \urcorner)                                                           \\
-                                                \vee\; & (\ulcorner r = Registered\; h \urcorner \ast \emph{isBroadcastRegisterHandle}\; h\; cb\; R) 
-                                                \end{aligned}\\
+                                                                      & (\ulcorner r = Invoked \urcorner)                                                           \\
+                                                               \vee\; & (\ulcorner r = Registered\; h \urcorner \ast \emph{isBroadcastRegisterHandle}\; h\; cb\; R)
+                                                             \end{aligned} \\
   \emph{isBroadcastRegisterHandle}              & : Val \to Val \to iProp \to iProp
 \end{align*}
 

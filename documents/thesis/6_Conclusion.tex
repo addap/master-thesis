@@ -10,12 +10,12 @@ Picos defines \emph{computations} and \emph{fibers}, which are mostly equivalent
 The main difference is the \emph{trigger} concept, which in Eio's terms can be thought of as a mutable reference to an optional \ocamlin{waker} function.
 % The workflow to await a result in Eio is to, first define a \ocamlin{register} function and perform a \esuspend{} effect with it. 
 % The scheduler will call the \ocamlin{register}
-The workflow to await a future result (i.e. a Picos computation) resembles Landin's Knot in that it consists of first attaching an empty trigger to the computation and then assigning a \ocamlin{waker} function later.
+The workflow to await a future result (i.e. a Picos computation) consists of first attaching an empty trigger to the computation and then assigning a \ocamlin{waker} function later.
 This is done by performing an \emph{Await} effect after attaching the trigger so that the effect handler (implemented by a library such as Eio) then creates a \ocamlin{waker} function and assigns it to the trigger.
 When the computation finishes it will signal the trigger, which calls the \ocamlin{waker} function and consequently places the original fiber in the scheduler's run queue.
 
 While the \emph{Await} effect carrying a trigger is technically first-order -- as opposed to Eio's higher-order \esuspend{} effect carrying a \ocamlin{register} function --
-a trigger still contains higher-order state.
+a trigger still contains higher-order state and the whole process resembles Landin's Knot for building recursive functions with higher-order state.
 So it is unclear to us whether a specification for the Picos primitives would be any simpler to prove or easier to use than the specification for Eio primitives we have presented so far.
 
 \paragraph*{Session Types as Effect Specifications}
@@ -34,7 +34,7 @@ However, for our purposes \hazel{} is completely sufficient since multistep prot
 \subsection{Future Work}
 The work we presented so far suffices to prove the safety of programs that use a small subset of the full functionality provided by Eio.
 To improve the usefulness of our model and be applicable to more programs it would be desirable to incorporate more features into our model of Eio in future work, such as switches and support for cancelling fibers.
-While switches are mainly used for a hierarchical organization of fibers and to efficiently clean up fiber resources, cancellation poses some interesting safety questions because there are situations that must be avoided, such as being able to cancel a fiber twice.
+While switches are mainly used for the hierarchical organization of fibers and to efficiently clean up fiber resources, cancellation poses some interesting safety questions because there are situations that must be avoided, such as being able to cancel a fiber twice.
 
 Instead of growing the model of Eio it would also be interesting to extend the existing specifications.
 Mainly, we would be interested in proving that a scheduler will never "forget fibers".
@@ -59,4 +59,3 @@ Additionally, we have verified specifications for two nontrivial data structures
 For the broadcast data structure we adapted the existing proof of CQS by Koval et al.~\cite{koval2023cqs}
 and for the scheduler's run queue we proved a -- to our knowledge novel -- specification for a multi-producer single-consumer queue with a temporarily suspendable invariant.
 Finally, we have extended the original \hh{} language with multithreading primitives and amended the adequacy result which shows that we can use this language to reason about programs that use both multithreading and effect handlers.
-

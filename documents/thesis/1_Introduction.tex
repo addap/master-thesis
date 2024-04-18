@@ -9,14 +9,14 @@ Another advantage is that user-level concurrency has a lighter memory footprint.
 This way an application can organize many more tasks (possibly on the order of millions) than if it uses a traditional thread-per-task approach.
 
 There is not one standardized implementation for user-level concurrency.
-It is generally said to use \emph{lightweight threads} as opposed to operating system threads, but in different languages or language libraries the concept is known under terms
-like \emph{async/await} (Rust, Python, JavaScript), \emph{goroutines} (Go), and \emph{fibers} (Java's Project Loom, \ocf{}'s Eio).
+It is generally said to use \emph{lightweight threads} as opposed to system-level threads (provided by the operating system), but in different languages or language libraries the concept is known under terms
+like \emph{async/await} (Rust, Python, JavaScript), \emph{goroutines} (Go), and \emph{fibers} (Java's Project Loom~\cite{jloom}, \ocf{}'s Eio).
 
 \paragraph{}
 
-In this thesis we look at the Eio library of \ocf{} and formally verify the safety of its core elements for user-level concurrency.
+We will look at the Eio library of \ocf{} and formally verify the safety of its core elements for user-level concurrency.
 The library uses the new effect handler feature from \ocf{} to implement fibers in an efficient way without stack copying~\cite{ocamleff}.
-In order to formally verify the code that uses effect handlers we use the \hazel{} program logic by de Vilhena~\cite{de2021separation,de2022proof}.
+In order to formally verify the code that uses effect handlers we use the \hazel{} program logic by de Vilhena~\cite{de2022proof}.
 
 \paragraph{Formal Verification}
 There is a growing need for the formal verification of programs or computer systems to provide a high assurance that they are \emph{safe to use}.
@@ -30,8 +30,8 @@ Safety is the baseline for the type of program verification that we do and as a 
 Specifications further restrict the possible program executions to a defined set of \emph{good behaviors}, such as "for a given input \(n\), this program computes the \(n\)th Fibonacci number".
 
 \paragraph{Separation Logic}
-We express specifications as logical propositions and do all reasoning in a separation logic called \emph{Iris}~\cite{jung2018iris}.
-Separation logics~\cite{reynolds2002separation} are based on Hoare logic, which has the \emph{Hoare triple} construct \(\{P\}\,s\,\{Q\}\) to encode the specification of a program.
+We express specifications as logical propositions and do all reasoning in a separation logic based on \emph{Iris}~\cite{jung2018iris}.
+Separation logics~\cite{reynolds2002separation} are based on Hoare logic, which defines the \emph{Hoare triple} construct \(\{P\}\,s\,\{Q\}\) to encode the specification of a program.
 It means that given preconditions \(P\), execution of the program \(s\) either diverges or terminates so that the postcondition \(Q\) holds\footnote{We only look at an expression-based language where \(Q\) is allowed to mention the final value of \(s\).}.
 Further, separation logics are a type of affine logic that have a \emph{separating conjunction} connective \(P \ast Q\) in addition to the standard logical connectives.
 
@@ -39,15 +39,16 @@ The separating conjunction allows an interpretation of propositions as \emph{res
 The most prominent example of a resource is the proposition \(l \mapsto v\) (also called \emph{points-to connective}), representing a heap fragment where the location \(l\) holds the value \(v\).
 This also implies \emph{ownership} over the location \(l\), i.e. no one else can access the location as long as we have that resource.
 A separating conjunction of heap fragments \(l \mapsto v \ast l' \mapsto v'\) additionally implies that \(l \neq l'\), because the heap fragments are necessarily disjoint.
-The dual connective of a separating conjunction is the \emph{magic wand} \(P \wand Q\), which follows the elimination rule \(P \ast (P \wand Q) \vdash Q\).
+The dual connective of a separating conjunction is the \emph{magic wand} \(P \wand Q\), which states that in order to have the resources \(Q\) the resources \(P\) are still missing. 
+It follows the elimination rule \(P \ast (P \wand Q) \vdash Q\).
 
 Another type of proposition is duplicable \emph{knowledge}, which is also called \emph{persistent}.
 For example, Hoare triples \(\{P\}\,s\,\{Q\}\) are defined as persistent because under the given assumptions \(P\) the evaluation of \(s\) should always be valid.
-Separation logics have been successfully applied in many program verification developments~\cite{?,?,?} as they are useful for modular reasoning about stateful and multithreaded programs.
 
 \paragraph{Iris}
-Iris is not only a separation logic, but a whole separation logic framework implemented in Coq that can be instantiated with different programming languages.
-This allows us to layer different \emph{program logics} on top of the base separation logic, which contain additional reasoning rules about the evaluation of programs in a concrete language.
+Iris~\cite{jung2018iris} is a framework for building separation logics that can be instantiated with different programming languages and is implemented in the Coq proof assistant.
+In recent years Iris has been used in many program verification developments~\cite{hammond2024axiomatic,jung2017rustbelt,rao2023iris} as it is useful for modular reasoning about stateful and multithreaded programs.
+Instantiating Iris with different programming languages allows layering different \emph{program logics} on top of the base separation logic, which contain additional reasoning rules about the evaluation of programs in a concrete language.
 Verifying a program in Iris follows the schema of first deciding which specifications are necessary for each of the program's components.
 These are expressed using predicates in the logic, which we call the \emph{logical state definitions}.
 If necessary, one can also use so-called \emph{ghost state},
@@ -73,7 +74,7 @@ This ensures that even in the presence of multiple threads executing in parallel
 
 The standard language for Iris is called heaplang and is an ML-like language with mutable state and multithreading.
 However, it does not support effect handlers as present in \ocf{}.
-So for reasoning about programs with effect handlers we use the \hh{} language for Iris, that is based on heaplang and includes effect handlers.
+So for reasoning about programs with effect handlers we use the \hh{} language for Iris which is based on heaplang but includes effect handlers.
 
 \paragraph{Effect Handlers}
 \emph{Effect handlers}~\cite{plotkin2013handling} (and the related concept of \emph{algebraic effects}) are a versatile concept explored in some research languages~\cite{eff,koka} and now also implemented in \ocf{}~\cite{ocamleff}.
@@ -89,10 +90,10 @@ We use an overloading of the \ocamlin{match} expression, which includes cases fo
 \begin{figure}[ht]
     \begin{minted}[fontsize=\footnotesize,escapeinside=@@]{ocaml}
     (* Declares a new constructor for the effect type 
-     * E : int -> bool Effect.t *)
+     * E : int -> bool eff *)
     type _ eff += E : int -> bool eff
 
-    (* Evaluating a perform expression with a value of type 'a Effect.t 
+    (* Evaluating a perform expression with a value of type 'a eff
      * transfers control to the enclosing handler and (possibly)
      * terminates in a value of type 'a. *)
     let e () = 
@@ -109,10 +110,11 @@ We use an overloading of the \ocamlin{match} expression, which includes cases fo
     match e () with
     | v -> v
     (* This handler just checks if the passed value is 1.
-     * Applying k to a value adds the continuation to the stack,
-     * so control is transferred back to where the perform expression 
+     * The continuation must be explcitly invoked using the 
+     * continue expression and a value to add k to the stack.
+     * Then, control is transferred back to where the perform expression 
      * was evaluated. *)
-    | @\texttt{\textbf{effect}}@ (E v) k -> k (v = 1)
+    | @\texttt{\textbf{effect}}@ (E v) k -> continue k (v = 1)
 \end{minted}
     \caption{Example for the effect handler syntax.}
     \label{fig:effect-example}
@@ -127,12 +129,12 @@ Languages like Koka additionally track the possible effects of an expression in 
 This might be implemented for \ocf{} in the future, but for now effects are not tracked by the type system.
 It is the responsibility of the programmer to install effect handlers that handle all possible effects of their program.
 This raises the question of \textbf{effect safety} for OCaml programs using effect handlers, which means that a program does not perform any unhandled effects.
-The \ocf{} runtime treats unhandled effects as an error and crash the program.
+The \ocf{} runtime treats unhandled effects as an error and crashes the program when an effect reaches the top level without being handled by an effect handler.
 So to prove the safety of \ocf{} programs we must additionally establish their effect safety.
 
 \paragraph{\hazel{} \& Protocols}
-In our development we use the Iris language \hh{} and the associated program logic \hazel{} by de Vilhena~\cite{de2021separation,de2022proof} which formalizes an ML-like language with effect handlers.
-We restate the most important concepts but for a deeper understanding we recommend reading~\cite{de2021separation}.
+In our development we use the Iris language \hh{} and the associated program logic \hazel{} by de Vilhena~\cite{de2022proof,de2021separation} which formalizes an ML-like language with effect handlers.
+We restate the most important concepts but for a deeper understanding we refer to~\cite{de2021separation}.
 
 \hazel{} defines an \emph{extended weakest precondition} \(\ewp{e}{\Psi}{v,\, Q\, v}\) which -- in addition to what is implied by a normal weakest precondition --
 shows we can observe that the expression \(e\) performs effects according to the protocol \(\Psi\).
@@ -147,18 +149,18 @@ Intuitively, the part after the exclamation mark gets \emph{sent} to the effect 
 The client who performs the effect transmits the value \(v\) to the effect handler and must prove the proposition \(P\).
 In return, the client receives from the effect handler a value \(w\) and gets to assume \(Q\).
 In total, this can be thought of as an analogue to a Hoare triple like \(\{P\}\, handler\; v\, \{w.\; Q\; w\}\), where we explicitly name the handler that handles the effect.
-But the client only indirectly invokes the effect handler by evaluating a \(perform\) expression, so in practice we prove the following Hoare triple.
+But the client only indirectly invokes the effect handler by evaluating a \(\mathit{perform}\) expression, so in practice we can prove Hoare triples of the following form.
 \[
-    \{P\}\, perform\; v\, \{w.\; Q\; w\}
+    \{P\}\, \mathit{perform}\; v\, \{w.\; Q\; w\}
 \]
 
 Apart from the above there are three additional ways to define protocols.
 There is the sum constructor \(\Psi_1 + \Psi_2\) to combine two protocols, allowing \(e\) to perform effects according to both, and its neutral element, the empty protocol \(\bot\),
 which allows no effects.
-Finally, there is a tag constructor \(\mathcal{f} \mathop{\#} \Psi\) to give a name to protocols.
+Finally, there is a tag constructor \(f \mathop{\#} \Psi\) to give a name to protocols.
 Our example effect \ocamlin{E} from figure~\ref{fig:effect-example} could therefore be formalized using the following protocol \(\Psi_\mathtt{E}\).
 \[
-    \Psi_\mathtt{E} \coloneq \mathtt{E} \mathop{\#}\; !\, i\, (i)\, \{ i \in \mathtt{int} \}.\; ?\, b\, (b)\, \{ b \in \mathtt{bool} \}
+    \Psi_\mathtt{E} \coloneq \mathtt{E} \mathop{\#}\; !\, i\, (i)\, \{ i \in \mathtt{int} \}.\; ?\, b\, (b)\, \{ \mathit{if}\; i = 1\; \mathit{then}\; b = true\; \mathit{else}\; b = false \}
 \]
 
 Using the extended weakest precondition with the \(\bot\) protocol then enables us to prove that a program is \textbf{effect safe}, as it shows that we cannot observe any effects from the top level.
@@ -175,7 +177,7 @@ However, if multithreading is required it is possible to spawn additional schedu
 
 In a cooperative user-level concurrency setting, many existing APIs for operating system resources in OCaml are not suitable anymore because they are blocking.
 Therefore, Eio also provides concurrency-aware abstractions to these resources, such as network sockets, the file system, and timers, i.e. they suspend the running fiber instead of blocking the system-level thread.
-Since these schedulers must interact with operating system, there are specialized schedulers for multiple platforms such as Windows, Linux, and a generic POSIX scheduler.
+Since these schedulers must interact with the operating system, there are specialized schedulers for multiple platforms such as Windows, Linux, and a generic POSIX scheduler.
 Eio also offers synchronization and message passing constructs like mutexes and channels which are also concurrency-aware.
 
 \subsection{Focus and Structure of the Thesis}
@@ -210,6 +212,7 @@ The implementation of the fiber and scheduler functions are discussed in section
 The specification of promises is discussed in section~\ref{sec:sched-spec}.
 Broadcast is based on the \emph{CQS} data structure, whose specification is already verified using Iris~\cite{koval2023cqs}, but Eio customizes the implementation so we had to adapt the proof.
 We discuss this process in section~\ref{sec:broadcast}.
+Then in section~\ref{sec:domain-manager} we discuss the design of the Eio component that allows running schedulers in multiple threads.
 Fibers in Eio also have access to \emph{thread-local variables} by performing a \egetctx{} effect, which is discussed in section~\ref{sec:thread-local-vars}.
 They are thread-local in the sense that they are shared between all fibers of one scheduler.
 Finally, we discuss our addition of multithreading to the \hh{} operational semantics in order to model running schedulers in different threads.
@@ -225,5 +228,7 @@ This includes:
     \item The verification of the basic Eio \textbf{fiber abstraction} running on a common denominator scheduler.
     \item Proving reusable specifications for the main three effects of Eio: \efork{}, \esuspend{}, and \egetctx{}.
     \item An adaptation of the existing verification of CQS to the customized version used by Eio.
-    \item Adding multithreading to \hh{}'s operational semantics, which shows we can reason about programs that use both \textbf{multithreading} and \textbf{effect handlers}.
+    \item Adding multithreading to the operational semantics of \hh{}, which shows we can reason about programs that use both \textbf{multithreading} and \textbf{effect handlers}.
 \end{itemize}
+
+Our results are mechanized in the Coq proof assistant and are publicly available at \url{https://gitlab.mpi-sws.org/addapp/master-thesis/}.
