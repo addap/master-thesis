@@ -17,11 +17,15 @@
 - [x] Capitalize figure captions consistently.
 - [x] Actually prove the case study.
 - [x] Cleanup duplicate info from section 2 (I explain the tryUnregister operation 3 times...)
-- [ ] Fix that I call it the "Hazel language", it should be the "HH language" and the "Hazel formalism".
+- [x] Fix that I call it the "Hazel language", it should be the "HH language" and the "Hazel formalism".
+- [x] Mostly replace quotation marks by italics
+- [x] fix all grammatical errors shown by spellcheck
 - [ ] Port deferred queue to eio by copying the new dfrac saved_prop implementation to my older Iris version.
 - [x] fix missing argument of gspwaiting/gspdone
 - [x] fix missing argument of proto/gsiswaker/etc.
 - [x] make scheduler result non-optional
+- [x] Move repo to mpi gitlab and then place link in pdf
+- [x] Add missing citations
 
 ### Code cleanup
 
