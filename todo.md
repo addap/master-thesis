@@ -20,7 +20,7 @@
 - [x] Fix that I call it the "Hazel language", it should be the "HH language" and the "Hazel formalism".
 - [x] Mostly replace quotation marks by italics
 - [x] fix all grammatical errors shown by spellcheck
-- [ ] Port deferred queue to eio by copying the new dfrac saved_prop implementation to my older Iris version.
+- [x] Port deferred queue to eio by copying the new dfrac saved_prop implementation to my older Iris version.
 - [x] fix missing argument of gspwaiting/gspdone
 - [x] fix missing argument of proto/gsiswaker/etc.
 - [x] make scheduler result non-optional
@@ -32,4 +32,4 @@
 - [ ] clean up the code, especially
   - [ ] the case study
   - [ ] adapted cqs proofs (there are like 20 TODOs in the code)
-- [ ] Organize the different Iris versions that I am using.
+- [x] Organize the different Iris versions that I am using.
