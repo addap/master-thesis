@@ -6,4 +6,4 @@
 	url = git@github.com:addap/kotlinx.coroutines.git
 [submodule "project"]
 	path = project
-	url = ./project
+	url = git@github.com:addap/hazel.git
