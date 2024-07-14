@@ -20,6 +20,7 @@ Then run the following to compile all proofs.
 $ coq_makefile -f _CoqProject -o Makefile.coq
 $ make -f Makefile.coq
 ```
+At the end the global assumptions for the correctness of the Eio scheduler are printer, which only includes the axiomatization of the separately proven CQS specification.
 
 # Compiling the proofs of the adapted CQS
 
